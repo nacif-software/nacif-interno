@@ -4,7 +4,7 @@
 
 ## Contexto
 
-Nacif Disponibilidade é o primeiro de vários sistemas internos (próximo: Hermes).
+Nacif Disponibilidade é o primeiro de vários sistemas internos.
 
 ## Decisão
 
@@ -13,3 +13,7 @@ Nacif Disponibilidade é o primeiro de vários sistemas internos (próximo: Herm
 ## Consequências
 
 Adicionar um sistema = pasta + manifest + registro (AGENTS.md §7). Navegação por módulo via `navItems(role)`.
+
+## Atualização (2026-10-02)
+
+A versão original citava o Hermes como próximo módulo e o portal exibia um card "Hermes — Em breve". Isso estava errado: o Hermes Agent é um agente externo, com acesso restrito, e não um serviço aberto pelo portal. O card foi removido. A integração com ele será por um servidor MCP de leitura (issues 007 e 002).

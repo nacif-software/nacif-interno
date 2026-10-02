@@ -19,14 +19,16 @@ function setup(loginResponse: { status: number; body: unknown }) {
 }
 
 describe('LoginPage', () => {
-  it('mostra a copy inicial do design', async () => {
+  it('mostra a copy geral do portal, sem citar um serviço específico', async () => {
     setup({ status: 200, body: {} });
     expect(
       await screen.findByRole('button', { name: 'Entrar com e-mail Nacif' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Serviços internos' })).toBeInTheDocument();
     expect(
-      screen.getByText(/Acesse para comunicar períodos de indisponibilidade/),
+      screen.getByText('Acesse os serviços e recursos internos da Nacif.'),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/indisponibilidade/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Se você é prestador do time/)).toBeInTheDocument();
   });
 

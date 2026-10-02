@@ -42,6 +42,9 @@ export const FLOW_EVENT_LABEL: Record<FlowEventType, string> = {
 };
 
 export const MESSAGES = {
+  /** Tela de login do portal: geral, não fala de um serviço específico (ADR 0010). */
+  portalTitle: 'Serviços internos',
+  portalLoginDescription: 'Acesse os serviços e recursos internos da Nacif.',
   domainNotAllowedTitle: 'Domínio não autorizado',
   domainNotAllowed: (email: string) =>
     `A conta ${email} não pertence ao domínio ${ALLOWED_EMAIL_DOMAIN}. Entre com seu e-mail Nacif.`,
