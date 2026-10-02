@@ -8,7 +8,7 @@ O convite gera um link que o administrador precisa copiar; decisões não notifi
 
 ## Proposta
 
-Provedor de e-mail configurável (SMTP ou API) com templates para convite, envio ao aprovador, decisão ao autor e cancelamento. Mesmo `NotificationChannel` da issue 001.
+Provedor de e-mail configurável (SMTP ou API) com templates para convite, envio ao aprovador, decisão ao autor e cancelamento. Reutiliza a interface `NotificationChannel` criada na issue 001. Push notification fica na issue 006.
 
 ## Critérios de aceite
 
