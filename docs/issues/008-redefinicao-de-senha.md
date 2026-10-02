@@ -2,7 +2,7 @@
 
 **Labels**: enhancement, auth
 
-**Status da revisão**: rascunho, ainda não revisada.
+**Status da revisão**: revisada em 2026-10-02.
 
 ## Contexto
 
@@ -14,16 +14,21 @@ Na tela de Administração, uma ação "Redefinir senha" em cada pessoa ativa. E
 
 O mecanismo de link com token já existe para o convite (`password_setup_tokens`), então a mudança é pequena.
 
-## Pontos a decidir na revisão
+## Decisões
 
-- A senha antiga continua valendo até a pessoa usar o link, ou é invalidada na hora em que o administrador gera o link?
-- Incluir aqui a troca da própria senha por quem está logado, ou deixar para outra issue?
-- "Esqueci minha senha" pela tela de login depende de envio de e-mail (issue 005). Fica fora desta.
+- A senha antiga continua valendo até a pessoa usar o link. Gerar o link por engano não derruba o acesso de ninguém.
+- O link só troca a senha: nome, papel e projeto não mudam.
+
+## Fora do escopo
+
+- Troca da própria senha por quem está logado. Fica para depois.
+- "Esqueci minha senha" pela tela de login. Depende de envio de e-mail (issue 005).
 
 ## Critérios de aceite
 
 - [ ] Administrador gera o link de redefinição para uma pessoa ativa que já tem senha.
 - [ ] O link vale por tempo limitado e só pode ser usado uma vez.
+- [ ] Enquanto o link não é usado, a senha antiga continua funcionando.
 - [ ] Depois da redefinição, a senha antiga não funciona e as sessões anteriores são encerradas.
 - [ ] Quem não é administrador não consegue gerar o link.
 - [ ] A ação fica registrada em log.
