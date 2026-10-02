@@ -2,7 +2,7 @@
 
 **Labels**: enhancement, integração
 
-**Status da revisão**: rascunho em revisão (2026-10-02). Pré-requisito da issue 002.
+**Status da revisão**: revisada em 2026-10-02. Pré-requisito da issue 002.
 
 **Quem pode fazer**: qualquer pessoa do time.
 
@@ -26,11 +26,11 @@ Ferramentas iniciais:
 | `listar_decisoes_recentes` | aprovações e recusas recentes, com quem decidiu e quando                | dias para trás, tipo de decisão                  |
 | `quem_esta_indisponivel`   | pessoas com indisponibilidade aprovada ou em análise em uma data ou mês | data ou mês, projeto                             |
 
-## Decisões a confirmar na revisão
+## Decisões
 
-- **Campos sensíveis**: observações do autor e justificativa de recusa ficam de fora das respostas na primeira versão. O que o Hermes recebe pode ser repetido no Slack.
-- **Autenticação**: token de serviço configurado por variável de ambiente, comparado por hash, sem tela de gestão por enquanto.
-- **Onde roda**: endpoint HTTP na própria API (transporte Streamable HTTP do MCP), não um processo separado.
+- **Sem dados sensíveis.** O MCP devolve só dados básicos: pessoa, projeto, período, dias úteis, status, cobertura, aprovador e datas. Observações do autor e justificativa de recusa ficam de fora, porque o que o agente recebe pode ser repetido no Slack. Dados completos continuam disponíveis apenas na plataforma, para administradores e aprovadores.
+- **Autenticação por token de serviço** em variável de ambiente, comparado por hash. Sem tela de gestão de tokens por enquanto.
+- **Endpoint HTTP na própria API**, com o transporte Streamable HTTP do MCP. Não é um processo separado.
 
 ## Fora do escopo
 
@@ -41,7 +41,8 @@ Ferramentas iniciais:
 
 ## Dependências
 
-- O servidor precisa estar acessível a partir da instância do Hermes. Hoje o sistema roda só localmente, então esta issue depende de um ambiente publicado com HTTPS.
+- Nenhuma para desenvolver e testar: o servidor pode ser construído e validado localmente com um cliente MCP.
+- O uso real pelo Hermes (issue 002) depende de o sistema estar em produção.
 
 ## Notas de implementação
 

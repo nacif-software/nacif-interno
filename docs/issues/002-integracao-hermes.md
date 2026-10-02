@@ -2,11 +2,11 @@
 
 **Labels**: enhancement, integração
 
-**Status da revisão**: rascunho em revisão (2026-10-02).
+**Status da revisão**: revisada em 2026-10-02. Fica em espera até o sistema ir para produção.
 
 **Quem pode fazer**: somente Ricardo ou Lucca. O Hermes tem acesso a informações críticas e privadas da empresa, e a configuração acontece dentro da instância dele.
 
-**Depende de**: issue 007 (servidor MCP de leitura) e de um ambiente publicado do Nacif Disponibilidade.
+**Depende de**: issue 007 (servidor MCP de leitura) e do Nacif Disponibilidade em produção. Entra junto com as outras etapas que dependem de produção.
 
 ## Contexto
 
@@ -21,6 +21,7 @@ Registrar o servidor MCP do Nacif Disponibilidade (issue 007) como fonte de dado
 ## Fora do escopo
 
 - Qualquer ação do Hermes que altere dados no Nacif Disponibilidade.
+- Acesso do Hermes a dados sensíveis, como observações e justificativas. Isso fica só na plataforma, para administradores e aprovadores.
 - Abrir o Hermes para pessoas além das quatro com acesso hoje.
 - O servidor MCP em si (issue 007).
 
