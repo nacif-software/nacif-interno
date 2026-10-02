@@ -48,11 +48,11 @@ export function LoginPage() {
         <div className="flex flex-col gap-3">
           <Logo size="lg" to={null} />
           <h1 className="text-[30px] leading-[1.1] font-bold tracking-[-0.03em] text-ink">
-            Disponibilidade
+            {MESSAGES.portalTitle}
           </h1>
           {!error && (
             <p className="text-[16px] leading-[1.5] text-ink-muted">
-              Acesse para comunicar períodos de indisponibilidade e acompanhar aprovações.
+              {MESSAGES.portalLoginDescription}
             </p>
           )}
         </div>

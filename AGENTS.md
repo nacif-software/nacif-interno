@@ -4,7 +4,9 @@ Leia este arquivo antes de qualquer alteração. Ele define vocabulário, arquit
 
 ## 1. O que é este repositório
 
-Portal de sistemas internos da **Nacif**. O primeiro módulo é **Nacif Disponibilidade**: membros do time (prestadores PJ) comunicam períodos de indisponibilidade e aprovadores decidem. Outros sistemas (ex.: Hermes) entrarão como módulos e aparecerão como cards no portal (`/`).
+Portal de sistemas internos da **Nacif**. O primeiro módulo é **Nacif Disponibilidade**: membros do time (prestadores PJ) comunicam períodos de indisponibilidade e aprovadores decidem. Outros sistemas internos entrarão como módulos e aparecerão como cards no portal (`/`). A tela de login e o portal falam dos serviços internos de forma geral, nunca de um módulo específico.
+
+O **Hermes Agent** não é um módulo do portal: é um agente externo, com acesso restrito, que consultará dados daqui por MCP (ver `docs/issues/`).
 
 - Especificação de UI: `docs/design-spec.md` (fonte de verdade; copy pt-BR deve ser idêntica).
 - Arquitetura: `docs/architecture.md`. Modelo de dados: `docs/data-model.md`. API: `docs/api.md`.
@@ -73,11 +75,13 @@ Seed: pessoas do design com senha `nacif1234` (`caio@nacif.xyz` admin, `marina@n
 - Cores, fontes e raios só pelos tokens do tema (`bg-brand`, `text-ink-muted`, `rounded-card`, `font-mono`...). Sem sombras, exceto `shadow-float` em dropdown e toast.
 - Commits no formato Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`...).
 
-## 7. Como adicionar um módulo (ex.: Hermes)
+## 7. Como adicionar um módulo
 
-1. API: criar `apps/api/src/modules/hermes/` com `manifest.ts` (`ServiceDescriptor`), `index.ts` (`ApiModule` com prefixo `/hermes`) e recursos em MVC; registrar em `apps/api/src/modules/index.ts`. Models Prisma novos vão no `schema.prisma` com nomes de tabela prefixados quando fizer sentido.
-2. Web: criar `apps/web/src/modules/hermes/` com `manifest.ts` (`WebModule` com `routes`, `service` e `navItems(role)`), `routes.tsx`, `controllers/`, `views/`; registrar em `apps/web/src/modules/registry.ts`.
-3. Remover o placeholder de `PLANNED_SERVICES` em `apps/api/src/modules/core/services/registry.ts`.
+Use o `slug` do novo serviço no lugar de `<slug>`.
+
+1. API: criar `apps/api/src/modules/<slug>/` com `manifest.ts` (`ServiceDescriptor`), `index.ts` (`ApiModule` com prefixo `/<slug>`) e recursos em MVC; registrar em `apps/api/src/modules/index.ts`. Models Prisma novos vão no `schema.prisma` com nomes de tabela prefixados quando fizer sentido.
+2. Web: criar `apps/web/src/modules/<slug>/` com `manifest.ts` (`WebModule` com `routes`, `service` e `navItems(role)`), `routes.tsx`, `controllers/`, `views/`; registrar em `apps/web/src/modules/registry.ts`.
+3. Se o serviço estava anunciado como "Em breve", remover a entrada de `PLANNED_SERVICES` em `apps/api/src/modules/core/services/registry.ts`.
 4. Documentar em `docs/architecture.md` e abrir um ADR se houver decisão relevante.
 
 ## 8. Testes: o mínimo antes de considerar pronto

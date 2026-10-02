@@ -84,7 +84,7 @@ describe('users e projects', () => {
     expect(list.body.map((p: { name: string }) => p.name)).toEqual(['Atlas', 'Vega', 'Órion']);
   });
 
-  it('services lista o módulo disponível e o Hermes como em breve', async () => {
+  it('services lista só os serviços que existem no portal', async () => {
     await seedTeam();
     const agent = buildTestApp();
     await loginAs(agent, 'pedro@nacif.xyz');
@@ -95,7 +95,6 @@ describe('users e projects', () => {
         status: 'available',
         path: '/disponibilidade',
       }),
-      expect.objectContaining({ slug: 'hermes', status: 'coming_soon' }),
     ]);
   });
 });
