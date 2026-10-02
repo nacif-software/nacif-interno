@@ -25,6 +25,8 @@ make test-e2e    # Playwright (exige make up + seed)
 make lint && make typecheck && make vocab-check
 ```
 
+No GitHub Actions, o job `quality` roda em todo PR e em todo push na `main`. O job `e2e` roda só em PRs para a `main`. Detalhes em `AGENTS.md`, seção 9.
+
 ## Documentação
 
 - `AGENTS.md`: guia para pessoas e agentes (vocabulário, arquitetura, convenções).
