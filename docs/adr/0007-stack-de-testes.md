@@ -9,3 +9,7 @@ Shared: Vitest unitário. Web: Vitest + Testing Library (jsdom). API: Vitest + S
 ## Consequências
 
 Testes de API cobrem SQL, índices e transações de verdade. CI precisa de um serviço Postgres.
+
+## Atualização (2026-10-02)
+
+No CI o e2e roda contra o build de produção (`vite preview`), não contra o dev server, e só em PRs para a `main`, por custo de minutos. Localmente `make test-e2e` continua usando o dev server do `make up`; `make test-e2e-preview` reproduz o modo do CI.

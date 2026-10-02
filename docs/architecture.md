@@ -72,6 +72,15 @@ HTTP → helmet/cors/cookie-parser/json → /api/<módulo> router
 
 `docker-compose.yml`: `db` (Postgres 17), `db-test` (profile `test`, tmpfs), `api` e `web` (mesma imagem `docker/dev.Dockerfile`, código montado, dependências em volumes nomeados, `pnpm install` no start). Variáveis em `.env` (ver `.env.example`); `apps/api/src/config/env.ts` valida com zod no boot.
 
+## CI
+
+`.github/workflows/ci.yml`:
+
+- `quality` (todo PR e todo push na `main`): lint, typecheck, `vocab-check` e testes de shared, web e api com Postgres como serviço.
+- `e2e` (só em PRs para a `main`): `docker compose up db api`, migrações, seed pelo global setup do Playwright, build do web e `vite preview` com proxy de `/api`. O dev server do Vite não é usado no CI porque em ambiente frio ele pode servir dependências desatualizadas.
+
+A `main` só recebe código por PR, então todo código que chega nela passou pelo e2e. O push de merge roda apenas o `quality`.
+
 ## Deploy (futuro)
 
 Não definido. Caminho provável: imagem multi-stage servindo `apps/web/dist` atrás da API na mesma origem, Postgres gerenciado, `prisma migrate deploy` no release.
