@@ -46,6 +46,7 @@ Tudo passa pelo `Makefile` (rode `make help`):
 | `make migrate` / `make migrate-new name=x` / `make seed` / `make db-reset` | migrações e seed (rodam dentro do container `api`)                                        |
 | `make test`                                                                | shared + web + api (api sobe o `db-test` na porta 5433)                                   |
 | `make test-e2e`                                                            | Playwright contra `make up` + seed                                                        |
+| `make test-e2e-preview`                                                    | e2e contra o build de produção (`vite preview`), igual ao CI                              |
 | `make lint` / `make typecheck` / `make format` / `make vocab-check`        | qualidade                                                                                 |
 | `make ci`                                                                  | tudo que o CI roda                                                                        |
 
