@@ -1,0 +1,11 @@
+# Uma linha por repositório: <owner/repo> [skills...]
+anthropics/skills frontend-design webapp-testing
+vercel-labs/agent-skills vercel-react-best-practices vercel-composition-patterns
+addyosmani/web-quality-skills accessibility
+prisma/skills prisma-client-api prisma-cli prisma-database-setup prisma-postgres
+supabase/agent-skills supabase-postgres-best-practices
+antfu/skills vitest vite
+currents-dev/playwright-best-practices-skill
+mattpocock/skills tdd code-review domain-modeling to-issues
+addyosmani/agent-skills security-and-hardening documentation-and-adrs
+github/awesome-copilot conventional-commit multi-stage-dockerfile

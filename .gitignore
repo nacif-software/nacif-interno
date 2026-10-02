@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+apps/api/src/generated/
+e2e/playwright-report/
+e2e/test-results/
+e2e/.auth/
+.DS_Store
+*.log
+.vite/
+.pnpm-store/

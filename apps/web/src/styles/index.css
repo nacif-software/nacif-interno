@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+@import './theme.css';
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink-muted;
+    margin: 0;
+  }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  a {
+    @apply text-brand no-underline;
+  }
+  a:hover {
+    @apply text-ink;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@utility text-display {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: var(--color-ink);
+}
+@utility text-screen-title {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
+}
+@utility text-section-title {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
+}
+@utility text-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+@utility text-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+@utility bg-dots {
+  background-image: radial-gradient(var(--color-brand-wash) 1.5px, transparent 1.5px);
+  background-size: 26px 26px;
+}
+@utility bg-hatched {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--color-brand-wash) 0 5px,
+    var(--color-white) 5px 10px
+  );
+}

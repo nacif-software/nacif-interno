@@ -1,0 +1,24 @@
+{
+  "name": "@nacif/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tipos, enums, schemas zod, regras de negócio puras e formatação compartilhados entre api e web.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "date-fns": "^4.4.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.1"
+  }
+}

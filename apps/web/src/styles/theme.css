@@ -1,0 +1,42 @@
+/* Tokens do design (docs/design-spec.md, A.1). Não inventar cores fora daqui. */
+@theme {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --color-brand: #5316e8;
+  --color-brand-wash: #ddd2fb;
+  --color-ink: #080d24;
+  --color-ink-muted: #4a4a55;
+  --color-line: #e5e5e5;
+  --color-canvas: #f7f7f8;
+  --color-card: #ffffff;
+  --color-success: #16a34a;
+  --color-success-bg: #e8f6ec;
+  --color-warning: #d97706;
+  --color-warning-bg: #fef3e2;
+  --color-danger: #dc2626;
+  --color-danger-bg: #fceaea;
+  --color-neutral-bg: #efeff1;
+  --color-day-muted: #c9c9ce;
+  --color-grid-line: #f2f2f3;
+  --color-row-selected: #f9f6fe;
+  --color-overlay: rgb(8 13 36 / 0.45);
+
+  --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, Helvetica, Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-card: 6px;
+  --radius-control: 5px;
+  --radius-badge: 4px;
+  --radius-check: 3px;
+  --radius-toggle: 12px;
+
+  --shadow-float: 0 4px 16px rgb(8 13 36 / 0.12);
+
+  --spacing-topbar: 68px;
+  --spacing-topbar-mobile: 56px;
+  --spacing-tabbar: 64px;
+}

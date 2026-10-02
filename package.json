@@ -1,0 +1,35 @@
+{
+  "name": "nacif-interno",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Portal de sistemas internos da Nacif. Primeiro módulo: Nacif Disponibilidade.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:api": "pnpm --filter @nacif/api dev",
+    "dev:web": "pnpm --filter @nacif/web dev",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm -r --workspace-concurrency=1 --filter '!@nacif/e2e' test",
+    "test:shared": "pnpm --filter @nacif/shared test",
+    "test:web": "pnpm --filter @nacif/web test",
+    "test:api": "pnpm --filter @nacif/api test",
+    "test:e2e": "pnpm --filter @nacif/e2e test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^16.0.0",
+    "prettier": "^3.9.9",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.70.1"
+  }
+}

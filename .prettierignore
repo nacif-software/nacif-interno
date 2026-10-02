@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+pnpm-lock.yaml
+apps/api/src/generated
+.agents
+.claude/skills
+e2e/playwright-report
+e2e/test-results
+.pnpm-store/
