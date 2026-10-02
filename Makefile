@@ -6,7 +6,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 .PHONY: help install up down restart deps logs ps build migrate migrate-new migrate-deploy generate seed db-reset studio \
-	test test-shared test-web test-api test-e2e test-e2e-ui lint lint-fix typecheck format format-check vocab-check \
+	test test-shared test-web test-api test-e2e test-e2e-preview test-e2e-ui lint lint-fix typecheck format format-check vocab-check \
 	clean shell-api shell-web shell-db skills-install ci dev-web
 
 help: ## Lista os alvos disponíveis
@@ -73,6 +73,9 @@ test-api: ## Testes de integração da API (sobe db-test)
 
 test-e2e: ## Testes end-to-end com Playwright (exige `make up` + seed)
 	pnpm --filter @nacif/e2e test
+
+test-e2e-preview: ## E2E contra o build de produção (vite preview), como no CI
+	E2E_PREVIEW=true VITE_API_PROXY_TARGET=http://localhost:$${API_PORT:-3010} pnpm --filter @nacif/e2e test
 
 test-e2e-ui: ## Playwright em modo UI
 	pnpm --filter @nacif/e2e test:ui
