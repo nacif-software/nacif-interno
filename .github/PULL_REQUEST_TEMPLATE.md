@@ -1,3 +1,5 @@
+<!-- O título deste PR vira o commit na main (squash and merge). Use Conventional Commits: feat:, fix:, docs:, ci:, chore: -->
+
 ## O que muda
 
 <!-- Resumo em uma ou duas frases. -->
