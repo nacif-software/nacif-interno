@@ -4,7 +4,7 @@
 
 ## Decisão
 
-Datas de calendário são `YYYY-MM-DD` em toda a stack; instantes são UTC exibidos em `America/Sao_Paulo`. Dias úteis excluem sábado e domingo; feriados ficam para a issue 004.
+Datas de calendário são `YYYY-MM-DD` em toda a stack; instantes são UTC exibidos em `America/Sao_Paulo`. Dias úteis excluem sábado e domingo; feriados ficam para a issue #8.
 
 ## Consequências
 

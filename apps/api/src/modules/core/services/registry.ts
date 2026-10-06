@@ -5,7 +5,7 @@ import type { ApiModule } from '../../../infra/http/module';
  * Serviços ainda sem módulo, mostrados no portal como "Em breve".
  * Vazio hoje. Só entra aqui o que será um serviço aberto pelo portal.
  * O Hermes Agent não é um deles: é um agente externo que consulta dados
- * por MCP (docs/issues/007 e 002).
+ * por MCP (issues #5 e #6 no GitHub).
  */
 export const PLANNED_SERVICES: ServiceDescriptor[] = [];
 
