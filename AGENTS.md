@@ -73,7 +73,7 @@ Seed: pessoas do design com senha `nacif1234` (`caio@nacif.xyz` admin, `marina@n
 - DTOs e schemas de request só no shared (`packages/shared/src/schemas`). Nunca importar tipos do Prisma no web.
 - Testes ao lado do código em `__tests__/` (shared, web) ou `src/__tests__/` (api, com Postgres real).
 - Cores, fontes e raios só pelos tokens do tema (`bg-brand`, `text-ink-muted`, `rounded-card`, `font-mono`...). Sem sombras, exceto `shadow-float` em dropdown e toast.
-- Commits no formato Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`...).
+- Commits e títulos de PR no formato Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`...). O título do PR é o que fica na `main` (§9).
 
 ## 7. Como adicionar um módulo
 
@@ -106,6 +106,13 @@ Consequências práticas:
 - PRs para outros branches e o push de merge na `main` rodam só o `quality`. O merge não repete o e2e.
 - Ao mexer em fluxo de tela, rode `make test-e2e` (ou `make test-e2e-preview`, igual ao CI) antes de abrir o PR. Não dependa do CI para descobrir quebra de e2e.
 - Um push novo no mesmo PR cancela a execução anterior (`concurrency`), para não gastar minutos à toa.
+
+Como o PR entra na `main`:
+
+- **Sempre squash and merge.** É o único método habilitado no repositório. Cada PR vira um commit na `main`; os commits intermediários ficam no PR.
+- **O título do PR vira a mensagem do commit**, com o corpo do PR como descrição. Por isso o título segue Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`...) e o corpo diz o que muda e como testar.
+- A `main` é protegida: exige PR, os checks `quality` e `e2e` verdes e o branch atualizado com a `main`. Sem force push. O branch é apagado automaticamente após o merge.
+- Quem mergeia é quem abriu o PR ou quem revisou, depois do CI verde.
 
 ## 10. Skills de agente
 
