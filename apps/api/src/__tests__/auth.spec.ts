@@ -78,6 +78,13 @@ describe('auth', () => {
     const info = await agent.get(`/api/auth/set-password/${token}`);
     expect(info.status).toBe(200);
     expect(info.body.email).toBe('nova@nacif.xyz');
+    expect(info.body.mode).toBe('invite');
+
+    // no convite o nome é obrigatório
+    expect(
+      (await agent.post('/api/auth/set-password').send({ token, password: 'senha-nova-123' }))
+        .status,
+    ).toBe(422);
 
     const set = await agent
       .post('/api/auth/set-password')

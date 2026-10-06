@@ -1,6 +1,7 @@
 import type {
   InviteBody,
   InviteResult,
+  SetupLinkResult,
   UpdateUserBody,
   UserDto,
   UserOption,
@@ -36,7 +37,14 @@ export function useInviteUser() {
 export function useResendInvite() {
   return useMutation({
     mutationFn: (id: string) =>
-      apiFetch<{ setupLink: string }>(`/users/${id}/invites/resend`, { method: 'POST' }),
+      apiFetch<SetupLinkResult>(`/users/${id}/invites/resend`, { method: 'POST' }),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<SetupLinkResult>(`/users/${id}/password-reset`, { method: 'POST' }),
   });
 }
 

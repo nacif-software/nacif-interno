@@ -1,33 +1,44 @@
+import { MESSAGES, type SetPasswordMode } from '@nacif/shared';
 import { useState } from 'react';
 import { Button, Modal } from '@/ui';
 
+export interface SetupLink {
+  link: string;
+  email: string;
+  mode: SetPasswordMode;
+}
+
+const COPY: Record<SetPasswordMode, { title: string; body: string }> = {
+  invite: { title: MESSAGES.setupLinkInviteTitle, body: MESSAGES.setupLinkInviteBody },
+  reset: { title: MESSAGES.setupLinkResetTitle, body: MESSAGES.setupLinkResetBody },
+};
+
 export function SetupLinkModal({
-  link,
-  email,
+  setup,
   onClose,
 }: {
-  link: string | null;
-  email: string | null;
+  setup: SetupLink | null;
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(link ?? '');
+      await navigator.clipboard.writeText(setup?.link ?? '');
       setCopied(true);
     } catch {
       setCopied(false);
     }
   };
+  const text = COPY[setup?.mode ?? 'invite'];
   return (
     <Modal
-      open={link !== null}
+      open={setup !== null}
       onClose={onClose}
-      title="Convite criado"
+      title={text.title}
       description={
         <>
-          Envie este link para <span className="font-mono text-ink">{email}</span>. Ele vale por 7
-          dias e define nome e senha no primeiro acesso.
+          {MESSAGES.setupLinkSendTo} <span className="font-mono text-ink">{setup?.email}</span>.{' '}
+          {text.body}
         </>
       }
       footer={
@@ -40,7 +51,7 @@ export function SetupLinkModal({
       }
     >
       <code className="block overflow-x-auto rounded-control border border-line bg-canvas p-3 font-mono text-[13px] text-ink">
-        {link}
+        {setup?.link}
       </code>
     </Modal>
   );

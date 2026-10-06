@@ -46,10 +46,11 @@ export const inviteBodySchema = z.object({
 });
 export type InviteBody = z.infer<typeof inviteBodySchema>;
 
-export const inviteResultSchema = z.object({
-  user: userDtoSchema,
-  setupLink: z.string(),
-});
+/** Resposta de reenvio de convite e de redefinição de senha: só o link. */
+export const setupLinkResultSchema = z.object({ setupLink: z.string() });
+export type SetupLinkResult = z.infer<typeof setupLinkResultSchema>;
+
+export const inviteResultSchema = setupLinkResultSchema.extend({ user: userDtoSchema });
 export type InviteResult = z.infer<typeof inviteResultSchema>;
 
 export const updateUserBodySchema = z

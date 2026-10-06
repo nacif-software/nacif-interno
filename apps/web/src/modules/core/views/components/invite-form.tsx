@@ -3,8 +3,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button, Input, useToast } from '@/ui';
 import { useInviteUser } from '../../controllers/use-users';
+import type { SetupLink } from './setup-link-modal';
 
-export function InviteForm({ onInvited }: { onInvited: (link: string, email: string) => void }) {
+export function InviteForm({ onInvited }: { onInvited: (setup: SetupLink) => void }) {
   const invite = useInviteUser();
   const toast = useToast();
   const form = useForm<InviteBody>({
@@ -16,7 +17,7 @@ export function InviteForm({ onInvited }: { onInvited: (link: string, email: str
       onSuccess: (res) => {
         form.reset({ email: '' });
         toast.success(MESSAGES.inviteSentToast);
-        onInvited(res.setupLink, res.user.email);
+        onInvited({ link: res.setupLink, email: res.user.email, mode: 'invite' });
       },
       onError: (e) => toast.error(e.message),
     });

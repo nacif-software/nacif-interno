@@ -1,4 +1,9 @@
-import { setPasswordBodySchema, type SetPasswordBody } from '@nacif/shared';
+import {
+  MESSAGES,
+  setPasswordBodySchema,
+  type SetPasswordBody,
+  type SetPasswordMode,
+} from '@nacif/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -6,11 +11,19 @@ import { useNavigate, useParams } from 'react-router';
 import { Alert, Button, Field, Input, Logo, SkeletonCard } from '@/ui';
 import { useSetPassword, useSetupInfo } from '../../controllers/use-session';
 
+const TITLE: Record<SetPasswordMode, string> = {
+  invite: MESSAGES.setPasswordTitle,
+  reset: MESSAGES.resetPasswordTitle,
+};
+
+/** Convite define nome e senha; redefinição (issue #9) só a senha. O modo vem da API. */
 export function SetPasswordPage() {
   const { token = '' } = useParams();
   const info = useSetupInfo(token);
   const setPassword = useSetPassword();
   const navigate = useNavigate();
+  const mode: SetPasswordMode = info.data?.mode ?? 'invite';
+  const isInvite = mode === 'invite';
   const form = useForm<SetPasswordBody>({
     resolver: zodResolver(setPasswordBodySchema),
     defaultValues: { token, name: '', password: '' },
@@ -21,7 +34,9 @@ export function SetPasswordPage() {
   }, [info.data, form]);
 
   const onSubmit = form.handleSubmit((values) => {
-    setPassword.mutate(values, { onSuccess: () => void navigate('/', { replace: true }) });
+    // Na redefinição o nome não muda; não enviamos para a API decidir só pela senha.
+    const body = isInvite ? values : { token: values.token, password: values.password };
+    setPassword.mutate(body, { onSuccess: () => void navigate('/', { replace: true }) });
   });
 
   return (
@@ -31,7 +46,7 @@ export function SetPasswordPage() {
         <div className="flex flex-col gap-3">
           <Logo size="lg" to={null} />
           <h1 className="text-[30px] leading-[1.1] font-bold tracking-[-0.03em] text-ink">
-            Defina sua senha
+            {TITLE[mode]}
           </h1>
           {info.data && (
             <p className="text-[16px] leading-[1.5] text-ink-muted">
@@ -42,7 +57,7 @@ export function SetPasswordPage() {
         {info.isPending && <SkeletonCard />}
         {info.isError && (
           <Alert variant="error" title="Link inválido ou expirado">
-            Peça a um administrador para gerar um novo convite.
+            Peça a um administrador para gerar um novo link.
           </Alert>
         )}
         {setPassword.isError && (
@@ -52,9 +67,11 @@ export function SetPasswordPage() {
         )}
         {info.data && (
           <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-            <Field label="Nome" error={form.formState.errors.name?.message}>
-              {(p) => <Input {...p} {...form.register('name')} autoComplete="name" />}
-            </Field>
+            {isInvite && (
+              <Field label="Nome" error={form.formState.errors.name?.message}>
+                {(p) => <Input {...p} {...form.register('name')} autoComplete="name" />}
+              </Field>
+            )}
             <Field
               label="Senha"
               hint="Mínimo de 8 caracteres."

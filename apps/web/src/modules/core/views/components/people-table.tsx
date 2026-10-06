@@ -1,10 +1,12 @@
-import { ROLE_LABEL, ROLES, type ProjectDto, type UserDto } from '@nacif/shared';
+import { MESSAGES, ROLE_LABEL, ROLES, type ProjectDto, type UserDto } from '@nacif/shared';
 import { cn } from '@/lib/cn';
 import { RoleChip, Select, Toggle, useToast } from '@/ui';
 import { useCurrentUser } from '../../controllers/use-session';
-import { useResendInvite, useUpdateUser } from '../../controllers/use-users';
+import { useResendInvite, useResetPassword, useUpdateUser } from '../../controllers/use-users';
+import type { SetupLink } from './setup-link-modal';
 
 const GRID = 'md:grid-cols-[1.6fr_1.4fr_1fr_1fr_120px]';
+const LINK_ACTION = 'w-fit text-[13px] text-brand hover:text-ink cursor-pointer';
 
 export function PeopleTable({
   users,
@@ -13,11 +15,12 @@ export function PeopleTable({
 }: {
   users: UserDto[];
   projects: ProjectDto[];
-  onSetupLink: (link: string, email: string) => void;
+  onSetupLink: (setup: SetupLink) => void;
 }) {
   const me = useCurrentUser();
   const update = useUpdateUser();
   const resend = useResendInvite();
+  const resetPassword = useResetPassword();
   const toast = useToast();
 
   const patch = (
@@ -56,15 +59,32 @@ export function PeopleTable({
                 {u.invitePending && (
                   <button
                     type="button"
-                    className="w-fit text-[13px] text-brand hover:text-ink cursor-pointer"
+                    className={LINK_ACTION}
                     onClick={() =>
                       resend.mutate(u.id, {
-                        onSuccess: (r) => onSetupLink(r.setupLink, u.email),
+                        onSuccess: (r) =>
+                          onSetupLink({ link: r.setupLink, email: u.email, mode: 'invite' }),
                         onError: (e) => toast.error(e.message),
                       })
                     }
                   >
                     Convite pendente · gerar novo link
+                  </button>
+                )}
+                {!u.invitePending && u.active && (
+                  <button
+                    type="button"
+                    className={LINK_ACTION}
+                    aria-label={`${MESSAGES.resetPasswordAction} de ${u.name}`}
+                    onClick={() =>
+                      resetPassword.mutate(u.id, {
+                        onSuccess: (r) =>
+                          onSetupLink({ link: r.setupLink, email: u.email, mode: 'reset' }),
+                        onError: (e) => toast.error(e.message),
+                      })
+                    }
+                  >
+                    {MESSAGES.resetPasswordAction}
                   </button>
                 )}
               </div>
