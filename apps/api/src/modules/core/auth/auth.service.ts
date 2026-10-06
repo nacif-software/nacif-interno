@@ -37,6 +37,14 @@ function setupMode(user: { passwordHash: string | null }): SetPasswordMode {
   return user.passwordHash ? 'reset' : 'invite';
 }
 
+/** Token válido (não usado, não expirado) de uma pessoa ativa; desativar invalida o link. */
+async function findValidSetup(token: string, now: Date) {
+  const record = await passwordSetupTokenRepository.findValid(sha256(token), now);
+  if (!record) throw new AppError(404, 'NOT_FOUND', 'Link inválido ou expirado.');
+  if (!record.user.active) throw new UserInactiveError();
+  return record;
+}
+
 export function createAuthService(provider: AuthProvider = localPasswordProvider) {
   return {
     /** Valida domínio → provider → usuário ativo. Não cria a sessão (o controller faz). */
@@ -51,8 +59,7 @@ export function createAuthService(provider: AuthProvider = localPasswordProvider
     },
 
     async getSetupInfo(token: string, now: Date = new Date()): Promise<SetPasswordInfo> {
-      const record = await passwordSetupTokenRepository.findValid(sha256(token), now);
-      if (!record) throw new AppError(404, 'NOT_FOUND', 'Link inválido ou expirado.');
+      const record = await findValidSetup(token, now);
       return { email: record.user.email, name: record.user.name, mode: setupMode(record.user) };
     },
 
@@ -61,8 +68,7 @@ export function createAuthService(provider: AuthProvider = localPasswordProvider
      * (pessoa que já tem senha) troca só a senha. Em ambos revoga as sessões anteriores.
      */
     async setPassword(input: SetPasswordBody, now: Date = new Date()): Promise<SessionUser> {
-      const record = await passwordSetupTokenRepository.findValid(sha256(input.token), now);
-      if (!record) throw new AppError(404, 'NOT_FOUND', 'Link inválido ou expirado.');
+      const record = await findValidSetup(input.token, now);
       const isInvite = setupMode(record.user) === 'invite';
       if (isInvite && !input.name) {
         throw new ValidationError(MESSAGES.nameRequired, [

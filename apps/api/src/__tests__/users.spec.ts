@@ -105,6 +105,23 @@ describe('users e projects', () => {
     );
   });
 
+  it('redefinição: link deixa de valer se a pessoa for desativada antes de usar', async () => {
+    const { pedro } = await seedTeam();
+    const admin = buildTestApp();
+    await loginAs(admin, 'caio@nacif.xyz');
+    const { setupLink } = (await admin.post(`/api/users/${pedro.id}/password-reset`)).body;
+    const token = setupLink.split('/').pop() ?? '';
+    await admin.patch(`/api/users/${pedro.id}`).send({ active: false });
+
+    const agent = buildTestApp();
+    expect((await agent.get(`/api/auth/set-password/${token}`)).status).toBe(403);
+    const set = await agent
+      .post('/api/auth/set-password')
+      .send({ token, password: 'senha-nova-123' });
+    expect(set.status).toBe(403);
+    expect(set.body.error.code).toBe('USER_INACTIVE');
+  });
+
   it('desativar revoga sessões; admin não desativa a si mesmo', async () => {
     const { pedro } = await seedTeam();
     const member = buildTestApp();

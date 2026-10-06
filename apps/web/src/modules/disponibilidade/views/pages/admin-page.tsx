@@ -31,7 +31,7 @@ export function AdminPage() {
                 projects={projects.data ?? []}
                 onSetupLink={setSetup}
               />
-              <InviteForm onInvited={(link, email) => setSetup({ link, email, mode: 'invite' })} />
+              <InviteForm onInvited={setSetup} />
             </Card>
           )}
         </section>

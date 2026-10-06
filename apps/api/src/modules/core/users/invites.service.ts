@@ -1,4 +1,10 @@
-import { getInitials, MESSAGES, type InviteBody, type InviteResult } from '@nacif/shared';
+import {
+  getInitials,
+  MESSAGES,
+  type InviteBody,
+  type InviteResult,
+  type SetupLinkResult,
+} from '@nacif/shared';
 import { env } from '../../../config/env';
 import { AppError, NotFoundError } from '../../../infra/http/errors';
 import type { AuthenticatedUser } from '../../../infra/http/require-auth';
@@ -75,7 +81,7 @@ export const invitesService = {
     return { user: toUserDto(user), setupLink: link };
   },
 
-  async resend(userId: string, now: Date = new Date()): Promise<{ setupLink: string }> {
+  async resend(userId: string, now: Date = new Date()): Promise<SetupLinkResult> {
     const user = await usersRepository.findById(userId);
     if (!user) throw new NotFoundError('Pessoa não encontrada.');
     if (user.passwordHash) throw new AppError(409, 'CONFLICT', 'Esta pessoa já definiu a senha.');
@@ -94,7 +100,7 @@ export const invitesService = {
     userId: string,
     actor: AuthenticatedUser,
     now: Date = new Date(),
-  ): Promise<{ setupLink: string }> {
+  ): Promise<SetupLinkResult> {
     const user = await usersRepository.findById(userId);
     if (!user) throw new NotFoundError('Pessoa não encontrada.');
     if (!user.passwordHash) throw new AppError(409, 'CONFLICT', MESSAGES.resetPasswordNoPassword);
