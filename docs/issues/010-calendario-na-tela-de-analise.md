@@ -2,7 +2,7 @@
 
 **Labels**: enhancement, UI
 
-**Status da revisão**: rascunho em revisão (2026-10-06).
+**Status da revisão**: revisada em 2026-10-06.
 
 ## Contexto
 
@@ -18,10 +18,10 @@ Mostrar o calendário do time dentro da tela da comunicação, reaproveitando o 
 - A comunicação em análise aparece destacada na grade, para o aprovador distinguir o que está decidindo do que já existe.
 - No celular, a grade rola na horizontal, como já acontece na tela do calendário.
 
-## Decisões a confirmar na revisão
+## Decisões
 
-- O calendário aparece para todo mundo que abre a tela, incluindo o autor, ou só para quem pode decidir? Proposta: para todos, porque também ajuda o autor a entender um conflito.
-- Destaque da comunicação em análise: borda mais forte e o rótulo "Esta comunicação" na barra. Proposta: sim.
+- O calendário aparece para todo mundo que abre a tela, incluindo o autor. Também ajuda o autor a entender um conflito.
+- A comunicação em análise ganha borda mais forte e o rótulo "Esta comunicação" na barra.
 
 ## Fora do escopo
 
