@@ -12,4 +12,4 @@ E-mail/senha (bcryptjs) atrás da interface `AuthProvider`. Sessão opaca em Pos
 
 ## Consequências
 
-Revogação imediata (inativar pessoa apaga sessões). Trocar para Google OAuth = novo provider (issue 003), mantendo sessões e guards.
+Revogação imediata (inativar pessoa apaga sessões). Trocar para Google OAuth = novo provider (issue #7), mantendo sessões e guards.

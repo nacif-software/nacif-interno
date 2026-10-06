@@ -30,10 +30,10 @@ HTTP → helmet/cors/cookie-parser/json → /api/<módulo> router
 
 ## Autenticação e sessão
 
-- E-mail/senha local (`bcryptjs`), atrás da interface `AuthProvider` (`apps/api/src/modules/core/auth/providers`). OAuth Google entra trocando o provider (issue 003).
+- E-mail/senha local (`bcryptjs`), atrás da interface `AuthProvider` (`apps/api/src/modules/core/auth/providers`). Login corporativo entra trocando o provider (issue #7).
 - Domínio restrito a `@nacif.xyz` antes de consultar o banco (`DOMAIN_NOT_ALLOWED` ecoa o e-mail para a copy da tela 01b).
 - Sessão opaca (token de 256 bits) na tabela `sessions`, cookie `nacif_session` httpOnly/sameSite=lax, 30 dias deslizantes. Desativar uma pessoa revoga todas as sessões.
-- Convite: admin cria a pessoa sem senha e recebe um link `/definir-senha/<token>` (token com hash sha256 na tabela `password_setup_tokens`, 7 dias, uso único). Sem e-mail no MVP (issue 005).
+- Convite: admin cria a pessoa sem senha e recebe um link `/definir-senha/<token>` (token com hash sha256 na tabela `password_setup_tokens`, 7 dias, uso único). Sem e-mail no MVP (issue #10).
 
 ## Sistema de módulos
 
@@ -52,7 +52,7 @@ HTTP → helmet/cors/cookie-parser/json → /api/<módulo> router
 - Datas de calendário são `YYYY-MM-DD` (tipo `IsoDate`) em API, banco (`@db.Date`) e UI. Aritmética em UTC (`packages/shared/src/date/iso-date.ts`).
 - Instantes (envio, decisão) são `timestamptz` e viajam como ISO UTC; a UI formata em `America/Sao_Paulo`.
 - "Hoje" para a antecedência mínima é calculado no servidor em `America/Sao_Paulo`.
-- Dias úteis = segunda a sexta; feriados são trabalho futuro (issue 004).
+- Dias úteis = segunda a sexta; feriados são trabalho futuro (issue #8).
 
 ## Regras de negócio do módulo disponibilidade
 

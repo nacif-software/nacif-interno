@@ -7,7 +7,7 @@ export interface AuthenticateInput {
 
 /**
  * Abstração do mecanismo de autenticação.
- * Hoje: e-mail/senha local. Futuro: OAuth Google (docs/issues/003-oauth-google.md).
+ * Hoje: e-mail/senha local. Futuro: login corporativo (issue #7 no GitHub).
  * Regras de domínio, usuário inativo e sessão ficam fora do provider.
  */
 export interface AuthProvider {

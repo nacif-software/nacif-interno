@@ -31,7 +31,7 @@ export function eachDay(startDate: IsoDate, endDate: IsoDate): IsoDate[] {
 
 /**
  * Dias úteis (segunda a sexta) no intervalo inclusivo.
- * Feriados não são considerados (ver docs/issues/004-feriados.md).
+ * Feriados não são considerados (issue #8 no GitHub).
  */
 export function countBusinessDays(startDate: IsoDate, endDate: IsoDate): number {
   return eachDay(startDate, endDate).filter((d) => !isWeekend(d)).length;
