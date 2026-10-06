@@ -1,7 +1,8 @@
-import { getInitials, type InviteBody, type InviteResult } from '@nacif/shared';
+import { getInitials, MESSAGES, type InviteBody, type InviteResult } from '@nacif/shared';
 import { env } from '../../../config/env';
 import { AppError, NotFoundError } from '../../../infra/http/errors';
-import { db } from '../../../infra/prisma/client';
+import type { AuthenticatedUser } from '../../../infra/http/require-auth';
+import { db, type DbOrTx } from '../../../infra/prisma/client';
 import { logger } from '../../../infra/logger';
 import { generateToken, sha256 } from '../auth/password';
 import { passwordSetupTokenRepository } from '../auth/password-setup-token.repository';
@@ -12,6 +13,17 @@ const SETUP_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function setupLink(token: string): string {
   return `${env.APP_URL}/definir-senha/${token}`;
+}
+
+/** Invalida os tokens pendentes da pessoa e grava um novo; devolve o token em claro. */
+async function issueSetupToken(userId: string, now: Date, tx: DbOrTx): Promise<string> {
+  const token = generateToken(32);
+  await passwordSetupTokenRepository.invalidateAllForUser(userId, now, tx);
+  await passwordSetupTokenRepository.create(
+    { tokenHash: sha256(token), userId, expiresAt: new Date(now.getTime() + SETUP_TOKEN_TTL_MS) },
+    tx,
+  );
+  return token;
 }
 
 /** Nome provisório a partir do e-mail: "marina.duarte@" → "Marina Duarte". */
@@ -34,8 +46,7 @@ export const invitesService = {
     if (existing?.passwordHash) {
       throw new AppError(409, 'CONFLICT', 'Esta pessoa já tem acesso.');
     }
-    const token = generateToken(32);
-    const user = await db.$transaction(async (tx) => {
+    const { user, token } = await db.$transaction(async (tx) => {
       const record = existing
         ? await usersRepository.update(
             existing.id,
@@ -57,16 +68,7 @@ export const invitesService = {
             },
             tx,
           );
-      await passwordSetupTokenRepository.invalidateAllForUser(record.id, now, tx);
-      await passwordSetupTokenRepository.create(
-        {
-          tokenHash: sha256(token),
-          userId: record.id,
-          expiresAt: new Date(now.getTime() + SETUP_TOKEN_TTL_MS),
-        },
-        tx,
-      );
-      return record;
+      return { user: record, token: await issueSetupToken(record.id, now, tx) };
     });
     const link = setupLink(token);
     logger.info({ email: user.email, initials: getInitials(user.name), link }, 'Convite criado');
@@ -77,20 +79,32 @@ export const invitesService = {
     const user = await usersRepository.findById(userId);
     if (!user) throw new NotFoundError('Pessoa não encontrada.');
     if (user.passwordHash) throw new AppError(409, 'CONFLICT', 'Esta pessoa já definiu a senha.');
-    const token = generateToken(32);
-    await db.$transaction(async (tx) => {
-      await passwordSetupTokenRepository.invalidateAllForUser(user.id, now, tx);
-      await passwordSetupTokenRepository.create(
-        {
-          tokenHash: sha256(token),
-          userId: user.id,
-          expiresAt: new Date(now.getTime() + SETUP_TOKEN_TTL_MS),
-        },
-        tx,
-      );
-    });
+    const token = await db.$transaction((tx) => issueSetupToken(user.id, now, tx));
     const link = setupLink(token);
     logger.info({ email: user.email, link }, 'Convite reenviado');
+    return { setupLink: link };
+  },
+
+  /**
+   * Link de redefinição de senha para uma pessoa ativa que já tem senha (issue #9).
+   * A senha atual continua valendo até o link ser usado; aí `auth.service.setPassword`
+   * troca só a senha e revoga as sessões.
+   */
+  async resetPassword(
+    userId: string,
+    actor: AuthenticatedUser,
+    now: Date = new Date(),
+  ): Promise<{ setupLink: string }> {
+    const user = await usersRepository.findById(userId);
+    if (!user) throw new NotFoundError('Pessoa não encontrada.');
+    if (!user.passwordHash) throw new AppError(409, 'CONFLICT', MESSAGES.resetPasswordNoPassword);
+    if (!user.active) throw new AppError(409, 'CONFLICT', MESSAGES.resetPasswordInactive);
+    const token = await db.$transaction((tx) => issueSetupToken(user.id, now, tx));
+    const link = setupLink(token);
+    logger.info(
+      { email: user.email, by: actor.email, link },
+      'Link de redefinição de senha criado',
+    );
     return { setupLink: link };
   },
 };

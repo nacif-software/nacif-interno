@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildTestApp } from '../test/app';
 import { loginAs } from '../test/auth';
-import { seedTeam } from '../test/factories';
+import { createUser, seedTeam, TEST_PASSWORD } from '../test/factories';
 
 describe('users e projects', () => {
   it('admin lista todos, membro só ativos', async () => {
@@ -48,6 +48,60 @@ describe('users e projects', () => {
     expect(res.body.setupLink).toContain('/definir-senha/');
     expect((await admin.post('/api/users/invites').send({ email: 'ana@gmail.com' })).status).toBe(
       422,
+    );
+  });
+
+  it('redefinição de senha: só admin, só para pessoa ativa com senha', async () => {
+    const { pedro, thiago } = await seedTeam();
+    const member = buildTestApp();
+    await loginAs(member, 'pedro@nacif.xyz');
+    expect((await member.post(`/api/users/${pedro.id}/password-reset`)).status).toBe(403);
+
+    const admin = buildTestApp();
+    await loginAs(admin, 'caio@nacif.xyz');
+    expect((await admin.post(`/api/users/${thiago.id}/password-reset`)).status).toBe(409);
+    const pending = await createUser({ withPassword: false });
+    expect((await admin.post(`/api/users/${pending.id}/password-reset`)).status).toBe(409);
+    expect((await admin.post('/api/users/nao-existe/password-reset')).status).toBe(404);
+
+    const res = await admin.post(`/api/users/${pedro.id}/password-reset`);
+    expect(res.status).toBe(200);
+    expect(res.body.setupLink).toContain('/definir-senha/');
+  });
+
+  it('redefinição: senha antiga vale até usar o link; depois cai e as sessões encerram', async () => {
+    const { pedro } = await seedTeam();
+    const oldSession = buildTestApp();
+    await loginAs(oldSession, 'pedro@nacif.xyz');
+    const admin = buildTestApp();
+    await loginAs(admin, 'caio@nacif.xyz');
+    const { setupLink } = (await admin.post(`/api/users/${pedro.id}/password-reset`)).body;
+    const token = setupLink.split('/').pop() ?? '';
+
+    // link gerado não derruba ninguém
+    expect((await oldSession.get('/api/auth/me')).status).toBe(200);
+    expect((await loginAs(buildTestApp(), 'pedro@nacif.xyz')).user.name).toBe('Pedro Nakano');
+
+    const agent = buildTestApp();
+    const info = await agent.get(`/api/auth/set-password/${token}`);
+    expect(info.body).toEqual({ email: 'pedro@nacif.xyz', name: 'Pedro Nakano', mode: 'reset' });
+
+    // nome enviado é ignorado: o link só troca a senha
+    const set = await agent
+      .post('/api/auth/set-password')
+      .send({ token, name: 'Outro Nome', password: 'senha-nova-123' });
+    expect(set.status).toBe(200);
+    expect(set.body.user.name).toBe('Pedro Nakano');
+    expect((await agent.get('/api/auth/me')).status).toBe(200);
+
+    expect((await oldSession.get('/api/auth/me')).status).toBe(401);
+    expect((await agent.get(`/api/auth/set-password/${token}`)).status).toBe(404);
+    const oldLogin = await buildTestApp()
+      .post('/api/auth/login')
+      .send({ email: 'pedro@nacif.xyz', password: TEST_PASSWORD });
+    expect(oldLogin.status).toBe(401);
+    expect((await loginAs(buildTestApp(), 'pedro@nacif.xyz', 'senha-nova-123')).user.id).toBe(
+      pedro.id,
     );
   });
 

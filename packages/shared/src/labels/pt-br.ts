@@ -81,6 +81,18 @@ export const MESSAGES = {
   periodUpdatedToast: 'Período atualizado e reencaminhado ao aprovador.',
   settingsSavedToast: 'Configurações salvas.',
   inviteSentToast: 'Convite criado.',
+  /** Modal do link de definição de senha: "Envie este link para <e-mail em mono>. <corpo>". */
+  setupLinkSendTo: 'Envie este link para',
+  setupLinkInviteTitle: 'Convite criado',
+  setupLinkInviteBody: 'Ele vale por 7 dias e define nome e senha no primeiro acesso.',
+  setupLinkResetTitle: 'Link de redefinição criado',
+  setupLinkResetBody:
+    'Ele vale por 7 dias, só pode ser usado uma vez e troca apenas a senha. A senha atual continua valendo até a redefinição.',
+  resetPasswordAction: 'Redefinir senha',
+  setPasswordTitle: 'Defina sua senha',
+  resetPasswordTitle: 'Redefina sua senha',
+  resetPasswordNoPassword: 'Esta pessoa ainda não definiu a senha. Gere um novo convite.',
+  resetPasswordInactive: 'Esta pessoa está desativada.',
   emptyQueueTitle: 'Nada em análise',
   emptyQueueBody:
     'Nenhuma comunicação aguarda sua decisão. Novas aparecem aqui assim que enviadas.',

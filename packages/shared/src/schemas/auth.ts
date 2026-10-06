@@ -31,9 +31,18 @@ export const loginBodySchema = z.object({
 });
 export type LoginBody = z.infer<typeof loginBodySchema>;
 
+/**
+ * Modo do link de definição de senha: `invite` (primeiro acesso, define nome e senha)
+ * ou `reset` (redefinição pelo administrador, só troca a senha). Derivado no servidor
+ * de a pessoa já ter senha ou não.
+ */
+export const setPasswordModeSchema = z.enum(['invite', 'reset']);
+export type SetPasswordMode = z.infer<typeof setPasswordModeSchema>;
+
+/** `name` é obrigatório no convite e ignorado na redefinição; o service decide. */
 export const setPasswordBodySchema = z.object({
   token: z.string().min(1),
-  name: z.string().trim().min(2, { error: MESSAGES.nameRequired }).max(120),
+  name: z.string().trim().min(2, { error: MESSAGES.nameRequired }).max(120).optional(),
   password: passwordSchema,
 });
 export type SetPasswordBody = z.infer<typeof setPasswordBodySchema>;
@@ -49,5 +58,9 @@ export const sessionUserSchema = z.object({
 });
 export type SessionUser = z.infer<typeof sessionUserSchema>;
 
-export const setPasswordInfoSchema = z.object({ email: z.string(), name: z.string() });
+export const setPasswordInfoSchema = z.object({
+  email: z.string(),
+  name: z.string(),
+  mode: setPasswordModeSchema,
+});
 export type SetPasswordInfo = z.infer<typeof setPasswordInfoSchema>;

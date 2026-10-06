@@ -40,6 +40,13 @@ export function useResendInvite() {
   });
 }
 
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ setupLink: string }>(`/users/${id}/password-reset`, { method: 'POST' }),
+  });
+}
+
 export function useUpdateUser() {
   const qc = useQueryClient();
   return useMutation({

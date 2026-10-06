@@ -24,6 +24,10 @@ export const usersController = {
     res.json(await invitesService.resend(String(req.params.id)));
   }) as RequestHandler,
 
+  resetPassword: (async (req, res) => {
+    res.json(await invitesService.resetPassword(String(req.params.id), req.user));
+  }) as RequestHandler,
+
   update: (async (req, res) => {
     const { body } = getInput<UpdateUserBody>(res);
     res.json(await usersService.update(req.user, String(req.params.id), body));

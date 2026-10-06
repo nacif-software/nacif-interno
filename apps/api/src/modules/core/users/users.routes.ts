@@ -26,6 +26,7 @@ usersRouter.post(
   usersController.invite,
 );
 usersRouter.post('/users/:id/invites/resend', requireRole('ADMIN'), usersController.resendInvite);
+usersRouter.post('/users/:id/password-reset', requireRole('ADMIN'), usersController.resetPassword);
 usersRouter.patch(
   '/users/:id',
   requireRole('ADMIN'),

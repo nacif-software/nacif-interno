@@ -4,7 +4,7 @@ import { useUserOptions, useUsers } from '@/modules/core/controllers/use-users';
 import { InviteForm } from '@/modules/core/views/components/invite-form';
 import { PeopleTable } from '@/modules/core/views/components/people-table';
 import { ProjectsTable } from '@/modules/core/views/components/projects-table';
-import { SetupLinkModal } from '@/modules/core/views/components/setup-link-modal';
+import { SetupLinkModal, type SetupLink } from '@/modules/core/views/components/setup-link-modal';
 import { Card, SkeletonCard } from '@/ui';
 import { useSettings } from '../../controllers/use-settings';
 import { SettingsCard } from '../components/settings-card';
@@ -14,7 +14,7 @@ export function AdminPage() {
   const projects = useProjects();
   const approvers = useUserOptions('approver');
   const settings = useSettings();
-  const [setup, setSetup] = useState<{ link: string; email: string } | null>(null);
+  const [setup, setSetup] = useState<SetupLink | null>(null);
 
   const loading = users.isPending || projects.isPending || settings.isPending;
   return (
@@ -29,9 +29,9 @@ export function AdminPage() {
               <PeopleTable
                 users={users.data ?? []}
                 projects={projects.data ?? []}
-                onSetupLink={(link, email) => setSetup({ link, email })}
+                onSetupLink={setSetup}
               />
-              <InviteForm onInvited={(link, email) => setSetup({ link, email })} />
+              <InviteForm onInvited={(link, email) => setSetup({ link, email, mode: 'invite' })} />
             </Card>
           )}
         </section>
@@ -58,11 +58,7 @@ export function AdminPage() {
           <SkeletonCard />
         )}
       </section>
-      <SetupLinkModal
-        link={setup?.link ?? null}
-        email={setup?.email ?? null}
-        onClose={() => setSetup(null)}
-      />
+      <SetupLinkModal setup={setup} onClose={() => setSetup(null)} />
     </div>
   );
 }
