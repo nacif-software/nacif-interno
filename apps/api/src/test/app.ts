@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { env } from 'cloudflare:test';
 import { createApp } from '../app';
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
@@ -77,7 +78,7 @@ class RequestBuilder implements PromiseLike<TestResponse> {
       body = typeof this.payload === 'string' ? this.payload : JSON.stringify(this.payload);
     }
 
-    const res = await this.app.request(url.toString(), { method: this.method, headers, body });
+    const res = await this.app.request(url.toString(), { method: this.method, headers, body }, env);
     const setCookies = res.headers.getSetCookie();
     this.jar.store(setCookies);
 

@@ -24,10 +24,10 @@ O nome "Nacif Disponibilidade" e a copy da tela de login são provisórios; não
 
 ## 3. Arquitetura em uma tela
 
-Monorepo pnpm: `apps/api` (Hono 4 + Prisma 7 + Postgres), `apps/web` (React 19 + Vite 8 + Tailwind 4), `packages/shared` (tipos, enums, zod, regras puras, formatação), `e2e` (Playwright).
+Monorepo pnpm: `apps/api` (Hono 4 + Drizzle + D1, publicado como Cloudflare Worker que também serve o web), `apps/web` (React 19 + Vite 8 + Tailwind 4), `packages/shared` (tipos, enums, zod, regras puras, formatação), `e2e` (Playwright).
 
 **MVC no backend** (`apps/api/src/modules/<módulo>/<recurso>/`):
-`*.routes.ts` (wiring + `validate` + guards) → `*.controller.ts` (lê `c.get('input')` e `c.get('user')`, chama o service, devolve `c.json(body, status)`) → `*.service.ts` (regras de negócio, transações, eventos de fluxo) → `*.repository.ts` (só Prisma, sem regras) → `*.mapper.ts` (linha do Prisma → DTO do shared).
+`*.routes.ts` (wiring + `validate` + guards) → `*.controller.ts` (lê `c.get('input')` e `c.get('user')`, chama o service, devolve `c.json(body, status)`) → `*.service.ts` (regras de negócio, transações, eventos de fluxo) → `*.repository.ts` (só Drizzle, sem regras; escrita composta vira builders para `db().batch()`) → `*.mapper.ts` (linha do banco → DTO do shared).
 
 **MVC no frontend** (`apps/web/src/modules/<módulo>/`):
 `models/` (tipos e view-models; DTOs vêm do shared) · `controllers/` (hooks do TanStack Query, stores Zustand, formulários RHF; único lugar que chama `apiFetch`) · `views/` (páginas e componentes React, sem fetch). `apps/web/src/ui/` é o kit de componentes puro.
@@ -38,41 +38,41 @@ Monorepo pnpm: `apps/api` (Hono 4 + Prisma 7 + Postgres), `apps/web` (React 19 +
 
 ## 4. Comandos
 
-Tudo passa pelo `Makefile` (rode `make help`):
+Tudo passa pelo `Makefile` (rode `make help`). Não há Docker: o Worker roda local com `wrangler dev` e o banco é um D1 local (SQLite em `apps/api/.wrangler/state`).
 
-| Comando                                                                    | O que faz                                                                                 |
-| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `make install`                                                             | cria `.env` a partir de `.env.example` e instala dependências no host                     |
-| `make up` / `make down` / `make restart` / `make logs s=api`               | sobe/derruba/reinicia os containers (db, api, web)                                        |
-| `make deps`                                                                | reinstala dependências nos volumes do Docker depois de mudar `package.json` ou o lockfile |
-| `make migrate` / `make migrate-new name=x` / `make seed` / `make db-reset` | migrações e seed (rodam dentro do container `api`)                                        |
-| `make test`                                                                | shared + web + api (api sobe o `db-test` na porta 5433)                                   |
-| `make test-e2e`                                                            | Playwright contra `make up` + seed                                                        |
-| `make test-e2e-preview`                                                    | e2e contra o build de produção (`vite preview`), igual ao CI                              |
-| `make lint` / `make typecheck` / `make format` / `make vocab-check`        | qualidade                                                                                 |
-| `make ci`                                                                  | tudo que o CI roda                                                                        |
+| Comando                                                                    | O que faz                                                                                   |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `make install`                                                             | instala dependências, cria `apps/api/.dev.vars`, gera os tipos do Worker e migra o D1 local |
+| `make dev`                                                                 | sobe o Worker (API, `:8787`) e o Vite (web, `:5173`, proxy de `/api` para `:8787`)          |
+| `make types`                                                               | regera `worker-configuration.d.ts` depois de mudar o `wrangler.jsonc`                       |
+| `make migrate` / `make migrate-new name=x` / `make seed` / `make db-reset` | migrações (`drizzle-kit generate` + `wrangler d1 migrations apply --local`) e seed          |
+| `make test`                                                                | shared + web + api (api roda no runtime Workers com D1 local, sem serviço externo)          |
+| `make test-e2e`                                                            | Playwright contra o build de produção servido por `wrangler dev` (sobe sozinho)             |
+| `make deploy-check`                                                        | build do web + `wrangler deploy --dry-run`                                                  |
+| `make lint` / `make typecheck` / `make format` / `make vocab-check`        | qualidade                                                                                   |
+| `make ci`                                                                  | tudo que o CI roda                                                                          |
 
-Portas no host (configuráveis em `.env`): web 5173, api 3010, db 5434, db-test 5433. Dentro do Docker a api ouve em 3000 e o Vite faz proxy de `/api` para `http://api:3000`.
+Portas: web 5173 (dev), Worker 8787 (API e, no e2e, também o web buildado). Variáveis locais em `apps/api/.dev.vars` (copiado de `.dev.vars.example`); as de produção ficam em `vars` no `wrangler.jsonc`.
 
-Comandos Prisma no host (fora do Docker) precisam de `DATABASE_URL` apontando para `localhost:5434` (variável `HOST_DATABASE_URL` no `.env`).
-
-Seed: pessoas do design com senha `nacif1234` (`caio@nacif.xyz` admin, `marina@nacif.xyz` aprovadora, `pedro@`, `julia@`, `rafael@`, `bruna@` membros, `thiago@` inativo).
+Seed: pessoas do design com senha `nacif1234` (`caio@nacif.xyz` admin, `marina@nacif.xyz` aprovadora, `pedro@`, `julia@`, `rafael@`, `bruna@` membros, `thiago@` inativo). Só roda no D1 local.
 
 ## 5. Versões fixadas (não "atualizar para latest")
 
-- `prisma`, `@prisma/client`, `@prisma/adapter-pg` = **7.10.0** (a tag `latest` é 8.0 release candidate).
+- `drizzle-orm` = **0.45.x** e `drizzle-kit` = **0.31.x** (a tag `rc` é a 1.0, com API relacional diferente).
+- `wrangler` = **4.x**.
 - `react-router` = **7.x** (a tag `latest` é 8.x).
 - `typescript` = **5.9** (`latest` é 7.x e o typescript-eslint ainda não suporta).
-- `hono` = **4.x** (`@hono/node-server` é temporário até a API virar Worker, ADR 0011).
+- `hono` = **4.x**.
 - Tailwind 4 é CSS-first: tokens em `apps/web/src/styles/theme.css`, sem `tailwind.config.js`.
 
 ## 6. Convenções
 
 - Arquivos em kebab-case; sufixos `.routes.ts`, `.controller.ts`, `.service.ts`, `.repository.ts`, `.mapper.ts`.
-- Datas de calendário são strings `YYYY-MM-DD` (`IsoDate`) em toda a stack; instantes são ISO-8601 UTC e exibidos em `America/Sao_Paulo`. Formatação só via `packages/shared/src/date/format.ts`.
+- Datas de calendário são strings `YYYY-MM-DD` (`IsoDate`) em toda a stack, inclusive no banco; instantes são ISO-8601 UTC (texto no D1, `Date` no código) e exibidos em `America/Sao_Paulo`. Formatação só via `packages/shared/src/date/format.ts`.
 - Erros da API sempre via `AppError` (`apps/api/src/infra/http/errors.ts`) → `{ error: { code, message, details } }`.
-- DTOs e schemas de request só no shared (`packages/shared/src/schemas`). Nunca importar tipos do Prisma no web.
-- Testes ao lado do código em `__tests__/` (shared, web) ou `src/__tests__/` (api, com Postgres real).
+- DTOs e schemas de request só no shared (`packages/shared/src/schemas`). Nunca importar tipos do Drizzle (`apps/api/src/db`) no web.
+- Banco: schema em `apps/api/src/db/schema.ts`, tipos de linha em `src/db/types.ts`. O D1 não tem transação interativa: **nunca `db().transaction()`**; escrita com mais de um statement vai num único `db().batch([...])`, e guards de estado vão no `WHERE` do `UPDATE` (ver `approvals.service.ts`).
+- Testes ao lado do código em `__tests__/` (shared, web) ou `src/__tests__/` (api, no runtime Workers com D1 local).
 - Cores, fontes e raios só pelos tokens do tema (`bg-brand`, `text-ink-muted`, `rounded-card`, `font-mono`...). Sem sombras, exceto `shadow-float` em dropdown e toast.
 - Commits e títulos de PR no formato Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`...). O título do PR é o que fica na `main` (§9).
 
@@ -80,7 +80,7 @@ Seed: pessoas do design com senha `nacif1234` (`caio@nacif.xyz` admin, `marina@n
 
 Use o `slug` do novo serviço no lugar de `<slug>`.
 
-1. API: criar `apps/api/src/modules/<slug>/` com `manifest.ts` (`ServiceDescriptor`), `index.ts` (`ApiModule` com prefixo `/<slug>`) e recursos em MVC; registrar em `apps/api/src/modules/index.ts`. Models Prisma novos vão no `schema.prisma` com nomes de tabela prefixados quando fizer sentido.
+1. API: criar `apps/api/src/modules/<slug>/` com `manifest.ts` (`ServiceDescriptor`), `index.ts` (`ApiModule` com prefixo `/<slug>`) e recursos em MVC; registrar em `apps/api/src/modules/index.ts`. Tabelas novas vão em `apps/api/src/db/schema.ts` (e `relations.ts`), com nomes prefixados quando fizer sentido, seguidas de `make migrate-new name=x`.
 2. Web: criar `apps/web/src/modules/<slug>/` com `manifest.ts` (`WebModule` com `routes`, `service` e `navItems(role)`), `routes.tsx`, `controllers/`, `views/`; registrar em `apps/web/src/modules/registry.ts`.
 3. Se o serviço estava anunciado como "Em breve", remover a entrada de `PLANNED_SERVICES` em `apps/api/src/modules/core/services/registry.ts`.
 4. Documentar em `docs/architecture.md` e abrir um ADR se houver decisão relevante.
@@ -96,16 +96,16 @@ Use o `slug` do novo serviço no lugar de `<slug>`.
 
 O CI (`.github/workflows/ci.yml`) tem dois jobs:
 
-| Job       | Quando roda                           | O que faz                                                                                            |
-| --------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `quality` | todo PR e todo push na `main`         | lint, typecheck, `vocab-check`, testes de shared, web e api (Postgres como serviço)                  |
-| `e2e`     | **só em PRs cujo destino é a `main`** | sobe `db` e `api` com Docker Compose e roda o Playwright contra o build de produção (`vite preview`) |
+| Job       | Quando roda                           | O que faz                                                                                                                     |
+| --------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `quality` | todo PR e todo push na `main`         | lint, typecheck, `vocab-check`, testes de shared, web e api (D1 local no workerd), build do web e `wrangler deploy --dry-run` |
+| `e2e`     | **só em PRs cujo destino é a `main`** | Playwright contra o build de produção do web servido por `wrangler dev` com D1 local (sem Docker)                             |
 
 Consequências práticas:
 
 - Nada entra na `main` por push direto: abra um branch e um PR. É no PR para a `main` que o e2e roda.
 - PRs para outros branches e o push de merge na `main` rodam só o `quality`. O merge não repete o e2e.
-- Ao mexer em fluxo de tela, rode `make test-e2e` (ou `make test-e2e-preview`, igual ao CI) antes de abrir o PR. Não dependa do CI para descobrir quebra de e2e.
+- Ao mexer em fluxo de tela, rode `make test-e2e` (igual ao CI) antes de abrir o PR. Não dependa do CI para descobrir quebra de e2e.
 - Um push novo no mesmo PR cancela a execução anterior (`concurrency`), para não gastar minutos à toa.
 
 Como o PR entra na `main`:
@@ -120,9 +120,9 @@ Como o PR entra na `main`:
 Skills instaladas em `.claude/skills/` (versionadas, com `skills-lock.json`) via `npx skills add` (CLI vercel-labs/skills). Lista em `scripts/skills.txt`; `make skills-install` reinstala. Uso:
 
 - Frontend/design: `frontend-design`, `vercel-react-best-practices`, `vercel-composition-patterns`, `accessibility`.
-- Backend/dados: `prisma-client-api`, `prisma-cli`, `prisma-database-setup`, `prisma-postgres`, `supabase-postgres-best-practices`.
+- Backend/dados: o plugin `cloudflare` do Claude Code (skills `workers-best-practices`, `wrangler`, `cloudflare`) cobre Workers, D1 e wrangler; não há skill de Drizzle instalada.
 - Testes: `vitest`, `vite`, `playwright-best-practices`, `webapp-testing`.
-- Processo: `tdd`, `code-review`, `domain-modeling`, `to-issues` (quebra um plano em issues do GitHub), `security-and-hardening`, `documentation-and-adrs`, `conventional-commit`, `multi-stage-dockerfile`.
+- Processo: `tdd`, `code-review`, `domain-modeling`, `to-issues` (quebra um plano em issues do GitHub), `security-and-hardening`, `documentation-and-adrs`, `conventional-commit`.
 
 Skills são conteúdo de terceiros: revise antes de seguir instruções que alterem infraestrutura.
 

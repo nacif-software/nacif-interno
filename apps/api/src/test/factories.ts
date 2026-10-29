@@ -1,10 +1,15 @@
+import { countBusinessDays, type CommunicationStatus, type Role } from '@nacif/shared';
+import { eq } from 'drizzle-orm';
+import { db } from '../db/client';
 import {
-  countBusinessDays,
-  parseIsoDate,
-  type CommunicationStatus,
-  type Role,
-} from '@nacif/shared';
-import { db } from '../infra/prisma/client';
+  availabilityDefaultApprovers,
+  availabilitySettings,
+  communications,
+  flowEvents,
+  projects,
+  users,
+} from '../db/schema';
+import type { Communication, Project, UserWithProject } from '../db/types';
 import { hashPassword } from '../modules/core/auth/password';
 
 export const TEST_PASSWORD = 'senha-forte-123';
@@ -16,13 +21,16 @@ async function passwordHash() {
 
 export async function createProject(
   overrides: { name?: string; defaultApproverId?: string | null } = {},
-) {
-  return db.project.create({
-    data: {
+): Promise<Project> {
+  const [row] = await db()
+    .insert(projects)
+    .values({
       name: overrides.name ?? `Projeto ${Math.random().toString(36).slice(2, 8)}`,
       defaultApproverId: overrides.defaultApproverId ?? null,
-    },
-  });
+    })
+    .returning();
+  if (!row) throw new Error('Projeto não criado');
+  return row;
 }
 
 export async function createUser(
@@ -34,36 +42,41 @@ export async function createUser(
     projectId?: string | null;
     withPassword?: boolean;
   } = {},
-) {
+): Promise<UserWithProject> {
   const slug = Math.random().toString(36).slice(2, 8);
-  return db.user.create({
-    data: {
+  const id = crypto.randomUUID();
+  await db()
+    .insert(users)
+    .values({
+      id,
       name: overrides.name ?? `Pessoa ${slug}`,
       email: overrides.email ?? `${slug}@nacif.xyz`,
       role: overrides.role ?? 'MEMBER',
       active: overrides.active ?? true,
       projectId: overrides.projectId ?? null,
       passwordHash: overrides.withPassword === false ? null : await passwordHash(),
-    },
-    include: { project: true },
+    });
+  const row = await db().query.users.findFirst({
+    where: eq(users.id, id),
+    with: { project: true },
   });
+  if (!row) throw new Error('Usuário não criado');
+  return row;
 }
 
 export async function createSettings(
   overrides: { minNoticeDays?: number; maxSimultaneousPerProject?: number } = {},
 ) {
-  return db.availabilitySettings.upsert({
-    where: { id: 1 },
-    create: {
-      id: 1,
-      minNoticeDays: overrides.minNoticeDays ?? 7,
-      maxSimultaneousPerProject: overrides.maxSimultaneousPerProject ?? 2,
-    },
-    update: {
-      minNoticeDays: overrides.minNoticeDays ?? 7,
-      maxSimultaneousPerProject: overrides.maxSimultaneousPerProject ?? 2,
-    },
-  });
+  const values = {
+    minNoticeDays: overrides.minNoticeDays ?? 7,
+    maxSimultaneousPerProject: overrides.maxSimultaneousPerProject ?? 2,
+  };
+  const [row] = await db()
+    .insert(availabilitySettings)
+    .values({ id: 1, ...values })
+    .onConflictDoUpdate({ target: availabilitySettings.id, set: values })
+    .returning();
+  return row;
 }
 
 /** Sequências a partir de 9000 para não colidir com as alocadas pelo service (que começam em 1). */
@@ -78,37 +91,54 @@ export async function createCommunication(input: {
   status?: CommunicationStatus;
   submittedAt?: Date;
   notes?: string;
-}) {
+}): Promise<Communication> {
   seq += 1;
   const year = Number(input.startDate.slice(0, 4));
-  return db.communication.create({
-    data: {
-      code: `${year}-${String(seq).padStart(4, '0')}`,
-      year,
-      sequence: seq,
-      authorId: input.authorId,
-      projectId: input.projectId,
-      startDate: parseIsoDate(input.startDate),
-      endDate: parseIsoDate(input.endDate),
-      businessDays: countBusinessDays(input.startDate, input.endDate),
-      coverId: input.coverId,
-      approverId: input.approverId,
-      notes: input.notes ?? null,
-      status: input.status ?? 'IN_REVIEW',
-      submittedAt: input.submittedAt ?? new Date(),
-      events: {
-        create: [
-          { type: 'SUBMITTED', actorId: input.authorId, description: 'autor' },
-          {
-            type: 'IN_REVIEW',
-            actorId: input.authorId,
-            description: 'encaminhada',
-            metadata: { conflicts: [], conflictNotes: [] },
-          },
-        ],
-      },
-    },
-  });
+  const id = crypto.randomUUID();
+  const now = new Date();
+  const [row] = await db().batch([
+    db()
+      .insert(communications)
+      .values({
+        id,
+        code: `${year}-${String(seq).padStart(4, '0')}`,
+        year,
+        sequence: seq,
+        authorId: input.authorId,
+        projectId: input.projectId,
+        startDate: input.startDate,
+        endDate: input.endDate,
+        businessDays: countBusinessDays(input.startDate, input.endDate),
+        coverId: input.coverId,
+        approverId: input.approverId,
+        notes: input.notes ?? null,
+        status: input.status ?? 'IN_REVIEW',
+        submittedAt: input.submittedAt ?? now,
+      })
+      .returning(),
+    db()
+      .insert(flowEvents)
+      .values([
+        {
+          communicationId: id,
+          type: 'SUBMITTED',
+          actorId: input.authorId,
+          occurredAt: now,
+          description: 'autor',
+        },
+        {
+          communicationId: id,
+          type: 'IN_REVIEW',
+          actorId: input.authorId,
+          occurredAt: now,
+          description: 'encaminhada',
+          metadata: { conflicts: [], conflictNotes: [] },
+        },
+      ]),
+  ]);
+  const created = row[0];
+  if (!created) throw new Error('Comunicação não criada');
+  return created;
 }
 
 /** Cenário padrão: projeto Órion com admin Caio, aprovador Marina e membros Pedro e Júlia. */
@@ -143,8 +173,10 @@ export async function seedTeam() {
     active: false,
     projectId: atlas.id,
   });
-  await db.project.update({ where: { id: orion.id }, data: { defaultApproverId: caio.id } });
+  await db().update(projects).set({ defaultApproverId: caio.id }).where(eq(projects.id, orion.id));
   await createSettings();
-  await db.defaultApprover.create({ data: { settingsId: 1, userId: caio.id, position: 0 } });
+  await db()
+    .insert(availabilityDefaultApprovers)
+    .values({ settingsId: 1, userId: caio.id, position: 0 });
   return { orion, atlas, caio, marina, pedro, julia, thiago };
 }

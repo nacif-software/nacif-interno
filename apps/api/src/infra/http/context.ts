@@ -1,14 +1,15 @@
 import { Hono, type Context, type MiddlewareHandler } from 'hono';
-import type { Project, User } from '../../generated/prisma/client';
+import type { UserWithProject } from '../../db/types';
 import type { ApiModule } from './module';
 import { NotFoundError } from './errors';
 import type { ValidatedInput } from './validate';
 
 /** Pessoa autenticada, como `requireAuth` deixa em `c.get('user')`. */
-export type AuthenticatedUser = User & { project: Project | null };
+export type AuthenticatedUser = UserWithProject;
 
 /** Variáveis de contexto compartilhadas por toda a API. */
 export type AppEnv = {
+  Bindings: Env;
   Variables: {
     user: AuthenticatedUser;
     sessionId: string;

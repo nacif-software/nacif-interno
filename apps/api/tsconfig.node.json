@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "scripts",
+    "drizzle.config.ts",
+    "vitest.config.ts",
+    "src/db/schema.ts",
+    "src/db/seed-data.ts",
+    "src/db/types.ts"
+  ]
+}

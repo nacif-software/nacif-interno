@@ -1,63 +1,54 @@
 # Nacif Interno — comandos de desenvolvimento
-# Uso: make <alvo>. `make help` lista os alvos.
+# Uso: make <alvo>. `make help` lista os alvos. Sem Docker: o Worker roda local com `wrangler dev`.
 
-COMPOSE ?= docker compose
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
+API := pnpm --filter @nacif/api
 
-.PHONY: help install up down restart deps logs ps build migrate migrate-new migrate-deploy generate seed db-reset studio \
-	test test-shared test-web test-api test-e2e test-e2e-preview test-e2e-ui lint lint-fix typecheck format format-check vocab-check \
-	clean shell-api shell-web shell-db skills-install ci dev-web
+.PHONY: help install dev dev-api dev-web types migrate migrate-new seed db-reset build-web deploy-check \
+	test test-shared test-web test-api test-e2e test-e2e-ui lint lint-fix typecheck format format-check vocab-check \
+	clean skills-install ci
 
 help: ## Lista os alvos disponíveis
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
-install: ## Cria .env (se faltar) e instala dependências no host
-	@test -f .env || cp .env.example .env
+install: ## Instala dependências, cria .dev.vars, gera tipos do Worker e aplica as migrações no D1 local
 	pnpm install
+	@test -f apps/api/.dev.vars || cp apps/api/.dev.vars.example apps/api/.dev.vars
+	$(MAKE) types
+	$(MAKE) migrate
 
-up: ## Sobe db, api e web em background
-	$(COMPOSE) up -d --build
+dev: ## Sobe o Worker (API, :8787) e o Vite (web, :5173) juntos
+	pnpm dev
 
-down: ## Derruba os containers (mantém volumes)
-	$(COMPOSE) down
+dev-api: ## Só o Worker (wrangler dev, :8787)
+	$(API) dev
 
-restart: ## Reinicia api e web
-	$(COMPOSE) restart api web
+dev-web: ## Só o web (Vite, :5173, proxy de /api para :8787)
+	pnpm --filter @nacif/web dev
 
-deps: ## Reinstala dependências nos volumes do Docker (após mudar package.json/lockfile)
-	$(COMPOSE) run --rm deps
-	$(COMPOSE) restart api web
+types: ## Regera worker-configuration.d.ts a partir do wrangler.jsonc
+	$(API) types
 
-logs: ## Acompanha logs (make logs s=api)
-	$(COMPOSE) logs -f $(s)
+migrate: ## Aplica as migrações pendentes no D1 local
+	$(API) migrate
 
-ps: ## Lista containers
-	$(COMPOSE) ps
+migrate-new: ## Gera uma migração a partir do schema (make migrate-new name=add_x)
+	$(API) migrate:new --name $(name)
 
-build: ## Reconstrói as imagens
-	$(COMPOSE) build
+seed: ## Popula o D1 local com os dados de exemplo do design
+	$(API) seed
 
-migrate: ## Aplica migrações pendentes em dev (cria se houver mudança no schema)
-	$(COMPOSE) exec api pnpm --filter @nacif/api exec prisma migrate dev
+db-reset: ## Apaga o D1 local, reaplica migrações e roda o seed
+	rm -rf apps/api/.wrangler/state
+	$(MAKE) migrate
+	$(MAKE) seed
 
-migrate-new: ## Cria uma migração nomeada (make migrate-new name=add_x)
-	$(COMPOSE) exec api pnpm --filter @nacif/api exec prisma migrate dev --name $(name)
+build-web: ## Build de produção do web (servido pelo Worker como Static Assets)
+	pnpm --filter @nacif/web build
 
-migrate-deploy: ## Aplica migrações sem prompt (CI/prod)
-	$(COMPOSE) exec api pnpm --filter @nacif/api exec prisma migrate deploy
-
-generate: ## Regera o Prisma Client
-	$(COMPOSE) exec api pnpm --filter @nacif/api exec prisma generate
-
-seed: ## Popula o banco com os dados de exemplo do design
-	$(COMPOSE) exec api pnpm --filter @nacif/api exec prisma db seed
-
-db-reset: ## Apaga o banco, reaplica migrações e roda o seed
-	$(COMPOSE) exec api pnpm --filter @nacif/api exec prisma migrate reset --force
-
-studio: ## Abre o Prisma Studio (porta 5555)
-	$(COMPOSE) exec -e BROWSER=none api pnpm --filter @nacif/api exec prisma studio --port 5555 --hostname 0.0.0.0
+deploy-check: build-web ## Valida o bundle do Worker sem publicar (wrangler deploy --dry-run)
+	$(API) deploy:check
 
 test: test-shared test-web test-api ## Roda todos os testes (exceto e2e)
 
@@ -67,15 +58,11 @@ test-shared: ## Testes unitários do pacote shared
 test-web: ## Testes de componentes do web
 	pnpm --filter @nacif/web test
 
-test-api: ## Testes de integração da API (sobe db-test)
-	$(COMPOSE) --profile test up -d --wait db-test
-	pnpm --filter @nacif/api test
+test-api: ## Testes de integração da API no runtime Workers com D1 local
+	$(API) test
 
-test-e2e: ## Testes end-to-end com Playwright (exige `make up` + seed)
+test-e2e: ## Playwright contra o build de produção servido por `wrangler dev` (sobe sozinho)
 	pnpm --filter @nacif/e2e test
-
-test-e2e-preview: ## E2E contra o build de produção (vite preview), como no CI
-	E2E_PREVIEW=true VITE_API_PROXY_TARGET=http://localhost:$${API_PORT:-3010} pnpm --filter @nacif/e2e test
 
 test-e2e-ui: ## Playwright em modo UI
 	pnpm --filter @nacif/e2e test:ui
@@ -98,24 +85,12 @@ format-check: ## Prettier --check
 vocab-check: ## Falha se encontrar vocabulário proibido na UI ou nas docs
 	@./scripts/vocab-check.sh
 
-clean: ## Derruba containers, apaga volumes e artefatos locais
-	$(COMPOSE) --profile test down -v --remove-orphans
+clean: ## Apaga dependências, builds, estado local do D1 e relatórios
 	rm -rf node_modules apps/*/node_modules packages/*/node_modules e2e/node_modules \
-		apps/*/dist packages/*/dist apps/api/src/generated e2e/playwright-report e2e/test-results
-
-shell-api: ## Shell no container da api
-	$(COMPOSE) exec api sh
-
-shell-web: ## Shell no container do web
-	$(COMPOSE) exec web sh
-
-shell-db: ## psql no banco de desenvolvimento
-	$(COMPOSE) exec db psql -U $${POSTGRES_USER:-nacif} -d $${POSTGRES_DB:-nacif}
+		apps/*/dist packages/*/dist apps/api/.wrangler apps/api/worker-configuration.d.ts \
+		e2e/playwright-report e2e/test-results
 
 skills-install: ## (Re)instala as skills de agente listadas em scripts/skills.txt
 	@./scripts/skills-install.sh
 
-dev-web: ## Alternativa: roda o web nativamente no host (api e db no Docker)
-	VITE_API_PROXY_TARGET=http://localhost:$${API_PORT:-3010} pnpm --filter @nacif/web dev
-
-ci: lint typecheck test vocab-check ## Tudo que o CI roda
+ci: lint typecheck test vocab-check deploy-check ## Tudo que o CI roda

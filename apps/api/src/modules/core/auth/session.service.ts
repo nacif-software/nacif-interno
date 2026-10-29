@@ -1,25 +1,26 @@
 import { SESSION_COOKIE_NAME } from '@nacif/shared';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
-import { env } from '../../../config/env';
+import { config } from '../../../config/env';
 import type { AppContext } from '../../../infra/http/context';
 import { generateToken } from './password';
 import { sessionRepository } from './session.repository';
 
-const TTL_SECONDS = env.SESSION_TTL_DAYS * 24 * 60 * 60;
-const TTL_MS = TTL_SECONDS * 1000;
 /** Só atualiza lastSeen/expiração se passou mais de 1h, para não escrever a cada request. */
 const TOUCH_INTERVAL_MS = 60 * 60 * 1000;
+
+const ttlSeconds = () => config().SESSION_TTL_DAYS * 24 * 60 * 60;
+const ttlMs = () => ttlSeconds() * 1000;
 
 export const sessionService = {
   async start(c: AppContext, userId: string, now: Date = new Date()): Promise<string> {
     const id = generateToken(32);
-    await sessionRepository.create({ id, userId, expiresAt: new Date(now.getTime() + TTL_MS) });
+    await sessionRepository.create({ id, userId, expiresAt: new Date(now.getTime() + ttlMs()) });
     setCookie(c, SESSION_COOKIE_NAME, id, {
       httpOnly: true,
       sameSite: 'Lax',
-      secure: env.COOKIE_SECURE,
+      secure: config().COOKIE_SECURE,
       path: '/',
-      maxAge: TTL_SECONDS,
+      maxAge: ttlSeconds(),
     });
     return id;
   },
@@ -38,7 +39,7 @@ export const sessionService = {
       return null;
     }
     if (now.getTime() - session.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
-      await sessionRepository.touch(token, now, new Date(now.getTime() + TTL_MS));
+      await sessionRepository.touch(token, now, new Date(now.getTime() + ttlMs()));
     }
     return session;
   },
@@ -51,7 +52,7 @@ export const sessionService = {
 
   async end(c: AppContext): Promise<void> {
     await this.revokeCurrent(c);
-    deleteCookie(c, SESSION_COOKIE_NAME, { path: '/', secure: env.COOKIE_SECURE });
+    deleteCookie(c, SESSION_COOKIE_NAME, { path: '/', secure: config().COOKIE_SECURE });
   },
 
   revokeAllForUser(userId: string) {

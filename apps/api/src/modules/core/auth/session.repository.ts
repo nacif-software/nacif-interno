@@ -1,25 +1,32 @@
-import { db } from '../../../infra/prisma/client';
+import { eq, lt } from 'drizzle-orm';
+import { db } from '../../../db/client';
+import { sessions } from '../../../db/schema';
 
 export const sessionRepository = {
   create(data: { id: string; userId: string; expiresAt: Date }) {
-    return db.session.create({ data });
+    return db().insert(sessions).values(data);
   },
   findWithUser(id: string) {
-    return db.session.findUnique({
-      where: { id },
-      include: { user: { include: { project: true } } },
+    return db().query.sessions.findFirst({
+      where: eq(sessions.id, id),
+      with: { user: { with: { project: true } } },
     });
   },
   touch(id: string, lastSeenAt: Date, expiresAt: Date) {
-    return db.session.update({ where: { id }, data: { lastSeenAt, expiresAt } });
+    return db().update(sessions).set({ lastSeenAt, expiresAt }).where(eq(sessions.id, id));
   },
   delete(id: string) {
-    return db.session.deleteMany({ where: { id } });
+    return db().delete(sessions).where(eq(sessions.id, id));
   },
   deleteAllForUser(userId: string) {
-    return db.session.deleteMany({ where: { userId } });
+    return db().delete(sessions).where(eq(sessions.userId, userId));
   },
-  deleteExpired(now: Date) {
-    return db.session.deleteMany({ where: { expiresAt: { lt: now } } });
+  /** Devolve quantas sessões foram apagadas. */
+  async deleteExpired(now: Date): Promise<number> {
+    const deleted = await db()
+      .delete(sessions)
+      .where(lt(sessions.expiresAt, now))
+      .returning({ id: sessions.id });
+    return deleted.length;
   },
 };

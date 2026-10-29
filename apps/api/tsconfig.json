@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["@cloudflare/vitest-plugin/types"]
   },
-  "include": ["src", "prisma", "prisma.config.ts", "vitest.config.ts"]
+  "include": ["src", "worker-configuration.d.ts"]
 }

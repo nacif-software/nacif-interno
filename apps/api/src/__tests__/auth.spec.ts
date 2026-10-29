@@ -1,9 +1,10 @@
 import { SESSION_COOKIE_NAME } from '@nacif/shared';
 import { describe, expect, it } from 'vitest';
-import { db } from '../infra/prisma/client';
+import { sessions } from '../db/schema';
 import { invitesService } from '../modules/core/users/invites.service';
 import { buildTestApp } from '../test/app';
 import { loginAs } from '../test/auth';
+import { countRows } from '../test/db';
 import { TEST_PASSWORD, seedTeam } from '../test/factories';
 
 describe('auth', () => {
@@ -62,7 +63,7 @@ describe('auth', () => {
     await loginAs(agent, 'marina@nacif.xyz');
     expect((await agent.post('/api/auth/logout')).status).toBe(204);
     expect((await agent.get('/api/auth/me')).status).toBe(401);
-    expect(await db.session.count()).toBe(0);
+    expect(await countRows(sessions)).toBe(0);
   });
 
   it('convite → link → definir senha → login', async () => {

@@ -1,9 +1,9 @@
 import type { ApiErrorBody } from '@nacif/shared';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
-import { env } from './config/env';
+import { bindConfig } from './config/env';
+import { bindDb } from './db/client';
 import type { AppEnv, AppRouter } from './infra/http/context';
 import { notFound, onError } from './infra/http/error-handler';
 import { registerModules, type ApiModule } from './infra/http/module';
@@ -15,8 +15,14 @@ const BODY_LIMIT_BYTES = 256 * 1024;
 export function createApp(options: { modules?: readonly ApiModule[] } = {}): AppRouter {
   const app = new Hono<AppEnv>();
 
+  // Bindings do Worker valem para a requisição inteira: config validada e banco prontos antes de tudo.
+  app.use('*', async (c, next) => {
+    bindConfig(c.env);
+    bindDb(c.env.DB);
+    await next();
+  });
   app.use(secureHeaders());
-  app.use(cors({ origin: env.APP_URL, credentials: true }));
+  // Web e API saem do mesmo Worker (mesma origem; em dev o Vite faz proxy), então não há CORS.
   app.use(
     bodyLimit({
       maxSize: BODY_LIMIT_BYTES,
@@ -28,9 +34,7 @@ export function createApp(options: { modules?: readonly ApiModule[] } = {}): App
       },
     }),
   );
-  if (env.NODE_ENV !== 'test') {
-    app.use(requestLogger);
-  }
+  app.use(requestLogger);
 
   registerModules(app, options.modules ?? modules);
 

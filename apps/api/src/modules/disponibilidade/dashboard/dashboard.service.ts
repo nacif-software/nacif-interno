@@ -1,13 +1,8 @@
-import {
-  APP_TIMEZONE,
-  isoDateYear,
-  parseIsoDate,
-  todayIso,
-  toIsoDate,
-  type DashboardDto,
-} from '@nacif/shared';
+import { APP_TIMEZONE, isoDateYear, todayIso, type DashboardDto } from '@nacif/shared';
+import { and, asc, desc, eq, gte, inArray, lte, sum } from 'drizzle-orm';
+import { db } from '../../../db/client';
+import { communications } from '../../../db/schema';
 import type { AuthenticatedUser } from '../../../infra/http/context';
-import { db } from '../../../infra/prisma/client';
 import { toSummaryDto } from '../communications/communication.mapper';
 import { communicationsRepository } from '../communications/communications.repository';
 
@@ -15,48 +10,47 @@ export const dashboardService = {
   async get(actor: AuthenticatedUser, now: Date = new Date()): Promise<DashboardDto> {
     const today = todayIso(APP_TIMEZONE, now);
     const year = isoDateYear(today);
-    const yearStart = parseIsoDate(`${year}-01-01`);
-    const yearEnd = parseIsoDate(`${year}-12-31`);
+    const mine = eq(communications.authorId, actor.id);
+    const counting = inArray(communications.status, ['APPROVED', 'IN_REVIEW']);
 
     const [communicated, inReview, next, recent] = await Promise.all([
-      db.communication.aggregate({
-        _sum: { businessDays: true },
-        where: {
-          authorId: actor.id,
-          status: { in: ['APPROVED', 'IN_REVIEW'] },
-          startDate: { gte: yearStart, lte: yearEnd },
-        },
+      db()
+        .select({ total: sum(communications.businessDays).mapWith(Number) })
+        .from(communications)
+        .where(
+          and(
+            mine,
+            counting,
+            gte(communications.startDate, `${year}-01-01`),
+            lte(communications.startDate, `${year}-12-31`),
+          ),
+        ),
+      db().query.communications.findMany({
+        where: and(mine, eq(communications.status, 'IN_REVIEW')),
+        with: { approver: true },
+        orderBy: [desc(communications.submittedAt)],
       }),
-      db.communication.findMany({
-        where: { authorId: actor.id, status: 'IN_REVIEW' },
-        include: { approver: true },
-        orderBy: { submittedAt: 'desc' },
-      }),
-      db.communication.findFirst({
-        where: {
-          authorId: actor.id,
-          status: { in: ['APPROVED', 'IN_REVIEW'] },
-          endDate: { gte: parseIsoDate(today) },
-        },
-        orderBy: { startDate: 'asc' },
+      db().query.communications.findFirst({
+        where: and(mine, counting, gte(communications.endDate, today)),
+        orderBy: [asc(communications.startDate)],
       }),
       communicationsRepository.findMany({
-        where: { authorId: actor.id },
-        orderBy: { submittedAt: 'desc' },
-        take: 5,
+        where: mine,
+        orderBy: [desc(communications.submittedAt)],
+        limit: 5,
       }),
     ]);
 
     return {
       year,
-      daysCommunicatedInYear: communicated._sum.businessDays ?? 0,
+      daysCommunicatedInYear: communicated[0]?.total ?? 0,
       inReviewCount: inReview.length,
       inReviewApproverName: inReview[0]?.approver.name ?? null,
       nextUnavailability: next
         ? {
             code: next.code,
-            startDate: toIsoDate(next.startDate),
-            endDate: toIsoDate(next.endDate),
+            startDate: next.startDate,
+            endDate: next.endDate,
             businessDays: next.businessDays,
             status: next.status,
           }

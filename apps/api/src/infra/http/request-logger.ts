@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from 'hono';
+import { config } from '../../config/env';
 import { logger } from '../logger';
 import type { AppEnv } from './context';
 
@@ -6,6 +7,7 @@ const IGNORED_PATHS = new Set(['/api/health']);
 
 /** Uma linha por requisição: método, caminho, status e duração. */
 export const requestLogger: MiddlewareHandler<AppEnv> = async (c, next) => {
+  if (config().APP_ENV === 'test') return next();
   const started = performance.now();
   try {
     await next();

@@ -1,8 +1,10 @@
 import { addDays, APP_TIMEZONE, todayIso } from '@nacif/shared';
 import { describe, expect, it } from 'vitest';
-import { db } from '../infra/prisma/client';
+import { and, eq } from 'drizzle-orm';
+import { flowEvents } from '../db/schema';
 import { buildTestApp } from '../test/app';
 import { loginAs } from '../test/auth';
+import { countRows } from '../test/db';
 import { createCommunication, seedTeam } from '../test/factories';
 
 const today = todayIso(APP_TIMEZONE);
@@ -177,9 +179,12 @@ describe('communications', () => {
     expect((await author.post(`/api/disponibilidade/communications/${c.id}/cancel`)).status).toBe(
       409,
     );
-    expect(await db.flowEvent.count({ where: { communicationId: c.id, type: 'CANCELLED' } })).toBe(
-      1,
-    );
+    expect(
+      await countRows(
+        flowEvents,
+        and(eq(flowEvents.communicationId, c.id), eq(flowEvents.type, 'CANCELLED')),
+      ),
+    ).toBe(1);
   });
 
   it('lista minhas comunicações paginadas e dashboard com métricas', async () => {

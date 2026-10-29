@@ -2,7 +2,9 @@ node_modules
 dist
 coverage
 pnpm-lock.yaml
-apps/api/src/generated
+apps/api/drizzle
+apps/api/worker-configuration.d.ts
+apps/api/.wrangler
 .agents
 .claude/skills
 e2e/playwright-report

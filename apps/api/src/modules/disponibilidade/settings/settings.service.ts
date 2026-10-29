@@ -1,9 +1,10 @@
 import { isApproverRole, type SettingsDto, type UpdateSettingsBody } from '@nacif/shared';
+import { inArray } from 'drizzle-orm';
+import { db } from '../../../db/client';
+import { users } from '../../../db/schema';
+import type { SettingsRow } from '../../../db/types';
 import { AppError } from '../../../infra/http/errors';
-import { db } from '../../../infra/prisma/client';
 import { settingsRepository } from './settings.repository';
-
-type SettingsRow = Awaited<ReturnType<typeof settingsRepository.get>>;
 
 export function toSettingsDto(row: SettingsRow): SettingsDto {
   return {
@@ -21,9 +22,9 @@ export const settingsService = {
   async update(body: UpdateSettingsBody): Promise<SettingsDto> {
     const ids = [...new Set(body.defaultApproverIds)];
     if (ids.length > 0) {
-      const users = await db.user.findMany({ where: { id: { in: ids } } });
+      const found = await db().query.users.findMany({ where: inArray(users.id, ids) });
       const invalid = ids.filter((id) => {
-        const u = users.find((x) => x.id === id);
+        const u = found.find((x) => x.id === id);
         return !u || !u.active || !isApproverRole(u.role);
       });
       if (invalid.length > 0) {

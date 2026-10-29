@@ -1,9 +1,11 @@
 import { addDays, APP_TIMEZONE, BATCH_UNDO_WINDOW_MS, todayIso } from '@nacif/shared';
 import { describe, expect, it } from 'vitest';
-import { db } from '../infra/prisma/client';
+import { eq, isNull } from 'drizzle-orm';
+import { communications, decisions } from '../db/schema';
 import { approvalsService } from '../modules/disponibilidade/approvals/approvals.service';
 import { buildTestApp } from '../test/app';
 import { loginAs } from '../test/auth';
+import { countRows } from '../test/db';
 import { createCommunication, seedTeam } from '../test/factories';
 
 const today = todayIso(APP_TIMEZONE);
@@ -106,7 +108,7 @@ describe('approvals', () => {
     expect(batch.status).toBe(200);
     expect(batch.body.approvedCount).toBe(2);
     expect(batch.body.skipped).toEqual([forCaio.id]);
-    expect(await db.communication.count({ where: { status: 'APPROVED' } })).toBe(2);
+    expect(await countRows(communications, eq(communications.status, 'APPROVED'))).toBe(2);
 
     const other = buildTestApp();
     await loginAs(other, 'caio@nacif.xyz');
@@ -119,8 +121,8 @@ describe('approvals', () => {
     );
     expect(undo.status).toBe(200);
     expect(undo.body.revertedCount).toBe(2);
-    expect(await db.communication.count({ where: { status: 'IN_REVIEW' } })).toBe(3);
-    expect(await db.decision.count({ where: { revertedAt: null } })).toBe(0);
+    expect(await countRows(communications, eq(communications.status, 'IN_REVIEW'))).toBe(3);
+    expect(await countRows(decisions, isNull(decisions.revertedAt))).toBe(0);
     expect(
       (await marina.post(`/api/disponibilidade/approvals/batch/${batch.body.batchId}/undo`)).status,
     ).toBe(409);

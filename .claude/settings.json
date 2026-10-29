@@ -4,12 +4,15 @@
       "Bash(make:*)",
       "Bash(pnpm:*)",
       "Bash(npx skills:*)",
-      "Bash(docker compose:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(curl localhost:*)",
-      "Bash(curl http://localhost:*)"
+      "Bash(curl http://localhost:*)",
+      "Bash(pnpm exec wrangler:*)"
     ]
+  },
+  "enabledPlugins": {
+    "cloudflare@cloudflare": true
   }
 }

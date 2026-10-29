@@ -15,7 +15,9 @@ export default tseslint.config(
       '.pnpm-store/**',
       '**/dist/**',
       '**/coverage/**',
-      'apps/api/src/generated/**',
+      'apps/api/drizzle/**',
+      'apps/api/worker-configuration.d.ts',
+      'apps/api/.wrangler/**',
       '.claude/**',
       'e2e/playwright-report/**',
       'e2e/test-results/**',
@@ -67,6 +69,17 @@ export default tseslint.config(
   {
     files: ['apps/api/**/*.ts', 'packages/shared/**/*.ts', 'e2e/**/*.ts'],
     languageOptions: { globals: { ...globals.node } },
+  },
+  {
+    // Arquivos da API que rodam no Node (scripts e configs), fora do tsconfig do Worker.
+    files: ['apps/api/scripts/**/*.ts', 'apps/api/drizzle.config.ts', 'apps/api/vitest.config.ts'],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: './apps/api/tsconfig.node.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   },
   {
     files: [

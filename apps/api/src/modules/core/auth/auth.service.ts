@@ -6,8 +6,8 @@ import {
   type SetPasswordInfo,
   type SetPasswordMode,
 } from '@nacif/shared';
+import { db } from '../../../db/client';
 import { AppError, ValidationError } from '../../../infra/http/errors';
-import { db } from '../../../infra/prisma/client';
 import { toSessionUser } from '../users/user.mapper';
 import { usersRepository } from '../users/users.repository';
 import { hashPassword, sha256 } from './password';
@@ -39,7 +39,7 @@ function setupMode(user: { passwordHash: string | null }): SetPasswordMode {
 
 /** Token válido (não usado, não expirado) de uma pessoa ativa; desativar invalida o link. */
 async function findValidSetup(token: string, now: Date) {
-  const record = await passwordSetupTokenRepository.findValid(sha256(token), now);
+  const record = await passwordSetupTokenRepository.findValid(await sha256(token), now);
   if (!record) throw new AppError(404, 'NOT_FOUND', 'Link inválido ou expirado.');
   if (!record.user.active) throw new UserInactiveError();
   return record;
@@ -76,17 +76,16 @@ export function createAuthService(provider: AuthProvider = localPasswordProvider
         ]);
       }
       const passwordHash = await hashPassword(input.password);
-      const userId = await db.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: record.userId },
-          data: isInvite ? { name: input.name, passwordHash } : { passwordHash },
-        });
-        await passwordSetupTokenRepository.markUsed(record.id, now, tx);
-        await passwordSetupTokenRepository.invalidateAllForUser(record.userId, now, tx);
-        return record.userId;
-      });
-      await sessionService.revokeAllForUser(userId);
-      const full = await usersRepository.findByIdWithProject(userId);
+      await db().batch([
+        usersRepository.updateById(
+          record.userId,
+          isInvite ? { name: input.name, passwordHash } : { passwordHash },
+        ),
+        passwordSetupTokenRepository.markUsed(record.id, now),
+        passwordSetupTokenRepository.invalidateAllForUser(record.userId, now),
+      ]);
+      await sessionService.revokeAllForUser(record.userId);
+      const full = await usersRepository.findByIdWithProject(record.userId);
       if (!full) throw new AppError(404, 'NOT_FOUND', 'Usuário não encontrado.');
       return toSessionUser(full);
     },

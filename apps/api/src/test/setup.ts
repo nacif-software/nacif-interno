@@ -1,17 +1,45 @@
-import { afterAll, beforeEach } from 'vitest';
-import { db } from '../infra/prisma/client';
+import { applyD1Migrations, env } from 'cloudflare:test';
+import { beforeAll, beforeEach } from 'vitest';
+import { bindConfig } from '../config/env';
+import { bindDb, db } from '../db/client';
+import {
+  approvalBatches,
+  availabilityDefaultApprovers,
+  availabilitySettings,
+  communicationCounters,
+  communications,
+  decisions,
+  flowEvents,
+  passwordSetupTokens,
+  projects,
+  sessions,
+  users,
+} from '../db/schema';
 
-/** Limpa todas as tabelas antes de cada teste (ordem não importa com TRUNCATE ... CASCADE). */
-beforeEach(async () => {
-  await db.$executeRawUnsafe(`
-    TRUNCATE TABLE
-      flow_events, decisions, approval_batches, communications, communication_counters,
-      availability_default_approvers, availability_settings,
-      password_setup_tokens, sessions, users, projects
-    RESTART IDENTITY CASCADE
-  `);
+/**
+ * O plugin isola o storage por arquivo de teste, não por teste: aplicamos as migrações uma vez
+ * por arquivo e limpamos as tabelas antes de cada teste (filhos antes dos pais, por causa das FKs).
+ */
+beforeAll(async () => {
+  await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
+  bindConfig(env);
+  bindDb(env.DB);
 });
 
-afterAll(async () => {
-  await db.$disconnect();
+beforeEach(async () => {
+  bindConfig(env);
+  bindDb(env.DB);
+  await db().batch([
+    db().delete(flowEvents),
+    db().delete(decisions),
+    db().delete(approvalBatches),
+    db().delete(communications),
+    db().delete(communicationCounters),
+    db().delete(availabilityDefaultApprovers),
+    db().delete(availabilitySettings),
+    db().delete(passwordSetupTokens),
+    db().delete(sessions),
+    db().delete(users),
+    db().delete(projects),
+  ]);
 });

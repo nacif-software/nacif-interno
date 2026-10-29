@@ -1,7 +1,5 @@
 import { getInitials, type SessionUser, type UserDto, type UserOption } from '@nacif/shared';
-import type { Project, User } from '../../../generated/prisma/client';
-
-type UserWithProject = User & { project: Project | null };
+import type { UserWithProject } from '../../../db/types';
 
 export function toSessionUser(user: UserWithProject): SessionUser {
   return {
