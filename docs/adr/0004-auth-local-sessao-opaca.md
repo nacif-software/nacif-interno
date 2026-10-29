@@ -13,3 +13,7 @@ E-mail/senha (bcryptjs) atrás da interface `AuthProvider`. Sessão opaca em Pos
 ## Consequências
 
 Revogação imediata (inativar pessoa apaga sessões). Trocar para Google OAuth = novo provider (issue #7), mantendo sessões e guards.
+
+## Atualização (2026-10-29)
+
+A decisão continua valendo com o ADR 0011: a sessão opaca passa a ser armazenada no D1, o cookie e o fluxo não mudam. Tokens de sessão e de definição de senha passam a usar Web Crypto. O login corporativo (issue #7) será pelo Cloudflare Access, com o login local como fallback de administrador.

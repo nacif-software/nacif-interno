@@ -13,3 +13,7 @@ Testes de API cobrem SQL, índices e transações de verdade. CI precisa de um s
 ## Atualização (2026-10-02)
 
 No CI o e2e roda contra o build de produção (`vite preview`), não contra o dev server, e só em PRs para a `main`, por custo de minutos. Localmente `make test-e2e` continua usando o dev server do `make up`; `make test-e2e-preview` reproduz o modo do CI.
+
+## Atualização (2026-10-29)
+
+Com o ADR 0011 os testes da API rodam no runtime Workers (`@cloudflare/vitest-plugin`) contra um D1 local, com migrações aplicadas no setup e storage isolado por teste no lugar do truncate. O e2e roda contra `wrangler dev` servindo o build de produção do web; `make test-e2e-preview` deixa de existir. O CI não precisa mais de Postgres nem de Docker.
