@@ -39,7 +39,9 @@ import {
 } from '../src/db/seed-data';
 
 if (process.argv.includes('--remote')) {
-  console.error('O seed é só para o D1 local. Produção começa vazia (scripts/create-admin.ts).');
+  console.error(
+    'O seed é só para o D1 local. Produção começa vazia; o primeiro administrador vem do script da issue #21.',
+  );
   process.exit(1);
 }
 

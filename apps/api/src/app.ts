@@ -1,9 +1,8 @@
 import type { ApiErrorBody } from '@nacif/shared';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
-import { bindConfig, config } from './config/env';
+import { bindConfig } from './config/env';
 import { bindDb } from './db/client';
 import type { AppEnv, AppRouter } from './infra/http/context';
 import { notFound, onError } from './infra/http/error-handler';
@@ -23,8 +22,7 @@ export function createApp(options: { modules?: readonly ApiModule[] } = {}): App
     await next();
   });
   app.use(secureHeaders());
-  // A origem permitida vem da config da requisição (bindings), por isso é uma função.
-  app.use(cors({ origin: () => config().APP_URL, credentials: true }));
+  // Web e API saem do mesmo Worker (mesma origem; em dev o Vite faz proxy), então não há CORS.
   app.use(
     bodyLimit({
       maxSize: BODY_LIMIT_BYTES,

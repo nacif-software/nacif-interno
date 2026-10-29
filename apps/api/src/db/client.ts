@@ -1,3 +1,4 @@
+import type { BatchItem, BatchResponse } from 'drizzle-orm/batch';
 import { drizzle, type DrizzleD1Database } from 'drizzle-orm/d1';
 import * as relations from './relations';
 import * as schema from './schema';
@@ -30,6 +31,15 @@ export function bindDb(d1: D1Database): Db {
 export function db(): Db {
   if (!current) throw new Error('Banco não vinculado: chame bindDb(env.DB) antes.');
   return current;
+}
+
+/** `db().batch()` exige ao menos um statement; aceita listas montadas dinamicamente (vazias inclusive). */
+export async function batchAll<T extends BatchItem<'sqlite'>>(
+  statements: T[],
+): Promise<BatchResponse<T[]>> {
+  const [first, ...rest] = statements;
+  if (!first) return [];
+  return db().batch([first, ...rest]);
 }
 
 export { schema };

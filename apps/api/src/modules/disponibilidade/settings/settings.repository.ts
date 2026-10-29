@@ -1,6 +1,6 @@
 import { asc, eq } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
-import { db } from '../../../db/client';
+import { batchAll, db } from '../../../db/client';
 import { availabilityDefaultApprovers, availabilitySettings } from '../../../db/schema';
 import type { SettingsRow } from '../../../db/types';
 
@@ -59,8 +59,7 @@ export const settingsRepository = {
           ),
       );
     }
-    const [first, ...rest] = statements;
-    if (first) await db().batch([first, ...rest]);
+    await batchAll(statements);
     return this.get();
   },
 };

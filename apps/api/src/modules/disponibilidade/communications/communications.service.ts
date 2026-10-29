@@ -24,12 +24,12 @@ import {
   type Paginated,
   type UpdatePeriodBody,
 } from '@nacif/shared';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '../../../db/client';
-import { communications, type FlowEventMetadata } from '../../../db/schema';
+import { uniqueViolation } from '../../../db/errors';
+import { communications, flowEvents, type FlowEventMetadata } from '../../../db/schema';
 import type { CommunicationRow } from '../../../db/types';
 import type { AuthenticatedUser } from '../../../infra/http/context';
-import { uniqueViolation } from '../../../infra/http/error-handler';
 import {
   AppError,
   ForbiddenError,
@@ -256,28 +256,42 @@ export const communicationsService = {
     });
     const previous = toSummaryDto(row);
 
+    // Eventos só entram se o período novo está gravado e a comunicação segue em análise
+    // (se um cancelamento ganhou a corrida, o UPDATE com guard não aplica e nada é registrado).
+    const applied = sql`exists (
+      select 1 from ${communications}
+      where ${communications.id} = ${row.id} and ${communications.status} = 'IN_REVIEW'
+        and ${communications.startDate} = ${body.startDate} and ${communications.endDate} = ${body.endDate}
+        and ${communications.businessDays} = ${businessDays}
+    )`;
     const [updated] = await db().batch([
       communicationsRepository.update(
         row.id,
         { startDate: body.startDate, endDate: body.endDate, businessDays },
         'IN_REVIEW',
       ),
-      flowEventsRepository.insert({
-        communicationId: row.id,
-        type: 'EDITED',
-        actorId: actor.id,
-        occurredAt: now,
-        description: `Período alterado de ${formatDateRange(previous.startDate, previous.endDate)} para ${formatDateRange(body.startDate, body.endDate)}`,
-        metadata: { previous: { startDate: previous.startDate, endDate: previous.endDate } },
-      }),
-      flowEventsRepository.insert({
-        communicationId: row.id,
-        type: 'IN_REVIEW',
-        actorId: actor.id,
-        occurredAt: now,
-        description: `Reencaminhada a ${row.approver.name}`,
-        metadata: conflictMetadata(conflicts),
-      }),
+      flowEventsRepository.insertIf(
+        {
+          communicationId: row.id,
+          type: 'EDITED',
+          actorId: actor.id,
+          occurredAt: now,
+          description: `Período alterado de ${formatDateRange(previous.startDate, previous.endDate)} para ${formatDateRange(body.startDate, body.endDate)}`,
+          metadata: { previous: { startDate: previous.startDate, endDate: previous.endDate } },
+        },
+        applied,
+      ),
+      flowEventsRepository.insertIf(
+        {
+          communicationId: row.id,
+          type: 'IN_REVIEW',
+          actorId: actor.id,
+          occurredAt: now,
+          description: `Reencaminhada a ${row.approver.name}`,
+          metadata: conflictMetadata(conflicts),
+        },
+        applied,
+      ),
     ]);
     if (updated.length === 0) {
       throw new InvalidStateError('Esta comunicação já foi decidida.');
@@ -300,13 +314,23 @@ export const communicationsService = {
         { status: 'CANCELLED', cancelledAt: now },
         'IN_REVIEW',
       ),
-      flowEventsRepository.insert({
-        communicationId: row.id,
-        type: 'CANCELLED',
-        actorId: actor.id,
-        occurredAt: now,
-        description: `Cancelada pelo autor em ${formatDayMonth(toZonedIsoDate(now, APP_TIMEZONE))}.`,
-      }),
+      flowEventsRepository.insertIf(
+        {
+          communicationId: row.id,
+          type: 'CANCELLED',
+          actorId: actor.id,
+          occurredAt: now,
+          description: `Cancelada pelo autor em ${formatDayMonth(toZonedIsoDate(now, APP_TIMEZONE))}.`,
+        },
+        // Cancelada e ainda sem evento de cancelamento (o status é terminal, então é determinístico).
+        sql`exists (
+          select 1 from ${communications}
+          where ${communications.id} = ${row.id} and ${communications.status} = 'CANCELLED'
+        ) and not exists (
+          select 1 from ${flowEvents}
+          where ${flowEvents.communicationId} = ${row.id} and ${flowEvents.type} = 'CANCELLED'
+        )`,
+      ),
     ]);
     if (updated.length === 0) {
       throw new InvalidStateError('Só é possível cancelar uma comunicação em análise.');

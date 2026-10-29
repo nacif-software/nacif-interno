@@ -24,8 +24,17 @@ function serialize(data: LogData): LogData {
   return out;
 }
 
+/** Se a config ainda não foi vinculada (ou é inválida), loga mesmo assim em nível `info`. */
+function settings(): { LOG_LEVEL: Level | 'silent'; APP_ENV: string } {
+  try {
+    return config();
+  } catch {
+    return { LOG_LEVEL: 'info', APP_ENV: 'production' };
+  }
+}
+
 function emit(level: Level, data: LogData, msg?: string): void {
-  const { LOG_LEVEL, APP_ENV } = config();
+  const { LOG_LEVEL, APP_ENV } = settings();
   if (ORDER[level] < ORDER[LOG_LEVEL]) return;
   const time = new Date().toISOString();
   const fields = serialize(data);

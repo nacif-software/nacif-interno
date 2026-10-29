@@ -7,7 +7,7 @@ import {
 } from '@nacif/shared';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { config } from '../../../config/env';
-import { db } from '../../../db/client';
+import { batchAll, db } from '../../../db/client';
 import type { AuthenticatedUser } from '../../../infra/http/context';
 import { AppError, NotFoundError } from '../../../infra/http/errors';
 import { logger } from '../../../infra/logger';
@@ -44,8 +44,7 @@ export async function setupTokenStatements(
 
 async function issueSetupToken(userId: string, now: Date): Promise<string> {
   const { token, statements } = await setupTokenStatements(userId, now);
-  const [first, ...rest] = statements;
-  if (first) await db().batch([first, ...rest]);
+  await batchAll(statements);
   return token;
 }
 
