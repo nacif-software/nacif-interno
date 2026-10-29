@@ -11,7 +11,6 @@ import {
   isApproverRole,
   isCommunicationCode,
   isoDateYear,
-  parseIsoDate,
   todayIso,
   toZonedIsoDate,
   validateMinimumNotice,
@@ -25,7 +24,12 @@ import {
   type Paginated,
   type UpdatePeriodBody,
 } from '@nacif/shared';
-import type { Prisma } from '../../../generated/prisma/client';
+import { and, desc, eq } from 'drizzle-orm';
+import { db } from '../../../db/client';
+import { communications, type FlowEventMetadata } from '../../../db/schema';
+import type { CommunicationRow } from '../../../db/types';
+import type { AuthenticatedUser } from '../../../infra/http/context';
+import { uniqueViolation } from '../../../infra/http/error-handler';
 import {
   AppError,
   ForbiddenError,
@@ -33,17 +37,18 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../../infra/http/errors';
-import type { AuthenticatedUser } from '../../../infra/http/context';
-import { db, type DbOrTx } from '../../../infra/prisma/client';
 import { usersRepository } from '../../core/users/users.repository';
 import { settingsRepository } from '../settings/settings.repository';
 import { allocateCode } from './communication-code.service';
 import { snapshotConflicts, toDetailDto, toSummaryDto } from './communication.mapper';
-import { communicationsRepository, type CommunicationRow } from './communications.repository';
+import { communicationsRepository } from './communications.repository';
 import { findConflicts } from './conflict.service';
 import { flowEventsRepository } from './flow-events.repository';
 
-function conflictMetadata(conflicts: ConflictDto[]): Prisma.InputJsonValue {
+/** Tentativas de inserção quando duas requisições disputam a mesma sequência de código. */
+const CODE_RACE_ATTEMPTS = 5;
+
+function conflictMetadata(conflicts: ConflictDto[]): FlowEventMetadata {
   return {
     conflicts: conflicts.map((c) => ({ ...c })),
     conflictNotes: conflicts.map((c) =>
@@ -52,10 +57,10 @@ function conflictMetadata(conflicts: ConflictDto[]): Prisma.InputJsonValue {
   };
 }
 
-async function loadOrThrow(idOrCode: string, tx: DbOrTx = db): Promise<CommunicationRow> {
+async function loadOrThrow(idOrCode: string): Promise<CommunicationRow> {
   const row = isCommunicationCode(idOrCode)
-    ? await communicationsRepository.findByCode(idOrCode.replace(/^#/, ''), tx)
-    : await communicationsRepository.findById(idOrCode, tx);
+    ? await communicationsRepository.findByCode(idOrCode.replace(/^#/, ''))
+    : await communicationsRepository.findById(idOrCode);
   if (!row) throw new NotFoundError('Comunicação não encontrada.');
   return row;
 }
@@ -102,16 +107,16 @@ export const communicationsService = {
     actor: AuthenticatedUser,
     query: CommunicationsListQuery,
   ): Promise<Paginated<CommunicationSummaryDto>> {
-    const where: Prisma.CommunicationWhereInput = {
-      authorId: actor.id,
-      ...(query.status ? { status: query.status } : {}),
-    };
+    const where = and(
+      eq(communications.authorId, actor.id),
+      query.status ? eq(communications.status, query.status) : undefined,
+    );
     const [rows, total] = await Promise.all([
       communicationsRepository.findMany({
         where,
-        orderBy: { submittedAt: 'desc' },
-        skip: (query.page - 1) * query.pageSize,
-        take: query.pageSize,
+        orderBy: [desc(communications.submittedAt)],
+        offset: (query.page - 1) * query.pageSize,
+        limit: query.pageSize,
       }),
       communicationsRepository.count(where),
     ]);
@@ -158,52 +163,55 @@ export const communicationsService = {
       maxSimultaneousPerProject: settings.maxSimultaneousPerProject,
     });
     const approver = await usersRepository.findById(body.approverId);
+    const year = isoDateYear(toZonedIsoDate(now, APP_TIMEZONE));
 
-    const created = await db.$transaction(async (tx) => {
-      const year = isoDateYear(toZonedIsoDate(now, APP_TIMEZONE));
-      const { code, sequence } = await allocateCode(tx, year);
-      const row = await communicationsRepository.create(
-        {
-          code,
-          year,
-          sequence,
-          authorId: actor.id,
-          projectId,
-          startDate: parseIsoDate(body.startDate),
-          endDate: parseIsoDate(body.endDate),
-          businessDays,
-          coverId: body.coverId,
-          approverId: body.approverId,
-          notes: body.notes && body.notes.length > 0 ? body.notes : null,
-          status: 'IN_REVIEW',
-          submittedAt: now,
-        },
-        tx,
-      );
-      await flowEventsRepository.create(
-        {
-          communicationId: row.id,
-          type: 'SUBMITTED',
-          actorId: actor.id,
-          occurredAt: now,
-          description: actor.name,
-        },
-        tx,
-      );
-      await flowEventsRepository.create(
-        {
-          communicationId: row.id,
-          type: 'IN_REVIEW',
-          actorId: actor.id,
-          occurredAt: now,
-          description: `Encaminhada a ${approver?.name ?? ''}`.trim(),
-          metadata: conflictMetadata(conflicts),
-        },
-        tx,
-      );
-      return row.id;
-    });
-    return this.getDetail(actor, created);
+    // Sem transação interativa no D1: o código vem de um upsert atômico e a inserção é um batch.
+    // Se duas requisições disputarem a mesma sequência, o unique de `code` falha e tentamos de novo.
+    const id = crypto.randomUUID();
+    for (let attempt = 1; ; attempt++) {
+      const { code, sequence } = await allocateCode(year);
+      try {
+        await db().batch([
+          communicationsRepository.insert({
+            id,
+            code,
+            year,
+            sequence,
+            authorId: actor.id,
+            projectId,
+            startDate: body.startDate,
+            endDate: body.endDate,
+            businessDays,
+            coverId: body.coverId,
+            approverId: body.approverId,
+            notes: body.notes && body.notes.length > 0 ? body.notes : null,
+            status: 'IN_REVIEW',
+            submittedAt: now,
+          }),
+          flowEventsRepository.insert({
+            communicationId: id,
+            type: 'SUBMITTED',
+            actorId: actor.id,
+            occurredAt: now,
+            description: actor.name,
+          }),
+          flowEventsRepository.insert({
+            communicationId: id,
+            type: 'IN_REVIEW',
+            actorId: actor.id,
+            occurredAt: now,
+            description: `Encaminhada a ${approver?.name ?? ''}`.trim(),
+            metadata: conflictMetadata(conflicts),
+          }),
+        ]);
+        break;
+      } catch (err) {
+        const constraint = uniqueViolation(err);
+        const codeRace = constraint?.startsWith('communications.') ?? false;
+        if (!codeRace || attempt >= CODE_RACE_ATTEMPTS) throw err;
+      }
+    }
+    return this.getDetail(actor, id);
   },
 
   async getDetail(actor: AuthenticatedUser, idOrCode: string): Promise<CommunicationDetailDto> {
@@ -215,7 +223,7 @@ export const communicationsService = {
         ? (
             await findConflicts({
               projectId: row.projectId,
-              range: { startDate: toSummaryDto(row).startDate, endDate: toSummaryDto(row).endDate },
+              range: { startDate: row.startDate, endDate: row.endDate },
               excludeUserId: row.authorId,
               excludeCommunicationId: row.id,
               maxSimultaneousPerProject: settings.maxSimultaneousPerProject,
@@ -248,39 +256,32 @@ export const communicationsService = {
     });
     const previous = toSummaryDto(row);
 
-    await db.$transaction(async (tx) => {
-      await communicationsRepository.update(
+    const [updated] = await db().batch([
+      communicationsRepository.update(
         row.id,
-        {
-          startDate: parseIsoDate(body.startDate),
-          endDate: parseIsoDate(body.endDate),
-          businessDays,
-        },
-        tx,
-      );
-      await flowEventsRepository.create(
-        {
-          communicationId: row.id,
-          type: 'EDITED',
-          actorId: actor.id,
-          occurredAt: now,
-          description: `Período alterado de ${formatDateRange(previous.startDate, previous.endDate)} para ${formatDateRange(body.startDate, body.endDate)}`,
-          metadata: { previous: { startDate: previous.startDate, endDate: previous.endDate } },
-        },
-        tx,
-      );
-      await flowEventsRepository.create(
-        {
-          communicationId: row.id,
-          type: 'IN_REVIEW',
-          actorId: actor.id,
-          occurredAt: now,
-          description: `Reencaminhada a ${row.approver.name}`,
-          metadata: conflictMetadata(conflicts),
-        },
-        tx,
-      );
-    });
+        { startDate: body.startDate, endDate: body.endDate, businessDays },
+        'IN_REVIEW',
+      ),
+      flowEventsRepository.insert({
+        communicationId: row.id,
+        type: 'EDITED',
+        actorId: actor.id,
+        occurredAt: now,
+        description: `Período alterado de ${formatDateRange(previous.startDate, previous.endDate)} para ${formatDateRange(body.startDate, body.endDate)}`,
+        metadata: { previous: { startDate: previous.startDate, endDate: previous.endDate } },
+      }),
+      flowEventsRepository.insert({
+        communicationId: row.id,
+        type: 'IN_REVIEW',
+        actorId: actor.id,
+        occurredAt: now,
+        description: `Reencaminhada a ${row.approver.name}`,
+        metadata: conflictMetadata(conflicts),
+      }),
+    ]);
+    if (updated.length === 0) {
+      throw new InvalidStateError('Esta comunicação já foi decidida.');
+    }
     return this.getDetail(actor, row.id);
   },
 
@@ -293,19 +294,23 @@ export const communicationsService = {
     if (row.authorId !== actor.id) throw new ForbiddenError();
     if (!canCancel(row.status))
       throw new InvalidStateError('Só é possível cancelar uma comunicação em análise.');
-    await db.$transaction(async (tx) => {
-      await communicationsRepository.update(row.id, { status: 'CANCELLED', cancelledAt: now }, tx);
-      await flowEventsRepository.create(
-        {
-          communicationId: row.id,
-          type: 'CANCELLED',
-          actorId: actor.id,
-          occurredAt: now,
-          description: `Cancelada pelo autor em ${formatDayMonth(toZonedIsoDate(now, APP_TIMEZONE))}.`,
-        },
-        tx,
-      );
-    });
+    const [updated] = await db().batch([
+      communicationsRepository.update(
+        row.id,
+        { status: 'CANCELLED', cancelledAt: now },
+        'IN_REVIEW',
+      ),
+      flowEventsRepository.insert({
+        communicationId: row.id,
+        type: 'CANCELLED',
+        actorId: actor.id,
+        occurredAt: now,
+        description: `Cancelada pelo autor em ${formatDayMonth(toZonedIsoDate(now, APP_TIMEZONE))}.`,
+      }),
+    ]);
+    if (updated.length === 0) {
+      throw new InvalidStateError('Só é possível cancelar uma comunicação em análise.');
+    }
     return this.getDetail(actor, row.id);
   },
 };

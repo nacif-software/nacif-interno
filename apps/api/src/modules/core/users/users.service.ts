@@ -1,34 +1,35 @@
 import type { UpdateUserBody, UserDto, UserOption, UsersListQuery } from '@nacif/shared';
-import type { Prisma } from '../../../generated/prisma/client';
-import { AppError, NotFoundError } from '../../../infra/http/errors';
+import { and, eq, inArray, isNotNull, ne, type SQL } from 'drizzle-orm';
+import { users } from '../../../db/schema';
 import type { AuthenticatedUser } from '../../../infra/http/context';
+import { AppError, NotFoundError } from '../../../infra/http/errors';
 import { sessionService } from '../auth/session.service';
 import { toUserDto, toUserOption } from './user.mapper';
 import { usersRepository } from './users.repository';
 
 export const usersService = {
   async list(actor: AuthenticatedUser, query: UsersListQuery): Promise<UserDto[]> {
-    const where: Prisma.UserWhereInput = {};
-    if (query.role) where.role = query.role;
+    const conditions: SQL[] = [];
+    if (query.role) conditions.push(eq(users.role, query.role));
     if (actor.role === 'ADMIN') {
-      if (query.active !== undefined) where.active = query.active;
+      if (query.active !== undefined) conditions.push(eq(users.active, query.active));
     } else {
-      where.active = true;
+      conditions.push(eq(users.active, true));
     }
-    const users = await usersRepository.list(where);
-    return users.map(toUserDto);
+    const rows = await usersRepository.list(and(...conditions));
+    return rows.map(toUserDto);
   },
 
   /** Opções para os selects do formulário: cobertura (qualquer pessoa ativa) ou aprovador (APPROVER/ADMIN). */
   async options(actor: AuthenticatedUser, purpose: 'cover' | 'approver'): Promise<UserOption[]> {
-    const where: Prisma.UserWhereInput = {
-      active: true,
-      id: { not: actor.id },
-      passwordHash: { not: null },
-    };
-    if (purpose === 'approver') where.role = { in: ['APPROVER', 'ADMIN'] };
-    const users = await usersRepository.list(where);
-    return users.map(toUserOption).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    const conditions: SQL[] = [
+      eq(users.active, true),
+      ne(users.id, actor.id),
+      isNotNull(users.passwordHash),
+    ];
+    if (purpose === 'approver') conditions.push(inArray(users.role, ['APPROVER', 'ADMIN']));
+    const rows = await usersRepository.list(and(...conditions));
+    return rows.map(toUserOption).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   },
 
   async update(actor: AuthenticatedUser, id: string, body: UpdateUserBody): Promise<UserDto> {

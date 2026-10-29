@@ -1,0 +1,36 @@
+{
+  // Configuração do Worker único: API em /api/* + SPA do web pelos Static Assets (ADR 0011).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nacif-interno",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-29",
+  "assets": {
+    "directory": "../web/dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nacif-interno",
+      // Placeholder até o banco ser criado na issue #16; o dev local não precisa do id real.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle",
+    },
+  ],
+  // Valores de produção. Em dev, `.dev.vars` (copiado de `.dev.vars.example`) sobrescreve.
+  "vars": {
+    "APP_ENV": "production",
+    "APP_URL": "https://interno.nacif.software",
+    "COOKIE_SECURE": "true",
+    "SESSION_TTL_DAYS": "30",
+    "LOG_LEVEL": "info",
+  },
+  "triggers": {
+    // Limpeza diária de sessões e tokens expirados (03:00 UTC).
+    "crons": ["0 3 * * *"],
+  },
+  "observability": {
+    "enabled": true,
+  },
+}

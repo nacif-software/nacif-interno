@@ -1,7 +1,5 @@
 import type { ProjectDto } from '@nacif/shared';
-import type { Project, User } from '../../../generated/prisma/client';
-
-type ProjectRow = Project & { defaultApprover: User | null; _count: { members: number } };
+import type { ProjectRow } from '../../../db/types';
 
 export function toProjectDto(p: ProjectRow): ProjectDto {
   return {
@@ -11,6 +9,6 @@ export function toProjectDto(p: ProjectRow): ProjectDto {
     defaultApprover: p.defaultApprover
       ? { id: p.defaultApprover.id, name: p.defaultApprover.name }
       : null,
-    memberCount: p._count.members,
+    memberCount: p.memberCount,
   };
 }

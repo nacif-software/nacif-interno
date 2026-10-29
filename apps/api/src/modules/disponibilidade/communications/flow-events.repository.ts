@@ -1,17 +1,21 @@
-import type { FlowEventType, Prisma } from '../../../generated/prisma/client';
-import type { DbOrTx } from '../../../infra/prisma/client';
+import { db } from '../../../db/client';
+import { flowEvents, type FlowEventMetadata } from '../../../db/schema';
+import type { FlowEvent } from '../../../db/types';
 
 export interface FlowEventInput {
   communicationId: string;
-  type: FlowEventType;
+  type: FlowEvent['type'];
   actorId: string | null;
   occurredAt: Date;
   description: string;
-  metadata?: Prisma.InputJsonValue;
+  metadata?: FlowEventMetadata;
 }
 
 export const flowEventsRepository = {
-  create(input: FlowEventInput, tx: DbOrTx) {
-    return tx.flowEvent.create({ data: { ...input, metadata: input.metadata ?? undefined } });
+  /** Builder para compor em `batch()`. */
+  insert(input: FlowEventInput) {
+    return db()
+      .insert(flowEvents)
+      .values({ ...input, metadata: input.metadata ?? null });
   },
 };

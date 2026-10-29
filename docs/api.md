@@ -1,6 +1,6 @@
 # API
 
-Base `/api`. JSON. Cookie de sessão `nacif_session` (httpOnly). Erros: `{ error: { code, message, details? } }` (códigos em `docs/architecture.md`). Datas `YYYY-MM-DD`; instantes ISO-8601 UTC. Listas paginadas: `{ items, total, page, pageSize }`.
+Base `/api`, na mesma origem do web (o Worker serve os dois). JSON. Cookie de sessão `nacif_session` (httpOnly). Erros: `{ error: { code, message, details? } }` (códigos em `docs/architecture.md`). Datas `YYYY-MM-DD`; instantes ISO-8601 UTC. Listas paginadas: `{ items, total, page, pageSize }`.
 
 ## Core
 

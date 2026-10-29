@@ -9,6 +9,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"pnpm --filter @nacif/api dev\" \"pnpm --filter @nacif/web dev\"",
     "dev:api": "pnpm --filter @nacif/api dev",
     "dev:web": "pnpm --filter @nacif/web dev",
     "typecheck": "pnpm -r --parallel typecheck",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
+    "concurrently": "^10.0.6",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",

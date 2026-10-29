@@ -1,4 +1,4 @@
-import { env } from '../config/env';
+import { config } from '../config/env';
 
 type Level = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 type LogData = Record<string, unknown>;
@@ -13,9 +13,6 @@ const ORDER: Record<Level | 'silent', number> = {
   silent: Infinity,
 };
 
-const threshold: Level | 'silent' =
-  env.NODE_ENV === 'test' && !process.env.LOG_LEVEL ? 'silent' : env.LOG_LEVEL;
-
 function serialize(data: LogData): LogData {
   const out: LogData = {};
   for (const [key, value] of Object.entries(data)) {
@@ -28,11 +25,12 @@ function serialize(data: LogData): LogData {
 }
 
 function emit(level: Level, data: LogData, msg?: string): void {
-  if (ORDER[level] < ORDER[threshold]) return;
+  const { LOG_LEVEL, APP_ENV } = config();
+  if (ORDER[level] < ORDER[LOG_LEVEL]) return;
   const time = new Date().toISOString();
   const fields = serialize(data);
   const line =
-    env.NODE_ENV === 'development'
+    APP_ENV === 'development'
       ? `${time.slice(11, 19)} ${level.toUpperCase().padEnd(5)} ${msg ?? ''} ${
           Object.keys(fields).length > 0 ? JSON.stringify(fields) : ''
         }`.trimEnd()
@@ -43,8 +41,8 @@ function emit(level: Level, data: LogData, msg?: string): void {
 }
 
 /**
- * Logger estruturado sem dependências (uma linha por evento), com a mesma
- * forma de chamada do pino: `logger.info({ campo }, 'mensagem')`.
+ * Logger estruturado sem dependências (uma linha por evento, visível no Workers Logs),
+ * com a forma de chamada `logger.info({ campo }, 'mensagem')`.
  */
 export const logger = {
   trace: (data: LogData, msg?: string) => emit('trace', data, msg),

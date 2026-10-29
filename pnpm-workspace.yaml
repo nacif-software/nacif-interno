@@ -4,6 +4,5 @@ packages:
   - e2e
 
 onlyBuiltDependencies:
-  - '@prisma/engines'
   - esbuild
-  - prisma
+  - workerd

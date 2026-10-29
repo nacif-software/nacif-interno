@@ -1,0 +1,5 @@
+# Variáveis do `wrangler dev` (copie para `.dev.vars`, que não é versionado).
+APP_ENV=development
+APP_URL=http://localhost:5173
+COOKIE_SECURE=false
+LOG_LEVEL=debug

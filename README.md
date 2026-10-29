@@ -4,16 +4,15 @@ Portal de sistemas internos da Nacif. Primeiro módulo: **Nacif Disponibilidade*
 
 ## Rodando localmente
 
-Pré-requisitos: Docker, Node 22, pnpm 10 (`corepack enable`), GNU Make.
+Pré-requisitos: Node 22, pnpm 10 (`corepack enable`), GNU Make. Sem Docker: a API roda como Cloudflare Worker local (`wrangler dev`) com um banco D1 local.
 
 ```bash
-make install   # cria .env e instala dependências
-make up        # sobe db, api e web
-make migrate   # aplica as migrações
+make install   # dependências, .dev.vars, tipos do Worker e migrações do D1 local
 make seed      # dados de exemplo (senha nacif1234)
+make dev       # Worker (API) em :8787 e web (Vite) em :5173
 ```
 
-Web em http://localhost:5173, API em http://localhost:3010/api/health. Portas configuráveis no `.env`.
+Web em http://localhost:5173, API em http://localhost:8787/api/health.
 
 Usuários do seed: `caio@nacif.xyz` (administrador), `marina@nacif.xyz` (aprovadora), `pedro@nacif.xyz`, `julia@nacif.xyz`, `rafael@nacif.xyz`, `bruna@nacif.xyz` (membros).
 
@@ -21,7 +20,7 @@ Usuários do seed: `caio@nacif.xyz` (administrador), `marina@nacif.xyz` (aprovad
 
 ```bash
 make test        # shared + web + api
-make test-e2e    # Playwright (exige make up + seed)
+make test-e2e    # Playwright contra o build de produção servido pelo Worker local
 make lint && make typecheck && make vocab-check
 ```
 

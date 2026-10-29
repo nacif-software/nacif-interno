@@ -2,23 +2,22 @@ import {
   canCancel,
   canDecideOn,
   canEditPeriod,
-  toIsoDate,
   type CommunicationDetailDto,
   type CommunicationSummaryDto,
   type ConflictDto,
   type FlowEventDto,
   type QueueItemDto,
 } from '@nacif/shared';
+import type { CommunicationRow } from '../../../db/types';
 import type { AuthenticatedUser } from '../../../infra/http/context';
-import type { CommunicationRow } from './communications.repository';
 
 export function toSummaryDto(row: CommunicationRow): CommunicationSummaryDto {
   const decision = row.decisions[0] ?? null;
   return {
     id: row.id,
     code: row.code,
-    startDate: toIsoDate(row.startDate),
-    endDate: toIsoDate(row.endDate),
+    startDate: row.startDate,
+    endDate: row.endDate,
     businessDays: row.businessDays,
     status: row.status,
     submittedAt: row.submittedAt.toISOString(),
@@ -54,7 +53,7 @@ export function toFlowEventDto(e: CommunicationRow['events'][number]): FlowEvent
     actor: e.actor ? { id: e.actor.id, name: e.actor.name } : null,
     occurredAt: e.occurredAt.toISOString(),
     description: e.description,
-    metadata: (e.metadata as Record<string, unknown> | null) ?? null,
+    metadata: e.metadata ?? null,
   };
 }
 
