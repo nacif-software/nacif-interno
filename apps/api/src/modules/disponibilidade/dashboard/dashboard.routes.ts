@@ -1,10 +1,10 @@
-import { Router, type RequestHandler } from 'express';
+import { createRouter, type AppContext } from '../../../infra/http/context';
 import { requireAuth } from '../../../infra/http/require-auth';
 import { dashboardService } from './dashboard.service';
 
-const get: RequestHandler = async (req, res) => {
-  res.json(await dashboardService.get(req.user));
-};
+async function get(c: AppContext) {
+  return c.json(await dashboardService.get(c.get('user')));
+}
 
-export const dashboardRouter = Router();
+export const dashboardRouter = createRouter();
 dashboardRouter.get('/dashboard', requireAuth, get);

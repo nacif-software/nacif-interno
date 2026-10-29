@@ -24,10 +24,10 @@ O nome "Nacif Disponibilidade" e a copy da tela de login são provisórios; não
 
 ## 3. Arquitetura em uma tela
 
-Monorepo pnpm: `apps/api` (Express 5 + Prisma 7 + Postgres), `apps/web` (React 19 + Vite 8 + Tailwind 4), `packages/shared` (tipos, enums, zod, regras puras, formatação), `e2e` (Playwright).
+Monorepo pnpm: `apps/api` (Hono 4 + Prisma 7 + Postgres), `apps/web` (React 19 + Vite 8 + Tailwind 4), `packages/shared` (tipos, enums, zod, regras puras, formatação), `e2e` (Playwright).
 
 **MVC no backend** (`apps/api/src/modules/<módulo>/<recurso>/`):
-`*.routes.ts` (wiring + `validate` + guards) → `*.controller.ts` (lê `res.locals.input` e `req.user`, chama o service, define o status) → `*.service.ts` (regras de negócio, transações, eventos de fluxo) → `*.repository.ts` (só Prisma, sem regras) → `*.mapper.ts` (linha do Prisma → DTO do shared).
+`*.routes.ts` (wiring + `validate` + guards) → `*.controller.ts` (lê `c.get('input')` e `c.get('user')`, chama o service, devolve `c.json(body, status)`) → `*.service.ts` (regras de negócio, transações, eventos de fluxo) → `*.repository.ts` (só Prisma, sem regras) → `*.mapper.ts` (linha do Prisma → DTO do shared).
 
 **MVC no frontend** (`apps/web/src/modules/<módulo>/`):
 `models/` (tipos e view-models; DTOs vêm do shared) · `controllers/` (hooks do TanStack Query, stores Zustand, formulários RHF; único lugar que chama `apiFetch`) · `views/` (páginas e componentes React, sem fetch). `apps/web/src/ui/` é o kit de componentes puro.
@@ -63,6 +63,7 @@ Seed: pessoas do design com senha `nacif1234` (`caio@nacif.xyz` admin, `marina@n
 - `prisma`, `@prisma/client`, `@prisma/adapter-pg` = **7.10.0** (a tag `latest` é 8.0 release candidate).
 - `react-router` = **7.x** (a tag `latest` é 8.x).
 - `typescript` = **5.9** (`latest` é 7.x e o typescript-eslint ainda não suporta).
+- `hono` = **4.x** (`@hono/node-server` é temporário até a API virar Worker, ADR 0011).
 - Tailwind 4 é CSS-first: tokens em `apps/web/src/styles/theme.css`, sem `tailwind.config.js`.
 
 ## 6. Convenções

@@ -1,35 +1,35 @@
 import type { InviteBody, UpdateUserBody, UserOptionsQuery, UsersListQuery } from '@nacif/shared';
-import type { RequestHandler } from 'express';
+import { param, type AppContext } from '../../../infra/http/context';
 import { getInput } from '../../../infra/http/validate';
 import { invitesService } from './invites.service';
 import { usersService } from './users.service';
 
 export const usersController = {
-  list: (async (req, res) => {
-    const { query } = getInput<unknown, UsersListQuery>(res);
-    res.json(await usersService.list(req.user, query));
-  }) as RequestHandler,
+  list: async (c: AppContext) => {
+    const { query } = getInput<unknown, UsersListQuery>(c);
+    return c.json(await usersService.list(c.get('user'), query));
+  },
 
-  options: (async (req, res) => {
-    const { query } = getInput<unknown, UserOptionsQuery>(res);
-    res.json(await usersService.options(req.user, query.purpose));
-  }) as RequestHandler,
+  options: async (c: AppContext) => {
+    const { query } = getInput<unknown, UserOptionsQuery>(c);
+    return c.json(await usersService.options(c.get('user'), query.purpose));
+  },
 
-  invite: (async (_req, res) => {
-    const { body } = getInput<InviteBody>(res);
-    res.status(201).json(await invitesService.invite(body));
-  }) as RequestHandler,
+  invite: async (c: AppContext) => {
+    const { body } = getInput<InviteBody>(c);
+    return c.json(await invitesService.invite(body), 201);
+  },
 
-  resendInvite: (async (req, res) => {
-    res.json(await invitesService.resend(String(req.params.id)));
-  }) as RequestHandler,
+  resendInvite: async (c: AppContext) => {
+    return c.json(await invitesService.resend(param(c, 'id')));
+  },
 
-  resetPassword: (async (req, res) => {
-    res.json(await invitesService.resetPassword(String(req.params.id), req.user));
-  }) as RequestHandler,
+  resetPassword: async (c: AppContext) => {
+    return c.json(await invitesService.resetPassword(param(c, 'id'), c.get('user')));
+  },
 
-  update: (async (req, res) => {
-    const { body } = getInput<UpdateUserBody>(res);
-    res.json(await usersService.update(req.user, String(req.params.id), body));
-  }) as RequestHandler,
+  update: async (c: AppContext) => {
+    const { body } = getInput<UpdateUserBody>(c);
+    return c.json(await usersService.update(c.get('user'), param(c, 'id'), body));
+  },
 };

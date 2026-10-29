@@ -1,11 +1,9 @@
-import { Router } from 'express';
-import type { ApiModule } from '../../../infra/http/module';
+import { createRouter } from '../../../infra/http/context';
 import { requireAuth } from '../../../infra/http/require-auth';
 import { buildServiceList } from './registry';
 
-export const servicesRouter = Router();
+export const servicesRouter = createRouter();
 
-servicesRouter.get('/services', requireAuth, (req, res) => {
-  const registered = (req.app.locals.modules as readonly ApiModule[] | undefined) ?? [];
-  res.json(buildServiceList(registered));
+servicesRouter.get('/services', requireAuth, (c) => {
+  return c.json(buildServiceList(c.get('modules')));
 });

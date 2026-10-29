@@ -1,10 +1,10 @@
 import { loginBodySchema, setPasswordBodySchema } from '@nacif/shared';
-import { Router } from 'express';
+import { createRouter } from '../../../infra/http/context';
 import { requireAuth } from '../../../infra/http/require-auth';
 import { validate } from '../../../infra/http/validate';
 import { authController } from './auth.controller';
 
-export const authRouter = Router();
+export const authRouter = createRouter();
 
 authRouter.post('/auth/login', validate({ body: loginBodySchema }), authController.login);
 authRouter.post('/auth/logout', authController.logout);

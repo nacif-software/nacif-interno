@@ -1,13 +1,13 @@
 import { approvalsQuerySchema, batchApproveBodySchema, rejectBodySchema } from '@nacif/shared';
-import { Router } from 'express';
+import { createRouter, guard } from '../../../infra/http/context';
 import { requireAuth } from '../../../infra/http/require-auth';
 import { requireRole } from '../../../infra/http/require-role';
 import { validate } from '../../../infra/http/validate';
 import { approvalsController } from './approvals.controller';
 
-export const approvalsRouter = Router();
+export const approvalsRouter = createRouter();
 
-approvalsRouter.use('/approvals', requireAuth, requireRole('APPROVER', 'ADMIN'));
+guard(approvalsRouter, '/approvals', requireAuth, requireRole('APPROVER', 'ADMIN'));
 approvalsRouter.get(
   '/approvals',
   validate({ query: approvalsQuerySchema }),

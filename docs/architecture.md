@@ -7,7 +7,7 @@ O repositório hospeda o **portal** de sistemas internos da Nacif. O portal (`/`
 ## Mapa do monorepo
 
 ```
-apps/api           Express 5 + Prisma 7 + PostgreSQL 17
+apps/api           Hono 4 + Prisma 7 + PostgreSQL 17
 apps/web           React 19 + Vite 8 + Tailwind 4 + React Router 7 + TanStack Query 5 + Zustand 5
 packages/shared    tipos, enums, schemas zod, regras puras, formatação (sem I/O)
 e2e                Playwright
@@ -18,14 +18,14 @@ docs/              este diretório
 ## Ciclo de uma requisição (API)
 
 ```
-HTTP → helmet/cors/cookie-parser/json → /api/<módulo> router
-  → validate({ body, query, params })     zod (shared) → res.locals.input | 422
-  → requireAuth / requireRole             cookie nacif_session → sessão no Postgres → req.user | 401/403
-  → controller                            lê input e req.user, chama service, define status
+HTTP → secureHeaders/cors/bodyLimit → /api/<módulo> router (Hono)
+  → validate({ body, query, params })     zod (shared) → c.get('input') | 422 (JSON inválido → 400)
+  → requireAuth / requireRole             cookie nacif_session → sessão no Postgres → c.get('user') | 401/403
+  → controller                            lê input e c.get('user'), chama service, devolve c.json(body, status)
   → service                               regras, transações ($transaction), eventos de fluxo, AppError
   → repository                            Prisma (driver adapter pg), sem regras
   → mapper                                linha → DTO (shared)
-  → errorHandler                          AppError/ZodError → { error: { code, message, details } }
+  → onError                               AppError/ZodError → { error: { code, message, details } }
 ```
 
 ## Autenticação e sessão
@@ -66,7 +66,7 @@ HTTP → helmet/cors/cookie-parser/json → /api/<módulo> router
 
 ## Contrato de erro
 
-`{ error: { code, message, details? } }` com códigos `VALIDATION_ERROR` 422, `UNAUTHENTICATED` 401, `FORBIDDEN` 403, `DOMAIN_NOT_ALLOWED` 403, `INVALID_CREDENTIALS` 401, `USER_INACTIVE` 403, `NOT_FOUND` 404, `INVALID_STATE` 409, `UNDO_WINDOW_EXPIRED` 409, `CONFLICT` 409, `INTERNAL` 500.
+`{ error: { code, message, details? } }` com códigos `VALIDATION_ERROR` 422, `UNAUTHENTICATED` 401, `FORBIDDEN` 403, `DOMAIN_NOT_ALLOWED` 403, `INVALID_CREDENTIALS` 401, `USER_INACTIVE` 403, `NOT_FOUND` 404, `INVALID_STATE` 409, `UNDO_WINDOW_EXPIRED` 409, `CONFLICT` 409, `INTERNAL` 500. JSON malformado devolve `VALIDATION_ERROR` 400 e corpo acima de 256 kB devolve `VALIDATION_ERROR` 413.
 
 ## Ambiente
 

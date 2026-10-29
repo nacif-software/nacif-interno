@@ -4,36 +4,36 @@ import type {
   CreateCommunicationBody,
   UpdatePeriodBody,
 } from '@nacif/shared';
-import type { RequestHandler } from 'express';
+import { param, type AppContext } from '../../../infra/http/context';
 import { getInput } from '../../../infra/http/validate';
 import { communicationsService } from './communications.service';
 
 export const communicationsController = {
-  listMine: (async (req, res) => {
-    const { query } = getInput<unknown, CommunicationsListQuery>(res);
-    res.json(await communicationsService.listMine(req.user, query));
-  }) as RequestHandler,
+  listMine: async (c: AppContext) => {
+    const { query } = getInput<unknown, CommunicationsListQuery>(c);
+    return c.json(await communicationsService.listMine(c.get('user'), query));
+  },
 
-  conflicts: (async (req, res) => {
-    const { query } = getInput<unknown, ConflictsQuery & { exclude?: string }>(res);
-    res.json(await communicationsService.conflicts(req.user, query, query.exclude));
-  }) as RequestHandler,
+  conflicts: async (c: AppContext) => {
+    const { query } = getInput<unknown, ConflictsQuery & { exclude?: string }>(c);
+    return c.json(await communicationsService.conflicts(c.get('user'), query, query.exclude));
+  },
 
-  create: (async (req, res) => {
-    const { body } = getInput<CreateCommunicationBody>(res);
-    res.status(201).json(await communicationsService.create(req.user, body));
-  }) as RequestHandler,
+  create: async (c: AppContext) => {
+    const { body } = getInput<CreateCommunicationBody>(c);
+    return c.json(await communicationsService.create(c.get('user'), body), 201);
+  },
 
-  get: (async (req, res) => {
-    res.json(await communicationsService.getDetail(req.user, String(req.params.id)));
-  }) as RequestHandler,
+  get: async (c: AppContext) => {
+    return c.json(await communicationsService.getDetail(c.get('user'), param(c, 'id')));
+  },
 
-  updatePeriod: (async (req, res) => {
-    const { body } = getInput<UpdatePeriodBody>(res);
-    res.json(await communicationsService.updatePeriod(req.user, String(req.params.id), body));
-  }) as RequestHandler,
+  updatePeriod: async (c: AppContext) => {
+    const { body } = getInput<UpdatePeriodBody>(c);
+    return c.json(await communicationsService.updatePeriod(c.get('user'), param(c, 'id'), body));
+  },
 
-  cancel: (async (req, res) => {
-    res.json(await communicationsService.cancel(req.user, String(req.params.id)));
-  }) as RequestHandler,
+  cancel: async (c: AppContext) => {
+    return c.json(await communicationsService.cancel(c.get('user'), param(c, 'id')));
+  },
 };

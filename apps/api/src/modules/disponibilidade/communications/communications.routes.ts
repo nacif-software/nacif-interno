@@ -4,15 +4,15 @@ import {
   createCommunicationBodySchema,
   updatePeriodBodySchema,
 } from '@nacif/shared';
-import { Router } from 'express';
 import { z } from 'zod';
+import { createRouter, guard } from '../../../infra/http/context';
 import { requireAuth } from '../../../infra/http/require-auth';
 import { validate } from '../../../infra/http/validate';
 import { communicationsController } from './communications.controller';
 
-export const communicationsRouter = Router();
+export const communicationsRouter = createRouter();
 
-communicationsRouter.use('/communications', requireAuth);
+guard(communicationsRouter, '/communications', requireAuth);
 communicationsRouter.get(
   '/communications',
   validate({ query: communicationsListQuerySchema }),

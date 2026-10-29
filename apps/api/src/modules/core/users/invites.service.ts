@@ -7,7 +7,7 @@ import {
 } from '@nacif/shared';
 import { env } from '../../../config/env';
 import { AppError, NotFoundError } from '../../../infra/http/errors';
-import type { AuthenticatedUser } from '../../../infra/http/require-auth';
+import type { AuthenticatedUser } from '../../../infra/http/context';
 import { db, type DbOrTx } from '../../../infra/prisma/client';
 import { logger } from '../../../infra/logger';
 import { generateToken, sha256 } from '../auth/password';

@@ -1,19 +1,19 @@
 import { updateSettingsBodySchema, type UpdateSettingsBody } from '@nacif/shared';
-import { Router, type RequestHandler } from 'express';
+import { createRouter, type AppContext } from '../../../infra/http/context';
 import { requireAuth } from '../../../infra/http/require-auth';
 import { requireRole } from '../../../infra/http/require-role';
 import { getInput, validate } from '../../../infra/http/validate';
 import { settingsService } from './settings.service';
 
-const get: RequestHandler = async (_req, res) => {
-  res.json(await settingsService.get());
-};
-const update: RequestHandler = async (_req, res) => {
-  const { body } = getInput<UpdateSettingsBody>(res);
-  res.json(await settingsService.update(body));
-};
+async function get(c: AppContext) {
+  return c.json(await settingsService.get());
+}
+async function update(c: AppContext) {
+  const { body } = getInput<UpdateSettingsBody>(c);
+  return c.json(await settingsService.update(body));
+}
 
-export const settingsRouter = Router();
+export const settingsRouter = createRouter();
 settingsRouter.get('/settings', requireAuth, get);
 settingsRouter.put(
   '/settings',

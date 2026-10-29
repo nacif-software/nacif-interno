@@ -1,34 +1,31 @@
 import { SESSION_COOKIE_NAME } from '@nacif/shared';
-import type { CookieOptions, Request, Response } from 'express';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { env } from '../../../config/env';
+import type { AppContext } from '../../../infra/http/context';
 import { generateToken } from './password';
 import { sessionRepository } from './session.repository';
 
-const TTL_MS = env.SESSION_TTL_DAYS * 24 * 60 * 60 * 1000;
+const TTL_SECONDS = env.SESSION_TTL_DAYS * 24 * 60 * 60;
+const TTL_MS = TTL_SECONDS * 1000;
 /** Só atualiza lastSeen/expiração se passou mais de 1h, para não escrever a cada request. */
 const TOUCH_INTERVAL_MS = 60 * 60 * 1000;
 
-function cookieOptions(): CookieOptions {
-  return {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: env.COOKIE_SECURE,
-    path: '/',
-    maxAge: TTL_MS,
-  };
-}
-
 export const sessionService = {
-  async start(res: Response, userId: string, now: Date = new Date()): Promise<string> {
+  async start(c: AppContext, userId: string, now: Date = new Date()): Promise<string> {
     const id = generateToken(32);
     await sessionRepository.create({ id, userId, expiresAt: new Date(now.getTime() + TTL_MS) });
-    res.cookie(SESSION_COOKIE_NAME, id, cookieOptions());
+    setCookie(c, SESSION_COOKIE_NAME, id, {
+      httpOnly: true,
+      sameSite: 'Lax',
+      secure: env.COOKIE_SECURE,
+      path: '/',
+      maxAge: TTL_SECONDS,
+    });
     return id;
   },
 
-  readToken(req: Request): string | null {
-    const cookies = req.cookies as Record<string, unknown> | undefined;
-    const token = cookies?.[SESSION_COOKIE_NAME];
+  readToken(c: AppContext): string | null {
+    const token = getCookie(c, SESSION_COOKIE_NAME);
     return typeof token === 'string' && token.length > 0 ? token : null;
   },
 
@@ -46,10 +43,15 @@ export const sessionService = {
     return session;
   },
 
-  async end(req: Request, res: Response): Promise<void> {
-    const token = this.readToken(req);
+  /** Apaga a sessão atual no banco sem mexer no cookie (uso: antes de iniciar outra). */
+  async revokeCurrent(c: AppContext): Promise<void> {
+    const token = this.readToken(c);
     if (token) await sessionRepository.delete(token);
-    res.clearCookie(SESSION_COOKIE_NAME, { ...cookieOptions(), maxAge: undefined });
+  },
+
+  async end(c: AppContext): Promise<void> {
+    await this.revokeCurrent(c);
+    deleteCookie(c, SESSION_COOKIE_NAME, { path: '/', secure: env.COOKIE_SECURE });
   },
 
   revokeAllForUser(userId: string) {
