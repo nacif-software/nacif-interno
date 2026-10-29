@@ -16,4 +16,6 @@ No CI o e2e roda contra o build de produção (`vite preview`), não contra o de
 
 ## Atualização (2026-10-29)
 
+Supertest foi substituído por um cliente de teste próprio sobre `app.request()` do Hono (`apps/api/src/test/app.ts`), com a mesma forma de uso (`agent.post(path).send(body)`), na migração da API para Hono (issue #19).
+
 Com o ADR 0011 os testes da API rodam no runtime Workers (`@cloudflare/vitest-plugin`) contra um D1 local, com migrações aplicadas no setup e storage isolado por teste no lugar do truncate. O e2e roda contra `wrangler dev` servindo o build de produção do web; `make test-e2e-preview` deixa de existir. O CI não precisa mais de Postgres nem de Docker.

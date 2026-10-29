@@ -6,7 +6,7 @@ import {
   toIsoDate,
   type DashboardDto,
 } from '@nacif/shared';
-import type { AuthenticatedUser } from '../../../infra/http/require-auth';
+import type { AuthenticatedUser } from '../../../infra/http/context';
 import { db } from '../../../infra/prisma/client';
 import { toSummaryDto } from '../communications/communication.mapper';
 import { communicationsRepository } from '../communications/communications.repository';

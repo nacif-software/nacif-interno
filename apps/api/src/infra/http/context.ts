@@ -24,16 +24,12 @@ export function createRouter(): AppRouter {
   return new Hono<AppEnv>();
 }
 
-/**
- * Aplica middlewares a um prefixo e a tudo abaixo dele
- * (`use('/x')` no Hono casa só `/x`; `/x/*` cobre os filhos).
- */
+/** Aplica middlewares a um prefixo e a tudo abaixo dele (`/x/*` no Hono cobre `/x` e os filhos). */
 export function guard(
   router: AppRouter,
   prefix: string,
   ...middlewares: MiddlewareHandler<AppEnv>[]
 ): void {
-  router.use(prefix, ...middlewares);
   router.use(`${prefix}/*`, ...middlewares);
 }
 

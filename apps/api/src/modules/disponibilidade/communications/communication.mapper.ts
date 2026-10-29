@@ -9,7 +9,7 @@ import {
   type FlowEventDto,
   type QueueItemDto,
 } from '@nacif/shared';
-import type { AuthenticatedUser } from '../../../infra/http/require-auth';
+import type { AuthenticatedUser } from '../../../infra/http/context';
 import type { CommunicationRow } from './communications.repository';
 
 export function toSummaryDto(row: CommunicationRow): CommunicationSummaryDto {

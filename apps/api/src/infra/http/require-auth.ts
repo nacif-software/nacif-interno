@@ -3,8 +3,6 @@ import { sessionService } from '../../modules/core/auth/session.service';
 import type { AppEnv } from './context';
 import { UnauthenticatedError } from './errors';
 
-export type { AuthenticatedUser } from './context';
-
 /** Carrega a sessão do cookie e popula `c.get('user')`. 401 se ausente, expirada ou usuário inativo. */
 export const requireAuth: MiddlewareHandler<AppEnv> = async (c, next) => {
   const token = sessionService.readToken(c);

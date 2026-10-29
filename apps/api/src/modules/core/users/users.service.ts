@@ -1,7 +1,7 @@
 import type { UpdateUserBody, UserDto, UserOption, UsersListQuery } from '@nacif/shared';
 import type { Prisma } from '../../../generated/prisma/client';
 import { AppError, NotFoundError } from '../../../infra/http/errors';
-import type { AuthenticatedUser } from '../../../infra/http/require-auth';
+import type { AuthenticatedUser } from '../../../infra/http/context';
 import { sessionService } from '../auth/session.service';
 import { toUserDto, toUserOption } from './user.mapper';
 import { usersRepository } from './users.repository';

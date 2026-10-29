@@ -37,7 +37,13 @@ export const onError: ErrorHandler<AppEnv> = (err, c) => {
     return c.json(body, 422);
   }
   if (err instanceof HTTPException) {
-    return err.getResponse();
+    const body: ApiErrorBody = {
+      error: {
+        code: err.status >= 500 ? 'INTERNAL' : 'VALIDATION_ERROR',
+        message: err.message || 'Requisição inválida.',
+      },
+    };
+    return c.json(body, err.status);
   }
   logger.error({ err }, 'Erro não tratado');
   const body: ApiErrorBody = { error: { code: 'INTERNAL', message: 'Erro interno.' } };

@@ -66,7 +66,7 @@ HTTP → secureHeaders/cors/bodyLimit → /api/<módulo> router (Hono)
 
 ## Contrato de erro
 
-`{ error: { code, message, details? } }` com códigos `VALIDATION_ERROR` 422, `UNAUTHENTICATED` 401, `FORBIDDEN` 403, `DOMAIN_NOT_ALLOWED` 403, `INVALID_CREDENTIALS` 401, `USER_INACTIVE` 403, `NOT_FOUND` 404, `INVALID_STATE` 409, `UNDO_WINDOW_EXPIRED` 409, `CONFLICT` 409, `INTERNAL` 500.
+`{ error: { code, message, details? } }` com códigos `VALIDATION_ERROR` 422, `UNAUTHENTICATED` 401, `FORBIDDEN` 403, `DOMAIN_NOT_ALLOWED` 403, `INVALID_CREDENTIALS` 401, `USER_INACTIVE` 403, `NOT_FOUND` 404, `INVALID_STATE` 409, `UNDO_WINDOW_EXPIRED` 409, `CONFLICT` 409, `INTERNAL` 500. JSON malformado devolve `VALIDATION_ERROR` 400 e corpo acima de 256 kB devolve `VALIDATION_ERROR` 413.
 
 ## Ambiente
 

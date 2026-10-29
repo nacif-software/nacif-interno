@@ -35,17 +35,16 @@ export function validate<B = unknown, Q = unknown, P = unknown>(
 ): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
     const issues: { path: string; message: string }[] = [];
-    const raw: Record<keyof Schemas<B, Q, P>, unknown> = {
+    const input: ValidatedInput = {
       body: schemas.body ? await readJsonBody(c) : undefined,
       query: c.req.query(),
       params: c.req.param(),
     };
-    const input: ValidatedInput = { body: raw.body, query: raw.query, params: raw.params };
 
     for (const key of ['body', 'query', 'params'] as const) {
       const schema = schemas[key];
       if (!schema) continue;
-      const result = schema.safeParse(raw[key]);
+      const result = schema.safeParse(input[key]);
       if (result.success) {
         input[key] = result.data;
       } else {

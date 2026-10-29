@@ -33,7 +33,7 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../../infra/http/errors';
-import type { AuthenticatedUser } from '../../../infra/http/require-auth';
+import type { AuthenticatedUser } from '../../../infra/http/context';
 import { db, type DbOrTx } from '../../../infra/prisma/client';
 import { usersRepository } from '../../core/users/users.repository';
 import { settingsRepository } from '../settings/settings.repository';

@@ -73,7 +73,8 @@ class RequestBuilder implements PromiseLike<TestResponse> {
     let body: string | undefined;
     if (this.payload !== undefined) {
       headers.set('content-type', 'application/json');
-      body = JSON.stringify(this.payload);
+      // string vai crua (como no supertest), para testar JSON malformado
+      body = typeof this.payload === 'string' ? this.payload : JSON.stringify(this.payload);
     }
 
     const res = await this.app.request(url.toString(), { method: this.method, headers, body });

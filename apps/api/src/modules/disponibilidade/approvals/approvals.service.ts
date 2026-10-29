@@ -17,7 +17,7 @@ import {
   InvalidStateError,
   NotFoundError,
 } from '../../../infra/http/errors';
-import type { AuthenticatedUser } from '../../../infra/http/require-auth';
+import type { AuthenticatedUser } from '../../../infra/http/context';
 import { db, type Tx } from '../../../infra/prisma/client';
 import { toQueueItemDto } from '../communications/communication.mapper';
 import {
