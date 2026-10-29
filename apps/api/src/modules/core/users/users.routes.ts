@@ -4,15 +4,15 @@ import {
   userOptionsQuerySchema,
   usersListQuerySchema,
 } from '@nacif/shared';
-import { Router } from 'express';
+import { createRouter, guard } from '../../../infra/http/context';
 import { requireAuth } from '../../../infra/http/require-auth';
 import { requireRole } from '../../../infra/http/require-role';
 import { validate } from '../../../infra/http/validate';
 import { usersController } from './users.controller';
 
-export const usersRouter = Router();
+export const usersRouter = createRouter();
 
-usersRouter.use('/users', requireAuth);
+guard(usersRouter, '/users', requireAuth);
 usersRouter.get('/users', validate({ query: usersListQuerySchema }), usersController.list);
 usersRouter.get(
   '/users/options',

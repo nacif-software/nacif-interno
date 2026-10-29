@@ -1,30 +1,40 @@
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
-import express, { type Express } from 'express';
-import helmet from 'helmet';
-import { pinoHttp } from 'pino-http';
+import type { ApiErrorBody } from '@nacif/shared';
+import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
+import { cors } from 'hono/cors';
+import { secureHeaders } from 'hono/secure-headers';
 import { env } from './config/env';
-import { errorHandler, notFoundHandler } from './infra/http/error-handler';
+import type { AppEnv, AppRouter } from './infra/http/context';
+import { notFound, onError } from './infra/http/error-handler';
 import { registerModules, type ApiModule } from './infra/http/module';
-import { logger } from './infra/logger';
+import { requestLogger } from './infra/http/request-logger';
 import { modules } from './modules';
 
-export function createApp(options: { modules?: readonly ApiModule[] } = {}): Express {
-  const app = express();
+const BODY_LIMIT_BYTES = 256 * 1024;
 
-  app.disable('x-powered-by');
-  app.set('trust proxy', 1);
-  app.use(helmet({ contentSecurityPolicy: false }));
+export function createApp(options: { modules?: readonly ApiModule[] } = {}): AppRouter {
+  const app = new Hono<AppEnv>();
+
+  app.use(secureHeaders());
   app.use(cors({ origin: env.APP_URL, credentials: true }));
-  app.use(cookieParser());
-  app.use(express.json({ limit: '256kb' }));
+  app.use(
+    bodyLimit({
+      maxSize: BODY_LIMIT_BYTES,
+      onError: (c) => {
+        const body: ApiErrorBody = {
+          error: { code: 'VALIDATION_ERROR', message: 'Corpo da requisição muito grande.' },
+        };
+        return c.json(body, 413);
+      },
+    }),
+  );
   if (env.NODE_ENV !== 'test') {
-    app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === '/api/health' } }));
+    app.use(requestLogger);
   }
 
   registerModules(app, options.modules ?? modules);
 
-  app.use('/api', notFoundHandler);
-  app.use(errorHandler);
+  app.notFound(notFound);
+  app.onError(onError);
   return app;
 }

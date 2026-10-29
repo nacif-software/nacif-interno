@@ -1,13 +1,13 @@
 import { createProjectBodySchema, updateProjectBodySchema } from '@nacif/shared';
-import { Router } from 'express';
+import { createRouter, guard } from '../../../infra/http/context';
 import { requireAuth } from '../../../infra/http/require-auth';
 import { requireRole } from '../../../infra/http/require-role';
 import { validate } from '../../../infra/http/validate';
 import { projectsController } from './projects.controller';
 
-export const projectsRouter = Router();
+export const projectsRouter = createRouter();
 
-projectsRouter.use('/projects', requireAuth);
+guard(projectsRouter, '/projects', requireAuth);
 projectsRouter.get('/projects', projectsController.list);
 projectsRouter.post(
   '/projects',

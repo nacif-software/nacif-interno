@@ -1,37 +1,37 @@
 import type { LoginBody, SetPasswordBody } from '@nacif/shared';
-import type { RequestHandler } from 'express';
+import { param, type AppContext } from '../../../infra/http/context';
 import { getInput } from '../../../infra/http/validate';
 import { toSessionUser } from '../users/user.mapper';
 import { authService } from './auth.service';
 import { sessionService } from './session.service';
 
 export const authController = {
-  login: (async (req, res) => {
-    const { body } = getInput<LoginBody>(res);
+  login: async (c: AppContext) => {
+    const { body } = getInput<LoginBody>(c);
     const user = await authService.login(body.email, body.password);
-    await sessionService.end(req, res);
-    await sessionService.start(res, user.id);
-    res.status(200).json({ user });
-  }) as RequestHandler,
+    await sessionService.revokeCurrent(c);
+    await sessionService.start(c, user.id);
+    return c.json({ user }, 200);
+  },
 
-  logout: (async (req, res) => {
-    await sessionService.end(req, res);
-    res.status(204).end();
-  }) as RequestHandler,
+  logout: async (c: AppContext) => {
+    await sessionService.end(c);
+    return c.body(null, 204);
+  },
 
-  me: ((req, res) => {
-    res.json({ user: toSessionUser(req.user) });
-  }) as RequestHandler,
+  me: (c: AppContext) => {
+    return c.json({ user: toSessionUser(c.get('user')) });
+  },
 
-  setupInfo: (async (req, res) => {
-    const info = await authService.getSetupInfo(String(req.params.token));
-    res.json(info);
-  }) as RequestHandler,
+  setupInfo: async (c: AppContext) => {
+    const info = await authService.getSetupInfo(param(c, 'token'));
+    return c.json(info);
+  },
 
-  setPassword: (async (req, res) => {
-    const { body } = getInput<SetPasswordBody>(res);
+  setPassword: async (c: AppContext) => {
+    const { body } = getInput<SetPasswordBody>(c);
     const user = await authService.setPassword(body);
-    await sessionService.start(res, user.id);
-    res.json({ user });
-  }) as RequestHandler,
+    await sessionService.start(c, user.id);
+    return c.json({ user });
+  },
 };

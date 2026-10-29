@@ -7,7 +7,7 @@ O repositório hospeda o **portal** de sistemas internos da Nacif. O portal (`/`
 ## Mapa do monorepo
 
 ```
-apps/api           Express 5 + Prisma 7 + PostgreSQL 17
+apps/api           Hono 4 + Prisma 7 + PostgreSQL 17
 apps/web           React 19 + Vite 8 + Tailwind 4 + React Router 7 + TanStack Query 5 + Zustand 5
 packages/shared    tipos, enums, schemas zod, regras puras, formatação (sem I/O)
 e2e                Playwright
@@ -18,14 +18,14 @@ docs/              este diretório
 ## Ciclo de uma requisição (API)
 
 ```
-HTTP → helmet/cors/cookie-parser/json → /api/<módulo> router
-  → validate({ body, query, params })     zod (shared) → res.locals.input | 422
-  → requireAuth / requireRole             cookie nacif_session → sessão no Postgres → req.user | 401/403
-  → controller                            lê input e req.user, chama service, define status
+HTTP → secureHeaders/cors/bodyLimit → /api/<módulo> router (Hono)
+  → validate({ body, query, params })     zod (shared) → c.get('input') | 422 (JSON inválido → 400)
+  → requireAuth / requireRole             cookie nacif_session → sessão no Postgres → c.get('user') | 401/403
+  → controller                            lê input e c.get('user'), chama service, devolve c.json(body, status)
   → service                               regras, transações ($transaction), eventos de fluxo, AppError
   → repository                            Prisma (driver adapter pg), sem regras
   → mapper                                linha → DTO (shared)
-  → errorHandler                          AppError/ZodError → { error: { code, message, details } }
+  → onError                               AppError/ZodError → { error: { code, message, details } }
 ```
 
 ## Autenticação e sessão

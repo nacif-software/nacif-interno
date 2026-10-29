@@ -1,30 +1,17 @@
-import type { RequestHandler } from 'express';
-import type { Project, User } from '../../generated/prisma/client';
+import type { MiddlewareHandler } from 'hono';
 import { sessionService } from '../../modules/core/auth/session.service';
+import type { AppEnv } from './context';
 import { UnauthenticatedError } from './errors';
 
-export type AuthenticatedUser = User & { project: Project | null };
+export type { AuthenticatedUser } from './context';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    user: AuthenticatedUser;
-    sessionId: string;
-  }
-}
-
-/** Carrega a sessão do cookie e popula req.user. 401 se ausente, expirada ou usuário inativo. */
-export const requireAuth: RequestHandler = async (req, _res, next) => {
-  const token = sessionService.readToken(req);
-  if (!token) {
-    next(new UnauthenticatedError());
-    return;
-  }
+/** Carrega a sessão do cookie e popula `c.get('user')`. 401 se ausente, expirada ou usuário inativo. */
+export const requireAuth: MiddlewareHandler<AppEnv> = async (c, next) => {
+  const token = sessionService.readToken(c);
+  if (!token) throw new UnauthenticatedError();
   const session = await sessionService.resolve(token);
-  if (!session || !session.user.active) {
-    next(new UnauthenticatedError());
-    return;
-  }
-  req.user = session.user;
-  req.sessionId = session.id;
-  next();
+  if (!session || !session.user.active) throw new UnauthenticatedError();
+  c.set('user', session.user);
+  c.set('sessionId', session.id);
+  await next();
 };

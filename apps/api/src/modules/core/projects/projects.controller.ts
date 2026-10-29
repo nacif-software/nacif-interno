@@ -1,18 +1,18 @@
 import type { CreateProjectBody, UpdateProjectBody } from '@nacif/shared';
-import type { RequestHandler } from 'express';
+import { param, type AppContext } from '../../../infra/http/context';
 import { getInput } from '../../../infra/http/validate';
 import { projectsService } from './projects.service';
 
 export const projectsController = {
-  list: (async (_req, res) => {
-    res.json(await projectsService.list());
-  }) as RequestHandler,
-  create: (async (_req, res) => {
-    const { body } = getInput<CreateProjectBody>(res);
-    res.status(201).json(await projectsService.create(body));
-  }) as RequestHandler,
-  update: (async (req, res) => {
-    const { body } = getInput<UpdateProjectBody>(res);
-    res.json(await projectsService.update(String(req.params.id), body));
-  }) as RequestHandler,
+  list: async (c: AppContext) => {
+    return c.json(await projectsService.list());
+  },
+  create: async (c: AppContext) => {
+    const { body } = getInput<CreateProjectBody>(c);
+    return c.json(await projectsService.create(body), 201);
+  },
+  update: async (c: AppContext) => {
+    const { body } = getInput<UpdateProjectBody>(c);
+    return c.json(await projectsService.update(param(c, 'id'), body));
+  },
 };

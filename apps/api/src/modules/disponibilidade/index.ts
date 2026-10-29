@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { createRouter } from '../../infra/http/context';
 import type { ApiModule } from '../../infra/http/module';
 import { approvalsRouter } from './approvals/approvals.routes';
 import { calendarRouter } from './calendar/calendar.routes';
@@ -7,12 +7,12 @@ import { dashboardRouter } from './dashboard/dashboard.routes';
 import { disponibilidadeService } from './manifest';
 import { settingsRouter } from './settings/settings.routes';
 
-const router = Router();
-router.use(settingsRouter);
-router.use(dashboardRouter);
-router.use(communicationsRouter);
-router.use(approvalsRouter);
-router.use(calendarRouter);
+const router = createRouter();
+router.route('/', settingsRouter);
+router.route('/', dashboardRouter);
+router.route('/', communicationsRouter);
+router.route('/', approvalsRouter);
+router.route('/', calendarRouter);
 
 export const disponibilidadeModule: ApiModule = {
   slug: 'disponibilidade',
