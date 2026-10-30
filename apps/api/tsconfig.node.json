@@ -9,6 +9,8 @@
     "vitest.config.ts",
     "src/db/schema.ts",
     "src/db/seed-data.ts",
-    "src/db/types.ts"
+    "src/db/types.ts",
+    "src/modules/core/auth/password.ts",
+    "src/modules/core/users/setup-link.ts"
   ]
 }

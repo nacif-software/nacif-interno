@@ -4,6 +4,12 @@
   "name": "nacif-interno",
   "main": "src/worker.ts",
   "compatibility_date": "2026-10-29",
+  // Só o Custom Domain abaixo recebe tráfego: sem URL nacif-interno.<conta>.workers.dev pública.
+  "workers_dev": false,
+  // Criado pelo primeiro `wrangler deploy` (issue #16): registro DNS `interno` + certificado na zona
+  // nacif.software. Só esse hostname, nunca curinga: a raiz e o `www` da zona são o site da empresa.
+  // Precauções e passo a passo em docs/deploy.md.
+  "routes": [{ "pattern": "interno.nacif.software", "custom_domain": true }],
   "assets": {
     "directory": "../web/dist",
     "not_found_handling": "single-page-application",
@@ -13,12 +19,14 @@
     {
       "binding": "DB",
       "database_name": "nacif-interno",
-      // Placeholder até o banco ser criado na issue #16; o dev local não precisa do id real.
+      // Placeholder até o banco ser criado na issue #16 (ver docs/deploy.md); o dev local não
+      // precisa do id real. Migrações: `wrangler d1 migrations apply nacif-interno --remote`.
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "drizzle",
     },
   ],
-  // Valores de produção. Em dev, `.dev.vars` (copiado de `.dev.vars.example`) sobrescreve.
+  // Valores de produção (o deploy sobrescreve o que estiver no painel). Em dev, `.dev.vars`
+  // (copiado de `.dev.vars.example`) sobrescreve. Segredos nunca aqui: `wrangler secret put`.
   "vars": {
     "APP_ENV": "production",
     "APP_URL": "https://interno.nacif.software",

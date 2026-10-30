@@ -9,6 +9,7 @@
     "migrate": "wrangler d1 migrations apply nacif-interno --local",
     "migrate:new": "drizzle-kit generate",
     "seed": "tsx scripts/seed.ts",
+    "create-admin": "tsx scripts/create-admin.ts",
     "deploy:check": "wrangler deploy --dry-run --outdir .wrangler/dry-run",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
     "test": "vitest run",

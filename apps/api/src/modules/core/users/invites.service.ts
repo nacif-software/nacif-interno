@@ -13,13 +13,12 @@ import { AppError, NotFoundError } from '../../../infra/http/errors';
 import { logger } from '../../../infra/logger';
 import { generateToken, sha256 } from '../auth/password';
 import { passwordSetupTokenRepository } from '../auth/password-setup-token.repository';
+import { provisionalName, SETUP_TOKEN_TTL_MS, setupPath } from './setup-link';
 import { toUserDto } from './user.mapper';
 import { usersRepository } from './users.repository';
 
-const SETUP_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
 function setupLink(token: string): string {
-  return `${config().APP_URL}/definir-senha/${token}`;
+  return `${config().APP_URL}${setupPath(token)}`;
 }
 
 /**
@@ -46,16 +45,6 @@ async function issueSetupToken(userId: string, now: Date): Promise<string> {
   const { token, statements } = await setupTokenStatements(userId, now);
   await batchAll(statements);
   return token;
-}
-
-/** Nome provisório a partir do e-mail: "marina.duarte@" → "Marina Duarte". */
-function provisionalName(email: string): string {
-  const local = email.split('@')[0] ?? '';
-  return local
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-    .join(' ');
 }
 
 export const invitesService = {

@@ -5,7 +5,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 API := pnpm --filter @nacif/api
 
-.PHONY: help install dev dev-api dev-web types migrate migrate-new seed db-reset build-web deploy-check \
+.PHONY: help install dev dev-api dev-web types migrate migrate-new seed db-reset create-admin build-web deploy-check \
 	test test-shared test-web test-api test-e2e test-e2e-ui lint lint-fix typecheck format format-check vocab-check \
 	clean skills-install ci
 
@@ -43,6 +43,11 @@ db-reset: ## Apaga o D1 local, reaplica migrações e roda o seed
 	rm -rf apps/api/.wrangler/state
 	$(MAKE) migrate
 	$(MAKE) seed
+
+create-admin: ## Cria/promove um administrador e imprime o link de senha (make create-admin email=x@nacif.xyz [db=local])
+	@test -n "$(email)" || { echo "Uso: make create-admin email=x@nacif.xyz [db=local]"; exit 1; }
+	@test -z "$(db)" -o "$(db)" = "local" -o "$(db)" = "remote" || { echo "db deve ser local ou remote (recebido: $(db))"; exit 1; }
+	$(API) create-admin $(email) $(if $(filter local,$(db)),--local,)
 
 build-web: ## Build de produção do web (servido pelo Worker como Static Assets)
 	pnpm --filter @nacif/web build

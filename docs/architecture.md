@@ -85,4 +85,4 @@ A `main` só recebe código por PR, então todo código que chega nela passou pe
 
 ## Deploy
 
-Cloudflare Workers Builds a partir da `main`, previews por branch, domínio `interno.nacif.software` (ADR 0011). Detalhes, comandos e rollback em `docs/deploy.md` (issue #21).
+Cloudflare Workers Builds publica a `main` a cada merge: build do web, migrações do D1 e deploy do Worker em `interno.nacif.software` (ADR 0011). Só produção; previews por branch ficam para depois do Access. O primeiro administrador é criado por `make create-admin`. Configuração do Builds, bindings, rollback de código (`wrangler rollback`) e de dados (D1 Time Travel) em `docs/deploy.md`.

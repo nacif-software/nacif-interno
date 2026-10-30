@@ -24,3 +24,7 @@ Isso substitui o ADR 0002 (Express, Prisma, PostgreSQL). Dois fatos pesaram: o a
 ## Consequências
 
 Perde-se o PostgreSQL: sem enums nativos nem `DATE`, limite de 10 GB por banco e um escritor por vez, aceitável para o volume do sistema. Prisma, Docker Compose, o serviço Postgres do CI e as skills de Prisma/Postgres saem. Versões fixadas passam a ser `drizzle-orm` 0.45, `wrangler` 4 e `hono` 4. O plano Workers Paid é necessário (Email Sending e cotas do D1). A migração acontece em três PRs (épica na issue #15): Hono ainda em Node, depois Workers com D1 e Drizzle sem Docker, depois deploy. `AGENTS.md` e os docs são atualizados em cada PR, não antes.
+
+## Atualização (2026-10-30)
+
+Previews por branch ficam adiados: a URL de um preview é pública até o Cloudflare Access (#7) proteger o Worker, e o CI com e2e já valida cada PR. O Workers Builds publica só a `main`, com as migrações aplicadas antes do código (toda migração precisa ser compatível com o código em produção). O Custom Domain `interno.nacif.software` está no `wrangler.jsonc` com `workers_dev: false`; o registro DNS nasce no primeiro deploy (#16). Operação em `docs/deploy.md`.

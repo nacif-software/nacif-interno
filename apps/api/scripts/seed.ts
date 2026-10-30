@@ -15,8 +15,6 @@ import {
 } from '@nacif/shared';
 import bcrypt from 'bcryptjs';
 import { sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/d1';
-import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
@@ -37,10 +35,11 @@ import {
   SEED_SETTINGS,
   type SeedPersonKey,
 } from '../src/db/seed-data';
+import { apiDir, d1Execute, qb, toStatement } from './lib/sql';
 
 if (process.argv.includes('--remote')) {
   console.error(
-    'O seed é só para o D1 local. Produção começa vazia; o primeiro administrador vem do script da issue #21.',
+    'O seed é só para o D1 local. Produção começa vazia: crie o primeiro administrador com `make create-admin email=...`.',
   );
   process.exit(1);
 }
@@ -54,30 +53,8 @@ interface SeedEvent {
   actorKey: SeedPersonKey;
 }
 
-const apiDir = path.resolve(import.meta.dirname, '..');
 const outFile = path.join(apiDir, '.wrangler', 'seed.sql');
-const DATABASE = 'nacif-interno';
 const PASSWORD = process.env.SEED_PASSWORD ?? 'nacif1234';
-
-/** Só monta SQL; nenhuma query é executada por aqui. */
-const qb = drizzle(null as never);
-
-function literal(value: unknown): string {
-  if (value === null || value === undefined) return 'NULL';
-  if (typeof value === 'number') return String(value);
-  if (typeof value === 'boolean') return value ? '1' : '0';
-  if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
-  throw new Error(`Valor não suportado no seed: ${typeof value}`);
-}
-
-/** Inline dos parâmetros (`?`) de uma query do Drizzle para gerar um arquivo .sql. */
-function toStatement(query: { toSQL(): { sql: string; params: unknown[] } }): string {
-  const { sql: text, params } = query.toSQL();
-  let i = 0;
-  const inlined = text.replace(/\?/g, () => literal(params[i++]));
-  if (i !== params.length) throw new Error('Parâmetros não casam com os placeholders.');
-  return `${inlined};`;
-}
 
 const projectId = (name: string) => {
   const project = SEED_PROJECTS.find((p) => p.name === name);
@@ -298,10 +275,6 @@ writeFileSync(outFile, `${statements.join('\n')}\n`);
 console.log(`Seed gerado em ${path.relative(apiDir, outFile)} (${statements.length} statements).`);
 
 if (!process.argv.includes('--only-sql')) {
-  execFileSync(
-    'pnpm',
-    ['exec', 'wrangler', 'd1', 'execute', DATABASE, '--local', '--file', outFile, '--yes'],
-    { cwd: apiDir, stdio: 'inherit' },
-  );
+  d1Execute('local', ['--file', outFile, '--yes']);
   console.log('Seed aplicado no D1 local.');
 }
