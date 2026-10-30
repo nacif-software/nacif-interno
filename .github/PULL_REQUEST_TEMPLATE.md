@@ -12,4 +12,5 @@
 
 - [ ] `make lint`, `make typecheck` e `make test` verdes
 - [ ] Copy de UI conforme `docs/design-spec.md` e vocabulário de `AGENTS.md`
-- [ ] Docs/ADR atualizados quando a arquitetura muda
+- [ ] Docs/ADR atualizados quando a arquitetura muda; `docs/deploy.md` se mudou binding, var, secret, cron ou domínio
+- [ ] Migração de banco (se houver) compatível com o código em produção: ela roda antes do código novo e não volta no rollback (AGENTS.md §9)

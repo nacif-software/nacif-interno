@@ -9,7 +9,7 @@ Portal de sistemas internos da **Nacif**. O primeiro módulo é **Nacif Disponib
 O **Hermes Agent** não é um módulo do portal: é um agente externo, com acesso restrito, que consultará dados daqui por MCP (issues #5 e #6).
 
 - Especificação de UI: `docs/design-spec.md` (fonte de verdade; copy pt-BR deve ser idêntica).
-- Arquitetura: `docs/architecture.md`. Modelo de dados: `docs/data-model.md`. API: `docs/api.md`.
+- Arquitetura: `docs/architecture.md`. Modelo de dados: `docs/data-model.md`. API: `docs/api.md`. Deploy e operação: `docs/deploy.md`.
 - Decisões: `docs/adr/`. Trabalho futuro: issues do GitHub em `nacif-software/nacif-interno`. Não existe fila de trabalho em arquivos do repositório.
 
 ## 2. Vocabulário (obrigatório)
@@ -40,17 +40,18 @@ Monorepo pnpm: `apps/api` (Hono 4 + Drizzle + D1, publicado como Cloudflare Work
 
 Tudo passa pelo `Makefile` (rode `make help`). Não há Docker: o Worker roda local com `wrangler dev` e o banco é um D1 local (SQLite em `apps/api/.wrangler/state`).
 
-| Comando                                                                    | O que faz                                                                                   |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `make install`                                                             | instala dependências, cria `apps/api/.dev.vars`, gera os tipos do Worker e migra o D1 local |
-| `make dev`                                                                 | sobe o Worker (API, `:8787`) e o Vite (web, `:5173`, proxy de `/api` para `:8787`)          |
-| `make types`                                                               | regera `worker-configuration.d.ts` depois de mudar o `wrangler.jsonc`                       |
-| `make migrate` / `make migrate-new name=x` / `make seed` / `make db-reset` | migrações (`drizzle-kit generate` + `wrangler d1 migrations apply --local`) e seed          |
-| `make test`                                                                | shared + web + api (api roda no runtime Workers com D1 local, sem serviço externo)          |
-| `make test-e2e`                                                            | Playwright contra o build de produção servido por `wrangler dev` (sobe sozinho)             |
-| `make deploy-check`                                                        | build do web + `wrangler deploy --dry-run`                                                  |
-| `make lint` / `make typecheck` / `make format` / `make vocab-check`        | qualidade                                                                                   |
-| `make ci`                                                                  | tudo que o CI roda                                                                          |
+| Comando                                                                    | O que faz                                                                                        |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `make install`                                                             | instala dependências, cria `apps/api/.dev.vars`, gera os tipos do Worker e migra o D1 local      |
+| `make dev`                                                                 | sobe o Worker (API, `:8787`) e o Vite (web, `:5173`, proxy de `/api` para `:8787`)               |
+| `make types`                                                               | regera `worker-configuration.d.ts` depois de mudar o `wrangler.jsonc`                            |
+| `make migrate` / `make migrate-new name=x` / `make seed` / `make db-reset` | migrações (`drizzle-kit generate` + `wrangler d1 migrations apply --local`) e seed               |
+| `make test`                                                                | shared + web + api (api roda no runtime Workers com D1 local, sem serviço externo)               |
+| `make test-e2e`                                                            | Playwright contra o build de produção servido por `wrangler dev` (sobe sozinho)                  |
+| `make deploy-check`                                                        | build do web + `wrangler deploy --dry-run`                                                       |
+| `make create-admin email=x@nacif.xyz [db=local]`                           | cria/promove um administrador e imprime o link de senha (único comando que escreve no D1 remoto) |
+| `make lint` / `make typecheck` / `make format` / `make vocab-check`        | qualidade                                                                                        |
+| `make ci`                                                                  | tudo que o CI roda                                                                               |
 
 Portas: web 5173 (dev), Worker 8787 (API e, no e2e, também o web buildado). Variáveis locais em `apps/api/.dev.vars` (copiado de `.dev.vars.example`); as de produção ficam em `vars` no `wrangler.jsonc`.
 
@@ -115,6 +116,13 @@ Como o PR entra na `main`:
 - A `main` é protegida: exige PR, os checks `quality` e `e2e` verdes e o branch atualizado com a `main`. Sem force push. O branch é apagado automaticamente após o merge.
 - Quem mergeia é quem abriu o PR ou quem revisou, depois do CI verde.
 
+Deploy (detalhes e comandos em `docs/deploy.md`):
+
+- **O Workers Builds publica a `main`** na Cloudflare a cada merge: instala, builda o web, aplica as migrações pendentes no D1 e publica o Worker. Ninguém roda `wrangler deploy` na mão; a exceção é `wrangler rollback`.
+- **Migrações rodam antes do código novo e não voltam no rollback.** Toda migração tem que ser compatível com o código que está em produção (só adições; remoção ou renome de coluna num PR posterior).
+- Só produção: sem staging e sem previews por branch até o Access (#7). O PR é validado pelo CI e por `make dev`/`make test-e2e` na máquina.
+- `apps/api/wrangler.jsonc` é a fonte de verdade da configuração publicada (vars, cron, domínio). Mudou binding, var, secret, cron ou domínio: atualize `docs/deploy.md` no mesmo PR.
+
 ## 10. Skills de agente
 
 Skills instaladas em `.claude/skills/` (versionadas, com `skills-lock.json`) via `npx skills add` (CLI vercel-labs/skills). Lista em `scripts/skills.txt`; `make skills-install` reinstala. Uso:
@@ -132,4 +140,5 @@ Skills são conteúdo de terceiros: revise antes de seguir instruções que alte
 - [ ] Camadas respeitadas (§3) e DTOs no shared.
 - [ ] Testes do §8 verdes; `make ci` verde; `make test-e2e` verde se mexeu em fluxo de tela.
 - [ ] Mudança entregue por PR para a `main` com os dois jobs do CI verdes (§9).
-- [ ] Docs/ADR atualizados quando a arquitetura ou o modelo mudam.
+- [ ] Docs/ADR atualizados quando a arquitetura ou o modelo mudam; `docs/deploy.md` quando muda o que é publicado.
+- [ ] Migração de banco (se houver) compatível com o código em produção (§9, Deploy).

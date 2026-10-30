@@ -52,4 +52,5 @@ No GitHub Actions, o job `quality` roda em todo PR e em todo push na `main`. O j
 
 - `AGENTS.md`: guia para pessoas e agentes (vocabulário, arquitetura, convenções).
 - `docs/architecture.md`, `docs/data-model.md`, `docs/api.md`, `docs/design-spec.md`.
+- `docs/deploy.md`: como o app é publicado na Cloudflare (Workers Builds), primeiro administrador, rollback de código e de dados.
 - `docs/adr/`: decisões. Trabalho futuro: [issues do GitHub](https://github.com/nacif-software/nacif-interno/issues).
