@@ -54,7 +54,8 @@ export function devVars(): Record<string, string> {
     .filter((line) => line && !line.startsWith('#') && line.includes('='))
     .map((line) => {
       const at = line.indexOf('=');
-      return [line.slice(0, at).trim(), line.slice(at + 1).trim()] as const;
+      const value = line.slice(at + 1).trim();
+      return [line.slice(0, at).trim(), value.replace(/^(["'])(.*)\1$/, '$2')] as const;
     });
   return Object.fromEntries(entries);
 }

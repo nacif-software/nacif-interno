@@ -8,7 +8,7 @@
  * Tudo acontece por e-mail e num único `wrangler d1 execute`: rodar de novo não duplica a pessoa,
  * invalida os links anteriores e gera um novo. Ver `docs/deploy.md`.
  */
-import { nacifEmailSchema } from '@nacif/shared';
+import { nacifEmailSchema, type Role } from '@nacif/shared';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -24,7 +24,7 @@ import { devVars, productionVars } from './lib/wrangler-vars';
 
 interface ExistingUser {
   name: string;
-  role: string;
+  role: Role;
   active: number;
   has_password: number;
 }
@@ -37,7 +37,7 @@ function usage(message?: string): never {
 
 function parseArgs(argv: string[]): { email: string; target: D1Target } {
   const flags = argv.filter((a) => a.startsWith('--'));
-  const unknown = flags.filter((f) => f !== '--local' && f !== '--remote');
+  const unknown = flags.filter((f) => f !== '--local');
   if (unknown.length) usage(`Opção desconhecida: ${unknown.join(' ')}`);
   const positional = argv.filter((a) => !a.startsWith('--'));
   if (positional.length !== 1) usage();
@@ -80,7 +80,13 @@ async function buildStatements(email: string, now: Date): Promise<{ token: strin
         })
         .onConflictDoUpdate({
           target: users.email,
-          set: { role: 'ADMIN', active: true, invitedAt: now, updatedAt: now },
+          set: {
+            role: 'ADMIN',
+            active: true,
+            updatedAt: now,
+            // Quem já tem senha não está sendo convidado: mantém o invited_at original.
+            invitedAt: sql`case when ${users.passwordHash} is null then ${now.toISOString()} else ${users.invitedAt} end`,
+          },
         }),
     ),
     toStatement(
@@ -89,11 +95,21 @@ async function buildStatements(email: string, now: Date): Promise<{ token: strin
         .set({ usedAt: now })
         .where(and(eq(passwordSetupTokens.userId, byEmail), isNull(passwordSetupTokens.usedAt))),
     ),
-    // Colunas na ordem da tabela em `schema.ts`.
+    // O Drizzle confere que os campos batem com a tabela (mesmos nomes e ordem) e falha ao montar
+    // o SQL se o schema mudar, em vez de gravar nas colunas erradas.
     toStatement(
       qb.insert(passwordSetupTokens).select(
-        sql`select ${crypto.randomUUID()}, ${tokenHash}, ${users.id}, ${expiresAt.toISOString()}, null, ${now.toISOString()}
-          from ${users} where ${users.email} = ${email}`,
+        qb
+          .select({
+            id: sql<string>`${crypto.randomUUID()}`.as('id'),
+            tokenHash: sql<string>`${tokenHash}`.as('token_hash'),
+            userId: users.id,
+            expiresAt: sql<string>`${expiresAt.toISOString()}`.as('expires_at'),
+            usedAt: sql<string | null>`null`.as('used_at'),
+            createdAt: sql<string>`${now.toISOString()}`.as('created_at'),
+          })
+          .from(users)
+          .where(eq(users.email, email)),
       ),
     ),
   ];

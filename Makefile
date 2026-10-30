@@ -46,6 +46,7 @@ db-reset: ## Apaga o D1 local, reaplica migrações e roda o seed
 
 create-admin: ## Cria/promove um administrador e imprime o link de senha (make create-admin email=x@nacif.xyz [db=local])
 	@test -n "$(email)" || { echo "Uso: make create-admin email=x@nacif.xyz [db=local]"; exit 1; }
+	@test -z "$(db)" -o "$(db)" = "local" -o "$(db)" = "remote" || { echo "db deve ser local ou remote (recebido: $(db))"; exit 1; }
 	$(API) create-admin $(email) $(if $(filter local,$(db)),--local,)
 
 build-web: ## Build de produção do web (servido pelo Worker como Static Assets)
