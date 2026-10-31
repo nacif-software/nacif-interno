@@ -34,20 +34,20 @@ Não há secrets hoje. Quando entrarem (Email Service na #10, Access na #7), fic
 
 Configuração a aplicar no painel (Workers → `nacif-interno` → Settings → Build), ligada ao repositório `nacif-software/nacif-interno`:
 
-| Campo                      | Valor                                                                                                                                          |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Git branch (produção)      | `main`                                                                                                                                         |
-| Root directory             | `/` (raiz do repositório; o `wrangler.jsonc` fica em `apps/api`, e os comandos usam `pnpm --filter`)                                           |
-| Build command              | `pnpm --filter @nacif/web build`                                                                                                               |
-| Deploy command             | `pnpm --filter @nacif/api exec wrangler d1 migrations apply nacif-interno-prod --remote && pnpm --filter @nacif/api exec wrangler deploy`      |
-| Preview builds             | **desligados** (ver "Previews")                                                                                                                |
-| Build watch paths: include | `apps/*`, `packages/*`, `pnpm-lock.yaml`, `package.json`, `pnpm-workspace.yaml`, `.nvmrc` (mudança só em `docs/` ou `.github/` não gera build) |
-| Build variables            | nenhuma (nada do build chega ao runtime)                                                                                                       |
-| API token                  | token próprio, ver abaixo                                                                                                                      |
+| Campo                      | Valor                                                                                                                                                       |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Git branch (produção)      | `main`                                                                                                                                                      |
+| Root directory             | `/` (raiz do repositório; o `wrangler.jsonc` fica em `apps/api`, e os comandos usam `pnpm --filter`)                                                        |
+| Build command              | `make build-web` (= `pnpm --filter @nacif/web build`)                                                                                                       |
+| Deploy command             | `make deploy` (= `pnpm --filter @nacif/api exec wrangler d1 migrations apply nacif-interno-prod --remote && pnpm --filter @nacif/api exec wrangler deploy`) |
+| Preview builds             | **desligados** (ver "Previews")                                                                                                                             |
+| Build watch paths: include | `apps/*`, `packages/*`, `pnpm-lock.yaml`, `package.json`, `pnpm-workspace.yaml`, `.nvmrc` (mudança só em `docs/` ou `.github/` não gera build)              |
+| Build variables            | nenhuma (nada do build chega ao runtime)                                                                                                                    |
+| API token                  | token próprio, ver abaixo                                                                                                                                   |
 
 Detalhes que importam:
 
-- A instalação das dependências é automática antes do build command (por isso o build command não repete `pnpm install --frozen-lockfile`). O Builds usa o pnpm do campo `packageManager` do `package.json` da raiz (hoje `pnpm@10.33.0`) e o Node do `.nvmrc` (hoje 22). Mudar essas versões no repositório muda o build.
+- Os comandos vivem no `Makefile` (`build-web`, `deploy`), então o painel só aponta para eles; a imagem do Builds tem `make` (pacote `build-essential`). A instalação das dependências é automática antes do build command (por isso o build command não repete `pnpm install --frozen-lockfile`). O Builds usa o pnpm do campo `packageManager` do `package.json` da raiz (hoje `pnpm@10.33.0`) e o Node do `.nvmrc` (hoje 22). Mudar essas versões no repositório muda o build.
 - O deploy command aplica as migrações **antes** de publicar o código. Em modo não interativo o wrangler não pede confirmação. Se uma migração falhar, ela é revertida, as anteriores ficam e o deploy não acontece. O wrangler captura um bookmark **depois** de aplicar; o ponto de restauração de antes da migração é o bookmark que você pegou com `time-travel info` (ver "Rollback").
 - O token gerado automaticamente pelo Builds **não tem permissão de D1**, então as migrações falhariam. Crie um token de usuário (My Profile → API Tokens) com: Account Settings (read), Workers Scripts (edit), **D1 (edit)**, Workers Routes (edit, para o Custom Domain), User Details (read), Memberships (read); selecione esse token no campo "API token" e use sempre o mesmo.
 - Limites no Paid: 6.000 minutos de build por mês, 6 builds simultâneos, 20 minutos por build. Um build deste repositório leva poucos minutos.
