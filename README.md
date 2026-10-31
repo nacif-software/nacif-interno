@@ -24,7 +24,7 @@ Usuários do seed: `caio@nacif.xyz` (administrador), `marina@nacif.xyz` (aprovad
 | Zerar o banco local e refazer o seed        | `make db-reset`                                                                                           |
 | Mudar o schema                              | editar `apps/api/src/db/schema.ts`, `make migrate-new name=descricao`, `make migrate`                     |
 | Mudar o `wrangler.jsonc`                    | `make types` (regera `worker-configuration.d.ts`)                                                         |
-| Ver o banco local                           | `pnpm --filter @nacif/api exec wrangler d1 execute nacif-interno --local --command "select * from users"` |
+| Ver o banco local                           | `pnpm --filter @nacif/api exec wrangler d1 execute nacif-interno-prod --local --command "select * from users"` |
 | Testar o build de produção do web no Worker | `make build-web && make dev-api`, depois http://localhost:8787                                            |
 | Checar o bundle antes de publicar           | `make deploy-check`                                                                                       |
 

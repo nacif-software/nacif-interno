@@ -18,10 +18,10 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "nacif-interno",
+      "database_name": "nacif-interno-prod",
       // Banco de produção criado em 2026-10-30 (issue #16, região ENAM). O dev local ignora o id.
-      // Migrações: `wrangler d1 migrations apply nacif-interno --remote` (o Builds faz no deploy).
-      "database_id": "12322951-e1b4-443a-8542-19e1e23b8b52",
+      // Migrações: `wrangler d1 migrations apply nacif-interno-prod --remote` (o Builds faz no deploy).
+      "database_id": "83f41649-33c2-48b3-b7c0-c563fef31567",
       "migrations_dir": "drizzle",
     },
   ],

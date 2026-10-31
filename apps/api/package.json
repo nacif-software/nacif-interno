@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler dev --port 8787",
     "types": "wrangler types",
-    "migrate": "wrangler d1 migrations apply nacif-interno --local",
+    "migrate": "wrangler d1 migrations apply nacif-interno-prod --local",
     "migrate:new": "drizzle-kit generate",
     "seed": "tsx scripts/seed.ts",
     "create-admin": "tsx scripts/create-admin.ts",
