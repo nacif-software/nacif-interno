@@ -48,7 +48,7 @@ Tudo passa pelo `Makefile` (rode `make help`). Não há Docker: o Worker roda lo
 | `make migrate` / `make migrate-new name=x` / `make seed` / `make db-reset` | migrações (`drizzle-kit generate` + `wrangler d1 migrations apply --local`) e seed               |
 | `make test`                                                                | shared + web + api (api roda no runtime Workers com D1 local, sem serviço externo)               |
 | `make test-e2e`                                                            | Playwright contra o build de produção servido por `wrangler dev` (sobe sozinho)                  |
-| `make deploy-check`                                                        | build do web + `wrangler deploy --dry-run`                                                       |
+| `make deploy-check` / `make deploy`                                        | build do web + `wrangler deploy --dry-run` / o deploy real (é o que o Workers Builds roda)       |
 | `make create-admin email=x@nacif.xyz [db=local]`                           | cria/promove um administrador e imprime o link de senha (único comando que escreve no D1 remoto) |
 | `make lint` / `make typecheck` / `make format` / `make vocab-check`        | qualidade                                                                                        |
 | `make ci`                                                                  | tudo que o CI roda                                                                               |
@@ -118,7 +118,7 @@ Como o PR entra na `main`:
 
 Deploy (detalhes e comandos em `docs/deploy.md`):
 
-- **O Workers Builds publica a `main`** na Cloudflare a cada merge: instala, builda o web, aplica as migrações pendentes no D1 e publica o Worker. Ninguém roda `wrangler deploy` na mão; a exceção é `wrangler rollback`.
+- **O Workers Builds publica a `main`** na Cloudflare a cada merge: instala, roda `make build-web` e `make deploy` (migrações pendentes no D1 e `wrangler deploy`). Ninguém roda `make deploy` na mão, salvo emergência; a exceção normal é `wrangler rollback`.
 - **Migrações rodam antes do código novo e não voltam no rollback.** Toda migração tem que ser compatível com o código que está em produção (só adições; remoção ou renome de coluna num PR posterior).
 - Só produção: sem staging e sem previews por branch até o Access (#7). O PR é validado pelo CI e por `make dev`/`make test-e2e` na máquina.
 - `apps/api/wrangler.jsonc` é a fonte de verdade da configuração publicada (vars, cron, domínio). Mudou binding, var, secret, cron ou domínio: atualize `docs/deploy.md` no mesmo PR.

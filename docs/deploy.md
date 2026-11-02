@@ -7,7 +7,7 @@ Como o Nacif Interno é publicado e operado na Cloudflare (ADR 0011). Este docum
 | Peça       | Valor                                                                                                  |
 | ---------- | ------------------------------------------------------------------------------------------------------ |
 | Worker     | `nacif-interno`: API Hono em `/api/*` e o SPA do web pelos Static Assets (`apps/web/dist`)             |
-| Banco      | D1 `nacif-interno` (migrações em `apps/api/drizzle/`)                                                  |
+| Banco      | D1 `nacif-interno-prod` (migrações em `apps/api/drizzle/`)                                             |
 | Domínio    | `interno.nacif.software`, Custom Domain do Worker (`routes` no `wrangler.jsonc`, `workers_dev: false`) |
 | Publicação | Workers Builds a partir da `main`; nenhuma publicação manual                                           |
 | Cron       | `0 3 * * *` (UTC) limpa sessões e tokens expirados; só em produção                                     |
@@ -19,14 +19,14 @@ A configuração do Worker vive em `apps/api/wrangler.jsonc` e é a fonte de ver
 
 ## Bindings, vars e secrets
 
-| Nome               | Tipo | Produção (`wrangler.jsonc`)      | Dev (`apps/api/.dev.vars`) | Uso                                            |
-| ------------------ | ---- | -------------------------------- | -------------------------- | ---------------------------------------------- |
-| `DB`               | D1   | `nacif-interno` (`database_id`)  | D1 local                   | todo o acesso a dados (Drizzle)                |
-| `APP_ENV`          | var  | `production`                     | `development`              | formato do log; `test` desliga o log de acesso |
-| `APP_URL`          | var  | `https://interno.nacif.software` | `http://localhost:5173`    | links de definição de senha                    |
-| `COOKIE_SECURE`    | var  | `true`                           | `false`                    | flag `Secure` do cookie de sessão              |
-| `SESSION_TTL_DAYS` | var  | `30`                             | (padrão 30)                | validade da sessão                             |
-| `LOG_LEVEL`        | var  | `info`                           | `debug`                    | nível do log                                   |
+| Nome               | Tipo | Produção (`wrangler.jsonc`)          | Dev (`apps/api/.dev.vars`) | Uso                                            |
+| ------------------ | ---- | ------------------------------------ | -------------------------- | ---------------------------------------------- |
+| `DB`               | D1   | `nacif-interno-prod` (`database_id`) | D1 local                   | todo o acesso a dados (Drizzle)                |
+| `APP_ENV`          | var  | `production`                         | `development`              | formato do log; `test` desliga o log de acesso |
+| `APP_URL`          | var  | `https://interno.nacif.software`     | `http://localhost:5173`    | links de definição de senha                    |
+| `COOKIE_SECURE`    | var  | `true`                               | `false`                    | flag `Secure` do cookie de sessão              |
+| `SESSION_TTL_DAYS` | var  | `30`                                 | (padrão 30)                | validade da sessão                             |
+| `LOG_LEVEL`        | var  | `info`                               | `debug`                    | nível do log                                   |
 
 Não há secrets hoje. Quando entrarem (Email Service na #10, Access na #7), ficam fora do repositório: `wrangler secret put NOME` em produção e `.dev.vars` em dev, com os nomes listados em `secrets.required` no `wrangler.jsonc` para o `wrangler types` e o `wrangler dev` avisarem o que falta. O `database_id` do D1 não é segredo e fica no `wrangler.jsonc` (placeholder até a #16).
 
@@ -34,20 +34,20 @@ Não há secrets hoje. Quando entrarem (Email Service na #10, Access na #7), fic
 
 Configuração a aplicar no painel (Workers → `nacif-interno` → Settings → Build), ligada ao repositório `nacif-software/nacif-interno`:
 
-| Campo                      | Valor                                                                                                                                          |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Git branch (produção)      | `main`                                                                                                                                         |
-| Root directory             | `/` (raiz do repositório; o `wrangler.jsonc` fica em `apps/api`, e os comandos usam `pnpm --filter`)                                           |
-| Build command              | `pnpm --filter @nacif/web build`                                                                                                               |
-| Deploy command             | `pnpm --filter @nacif/api exec wrangler d1 migrations apply nacif-interno --remote && pnpm --filter @nacif/api exec wrangler deploy`           |
-| Preview builds             | **desligados** (ver "Previews")                                                                                                                |
-| Build watch paths: include | `apps/*`, `packages/*`, `pnpm-lock.yaml`, `package.json`, `pnpm-workspace.yaml`, `.nvmrc` (mudança só em `docs/` ou `.github/` não gera build) |
-| Build variables            | nenhuma (nada do build chega ao runtime)                                                                                                       |
-| API token                  | token próprio, ver abaixo                                                                                                                      |
+| Campo                      | Valor                                                                                                                                                       |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Git branch (produção)      | `main`                                                                                                                                                      |
+| Root directory             | `/` (raiz do repositório; o `wrangler.jsonc` fica em `apps/api`, e os comandos usam `pnpm --filter`)                                                        |
+| Build command              | `make build-web` (= `pnpm --filter @nacif/web build`)                                                                                                       |
+| Deploy command             | `make deploy` (= `pnpm --filter @nacif/api exec wrangler d1 migrations apply nacif-interno-prod --remote && pnpm --filter @nacif/api exec wrangler deploy`) |
+| Preview builds             | **desligados** (ver "Previews")                                                                                                                             |
+| Build watch paths: include | `apps/*`, `packages/*`, `pnpm-lock.yaml`, `package.json`, `pnpm-workspace.yaml`, `.nvmrc` (mudança só em `docs/` ou `.github/` não gera build)              |
+| Build variables            | nenhuma (nada do build chega ao runtime)                                                                                                                    |
+| API token                  | token próprio, ver abaixo                                                                                                                                   |
 
 Detalhes que importam:
 
-- A instalação das dependências é automática antes do build command (por isso o build command não repete `pnpm install --frozen-lockfile`). O Builds usa o pnpm do campo `packageManager` do `package.json` da raiz (hoje `pnpm@10.33.0`) e o Node do `.nvmrc` (hoje 22). Mudar essas versões no repositório muda o build.
+- Os comandos vivem no `Makefile` (`build-web`, `deploy`), então o painel só aponta para eles; a imagem do Builds tem `make` (pacote `build-essential`). A instalação das dependências é automática antes do build command (por isso o build command não repete `pnpm install --frozen-lockfile`). O Builds usa o pnpm do campo `packageManager` do `package.json` da raiz (hoje `pnpm@10.33.0`) e o Node do `.nvmrc` (hoje 22). Mudar essas versões no repositório muda o build.
 - O deploy command aplica as migrações **antes** de publicar o código. Em modo não interativo o wrangler não pede confirmação. Se uma migração falhar, ela é revertida, as anteriores ficam e o deploy não acontece. O wrangler captura um bookmark **depois** de aplicar; o ponto de restauração de antes da migração é o bookmark que você pegou com `time-travel info` (ver "Rollback").
 - O token gerado automaticamente pelo Builds **não tem permissão de D1**, então as migrações falhariam. Crie um token de usuário (My Profile → API Tokens) com: Account Settings (read), Workers Scripts (edit), **D1 (edit)**, Workers Routes (edit, para o Custom Domain), User Details (read), Memberships (read); selecione esse token no campo "API token" e use sempre o mesmo.
 - Limites no Paid: 6.000 minutos de build por mês, 6 builds simultâneos, 20 minutos por build. Um build deste repositório leva poucos minutos.
@@ -101,10 +101,10 @@ O rollback troca o código e os assets; **não** desfaz migrações nem dados. P
 O D1 guarda o histórico do banco por 30 dias (Paid). Para voltar o banco a um instante:
 
 ```bash
-wrangler d1 time-travel info nacif-interno                        # bookmark atual: guarde-o antes de qualquer restore
-wrangler d1 time-travel info nacif-interno --timestamp=2026-11-05T13:00:00Z
-wrangler d1 time-travel restore nacif-interno --timestamp=2026-11-05T13:00:00Z
-wrangler d1 time-travel restore nacif-interno --bookmark=<bookmark>
+wrangler d1 time-travel info nacif-interno-prod                   # bookmark atual: guarde-o antes de qualquer restore
+wrangler d1 time-travel info nacif-interno-prod --timestamp=2026-11-05T13:00:00Z
+wrangler d1 time-travel restore nacif-interno-prod --timestamp=2026-11-05T13:00:00Z
+wrangler d1 time-travel restore nacif-interno-prod --bookmark=<bookmark>
 ```
 
 O restore é **destrutivo**: sobrescreve o banco no lugar e cancela queries em andamento. A saída do `restore` imprime o bookmark de antes da operação; restaurar para ele desfaz o restore. Combine com o código: se o restore volta o schema para antes de uma migração, faça antes o rollback do código para uma versão compatível, ou o app vai quebrar. Só as migrações do deploy e o `create-admin` escrevem no banco remoto; `make seed` recusa `--remote`.
@@ -117,12 +117,12 @@ O restore é **destrutivo**: sobrescreve o banco no lugar e cancela queries em a
 
 ## Previews
 
-Workers Previews publicam uma cópia do Worker por branch (`<branch>-nacif-interno.<conta>.workers.dev`) com `vars` e D1 próprios (bloco `previews` no `wrangler.jsonc`). Decidimos **não ligar** por enquanto: a URL é pública até o Access (#7) proteger o Worker, e o CI com e2e já valida cada PR. Na #16, deixe "Preview builds" desligado. Ligar depois é uma issue pequena: bloco `previews` com `vars` e D1 `nacif-interno-preview` (`preview_database_id` + `wrangler d1 migrations apply nacif-interno --preview`), token com acesso ao banco de preview, Access na frente das URLs.
+Workers Previews publicam uma cópia do Worker por branch (`<branch>-nacif-interno.<conta>.workers.dev`) com `vars` e D1 próprios (bloco `previews` no `wrangler.jsonc`). Decidimos **não ligar** por enquanto: a URL é pública até o Access (#7) proteger o Worker, e o CI com e2e já valida cada PR. Na #16, deixe "Preview builds" desligado. Ligar depois é uma issue pequena: bloco `previews` com `vars` e D1 `nacif-interno-preview` (`preview_database_id` + `wrangler d1 migrations apply nacif-interno-prod --preview`), token com acesso ao banco de preview, Access na frente das URLs.
 
 ## Checklist da issue #16
 
 1. Workers Paid ativo na conta.
-2. `wrangler d1 create nacif-interno` → copiar o `database_id` para o `wrangler.jsonc` (PR).
+2. Banco `nacif-interno-prod` criado (`wrangler d1 create`), `database_id` no `wrangler.jsonc` (PR #27). O nome do Worker continua `nacif-interno`.
 3. Conferir a zona (`interno` livre; raiz e `www` intocados).
 4. Token de API para o Builds com D1 (edit).
 5. Conectar o repositório no Builds com a configuração acima; preview builds desligados.

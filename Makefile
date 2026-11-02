@@ -5,7 +5,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 API := pnpm --filter @nacif/api
 
-.PHONY: help install dev dev-api dev-web types migrate migrate-new seed db-reset create-admin build-web deploy-check \
+.PHONY: help install dev dev-api dev-web types migrate migrate-new seed db-reset create-admin build-web deploy-check deploy \
 	test test-shared test-web test-api test-e2e test-e2e-ui lint lint-fix typecheck format format-check vocab-check \
 	clean skills-install ci
 
@@ -54,6 +54,10 @@ build-web: ## Build de produção do web (servido pelo Worker como Static Assets
 
 deploy-check: build-web ## Valida o bundle do Worker sem publicar (wrangler deploy --dry-run)
 	$(API) deploy:check
+
+deploy: ## Publica em produção: migrações no D1 remoto + wrangler deploy (é o que o Workers Builds roda; na mão só em emergência)
+	$(API) exec wrangler d1 migrations apply nacif-interno-prod --remote
+	$(API) exec wrangler deploy
 
 test: test-shared test-web test-api ## Roda todos os testes (exceto e2e)
 

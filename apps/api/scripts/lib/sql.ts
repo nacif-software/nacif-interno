@@ -6,7 +6,8 @@ import { drizzle } from 'drizzle-orm/d1';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
-export const DATABASE = 'nacif-interno';
+/** Nome do banco no `wrangler.jsonc` (o mesmo nome identifica o D1 local). */
+export const DATABASE = 'nacif-interno-prod';
 export const apiDir = path.resolve(import.meta.dirname, '..', '..');
 
 export type D1Target = 'local' | 'remote';
