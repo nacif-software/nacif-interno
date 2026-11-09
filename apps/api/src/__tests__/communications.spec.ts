@@ -1,4 +1,4 @@
-import { addDays, APP_TIMEZONE, todayIso } from '@nacif/shared';
+import { addDays, APP_TIMEZONE, isWeekend, todayIso } from '@nacif/shared';
 import { describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import { flowEvents } from '../db/schema';
@@ -56,9 +56,11 @@ describe('communications', () => {
     await loginAs(agent, 'pedro@nacif.xyz');
     const base = { coverId: julia.id, approverId: caio.id };
 
+    // um dia útil a menos de 7 dias de hoje (entre 3 dias consecutivos sempre há um dia útil)
+    const soonDay = [6, 5, 4].map((d) => addDays(today, d)).find((d) => !isWeekend(d)) ?? '';
     const soon = await agent
       .post('/api/disponibilidade/communications')
-      .send({ ...base, startDate: addDays(today, 6), endDate: addDays(today, 6) });
+      .send({ ...base, startDate: soonDay, endDate: soonDay });
     expect(soon.status).toBe(422);
     expect(soon.body.error.message).toBe('O início deve ser pelo menos 7 dias após hoje.');
 
