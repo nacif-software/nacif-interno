@@ -49,7 +49,7 @@ Detalhes que importam:
 
 - Os comandos vivem no `Makefile` (`build-web`, `deploy`), então o painel só aponta para eles; a imagem do Builds tem `make` (pacote `build-essential`). A instalação das dependências é automática antes do build command (por isso o build command não repete `pnpm install --frozen-lockfile`). O Builds usa o pnpm do campo `packageManager` do `package.json` da raiz (hoje `pnpm@10.33.0`) e o Node do `.nvmrc` (hoje 22). Mudar essas versões no repositório muda o build.
 - O deploy command aplica as migrações **antes** de publicar o código. Em modo não interativo o wrangler não pede confirmação. Se uma migração falhar, ela é revertida, as anteriores ficam e o deploy não acontece. O wrangler captura um bookmark **depois** de aplicar; o ponto de restauração de antes da migração é o bookmark que você pegou com `time-travel info` (ver "Rollback").
-- O token gerado automaticamente pelo Builds **não tem permissão de D1**, então as migrações falhariam. Crie um token de usuário (My Profile → API Tokens) com: Account Settings (read), Workers Scripts (edit), **D1 (edit)**, Workers Routes (edit, para o Custom Domain), User Details (read), Memberships (read); selecione esse token no campo "API token" e use sempre o mesmo.
+- O token "Create new token" do próprio fluxo do Builds já vem com D1 (edit), Workers Scripts (edit) e Workers Routes (edit), que é o que o `make deploy` precisa (as demais permissões podem ser removidas em My Profile → API Tokens → Edit). Se o primeiro build falhar na migração com `Authentication error [code: 10000]`, abra o token, confira essas permissões e a conta em Account Resources, salve e faça Retry build: foi o que resolveu em 2026-11-03.
 - Limites no Paid: 6.000 minutos de build por mês, 6 builds simultâneos, 20 minutos por build. Um build deste repositório leva poucos minutos.
 - `.github/workflows/ci.yml` continua sendo a validação: o Builds não roda testes. Nada entra na `main` sem o CI verde (AGENTS.md §9), então o Builds só publica código testado.
 
@@ -122,9 +122,9 @@ Workers Previews publicam uma cópia do Worker por branch (`<branch>-nacif-inter
 ## Checklist da issue #16
 
 1. Workers Paid ativo na conta.
-2. Banco `nacif-interno-prod` criado (`wrangler d1 create`), `database_id` no `wrangler.jsonc` (PR #27). O nome do Worker continua `nacif-interno`.
+2. Banco `nacif-interno-prod` criado (`wrangler d1 create`), `database_id` no `wrangler.jsonc` (PR #27). O nome do Worker continua `nacif-interno`. Feito.
 3. Conferir a zona (`interno` livre; raiz e `www` intocados).
-4. Token de API para o Builds com D1 (edit).
-5. Conectar o repositório no Builds com a configuração acima; preview builds desligados.
-6. Merge na `main` → primeiro build → `api/health` ok, domínio ativo, site da empresa intacto.
+4. Token de API para o Builds com D1 (edit). Feito: "Nacif Interno".
+5. Conectar o repositório no Builds com a configuração acima; preview builds desligados. Feito em 2026-11-03.
+6. Merge na `main` → primeiro build → `api/health` ok, domínio ativo, site da empresa intacto. Feito em 2026-11-03 (versão `cb1b607b`).
 7. `make create-admin email=...` e primeiro login.
