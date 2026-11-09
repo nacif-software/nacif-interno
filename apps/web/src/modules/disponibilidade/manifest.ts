@@ -12,6 +12,7 @@ export const paths = {
   edit: (code: string) => `${BASE}/comunicacoes/${encodeURIComponent(code)}/editar`,
   approvals: `${BASE}/aprovacoes`,
   calendar: `${BASE}/calendario`,
+  balance: `${BASE}/saldo`,
   admin: `${BASE}/administracao`,
 };
 
@@ -20,6 +21,7 @@ function navItems(role: Role): NavItem[] {
     return [
       { label: 'Início', to: paths.base, end: true },
       { label: 'Minhas comunicações', shortLabel: 'Comunicações', to: paths.list },
+      { label: 'Saldo', to: paths.balance },
       { label: 'Time', to: paths.calendar },
     ];
   }

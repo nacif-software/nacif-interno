@@ -1,10 +1,14 @@
 import { displayCommunicationCode, formatDateRange, formatSentDate, MESSAGES } from '@nacif/shared';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { cn } from '@/lib/cn';
+import { useCurrentUser } from '@/modules/core/controllers/use-session';
 import { Breadcrumb, Button, Card, EmptyState, SkeletonCard, StatusBadge, useToast } from '@/ui';
 import { useApprove, useReject } from '../../controllers/use-approvals';
 import { useCancelCommunication, useCommunication } from '../../controllers/use-communications';
 import { paths } from '../../manifest';
+import { AdjustDeductionModal } from '../components/adjust-deduction-modal';
+import { BalanceAfter } from '../components/balance-after';
 import { CancelModal } from '../components/cancel-modal';
 import { FlowTimeline } from '../components/flow-timeline';
 import { RejectModal } from '../components/reject-modal';
@@ -19,6 +23,8 @@ export function CommunicationDetailPage() {
   const navigate = useNavigate();
   const [cancelOpen, setCancelOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const me = useCurrentUser();
 
   if (query.isPending) return <SkeletonCard />;
   if (query.isError)
@@ -30,6 +36,9 @@ export function CommunicationDetailPage() {
       />
     );
   const c = query.data;
+  const balanceAfter = c.authorBalance - c.businessDays;
+  const isAuthor = me.id === c.author.id;
+  const debits = c.status === 'APPROVED';
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,12 +64,32 @@ export function CommunicationDetailPage() {
             <StatusBadge status={c.status} size="lg" />
           </div>
 
-          <Card className="grid grid-cols-3 p-6">
+          <Card className="grid grid-cols-2 gap-y-6 p-6 md:grid-cols-4">
             <div className="flex flex-col gap-2">
               <span className="text-eyebrow">Dias úteis</span>
               <span className="text-[26px] leading-none font-bold text-ink">{c.businessDays}</span>
             </div>
             <div className="flex flex-col gap-2 border-l border-line pl-6">
+              <span className="text-eyebrow">{MESSAGES.deductedDaysLabel}</span>
+              <span
+                className={cn(
+                  'text-[26px] leading-none font-bold',
+                  debits ? 'text-ink' : 'text-ink-muted',
+                )}
+              >
+                {debits ? (c.deductedDays ?? c.businessDays) : '—'}
+              </span>
+              <span className="text-[13px] text-ink-muted">
+                {c.status === 'IN_REVIEW'
+                  ? MESSAGES.deductedDaysPending
+                  : debits && c.deductedDays !== null && c.deductedDays !== c.businessDays
+                    ? MESSAGES.deductedDaysAdjusted
+                    : !debits
+                      ? MESSAGES.deductedDaysNotApplicable
+                      : undefined}
+              </span>
+            </div>
+            <div className="flex flex-col gap-2 border-l border-line pl-6 max-md:border-l-0 max-md:pl-0">
               <span className="text-eyebrow">Cobertura</span>
               <span className="text-[18px] leading-[1.2] font-semibold text-ink">
                 {c.cover?.name ?? MESSAGES.coverNotInformed}
@@ -79,6 +108,19 @@ export function CommunicationDetailPage() {
               <h2 className="text-[15px] font-semibold text-ink">Observações</h2>
               <p className="text-[16px] leading-[1.6] text-ink-muted">{c.notes}</p>
             </Card>
+          )}
+
+          {c.status === 'IN_REVIEW' && (
+            <p className="text-[14px] text-ink-muted" data-testid="author-balance">
+              {isAuthor ? MESSAGES.balanceMineLabel : MESSAGES.balanceOf(c.author.name)}:{' '}
+              <BalanceAfter before={c.authorBalance} deducted={c.businessDays} />
+              {balanceAfter < 0 && (
+                <span className="text-danger"> · {MESSAGES.balanceNegativeHint}</span>
+              )}
+              {me.role === 'APPROVER' && !isAuthor && (
+                <span className="block text-[13px]">{MESSAGES.balanceAdminOnlyHint}</span>
+              )}
+            </p>
           )}
 
           {c.conflicts.length > 0 && c.status === 'IN_REVIEW' && (
@@ -110,18 +152,24 @@ export function CommunicationDetailPage() {
               <>
                 <Button
                   variant="accent"
-                  loading={approve.isPending}
+                  loading={approve.isPending && !adjustOpen}
                   onClick={() =>
-                    approve.mutate(c.id, {
-                      onSuccess: () => toast.success(MESSAGES.approvedToast),
-                      onError: (e) => toast.error(e.message),
-                    })
+                    approve.mutate(
+                      { id: c.id },
+                      {
+                        onSuccess: () => toast.success(MESSAGES.approvedToast),
+                        onError: (e) => toast.error(e.message),
+                      },
+                    )
                   }
                 >
                   Aprovar
                 </Button>
                 <Button variant="destructive" onClick={() => setRejectOpen(true)}>
                   Recusar
+                </Button>
+                <Button variant="outline" onClick={() => setAdjustOpen(true)}>
+                  {MESSAGES.adjustDeductionTitle}
                 </Button>
               </>
             )}
@@ -147,6 +195,24 @@ export function CommunicationDetailPage() {
             },
             onError: (e) => toast.error(e.message),
           })
+        }
+      />
+      <AdjustDeductionModal
+        communication={c}
+        open={adjustOpen}
+        onClose={() => setAdjustOpen(false)}
+        loading={approve.isPending}
+        onConfirm={(body) =>
+          approve.mutate(
+            { id: c.id, body },
+            {
+              onSuccess: () => {
+                setAdjustOpen(false);
+                toast.success(MESSAGES.approvedToast);
+              },
+              onError: (e) => toast.error(e.message),
+            },
+          )
         }
       />
       <RejectModal

@@ -27,6 +27,7 @@ import { communicationsRepository } from '../communications/communications.repos
 import { communicationsService } from '../communications/communications.service';
 import { flowEventsRepository } from '../communications/flow-events.repository';
 import { memberOfProject } from '../../core/projects/user-projects.repository';
+import { balanceRepository } from '../balance/balance.repository';
 import { approvalsRepository } from './approvals.repository';
 
 /** Statements por decisão em `decideStatements`; `batchApprove` e `undoBatch` leem os resultados por esse passo. */
@@ -146,8 +147,9 @@ export const approvalsService = {
       communicationsRepository.count(and(base, eq(communications.status, 'APPROVED'))),
       communicationsRepository.count(and(base, eq(communications.status, 'REJECTED'))),
     ]);
+    const balances = await balanceRepository.balances([...new Set(rows.map((r) => r.authorId))]);
     return {
-      items: rows.map(toQueueItemDto),
+      items: rows.map((row) => toQueueItemDto(row, balances.get(row.authorId) ?? 0)),
       total,
       page: query.page,
       pageSize: query.pageSize,

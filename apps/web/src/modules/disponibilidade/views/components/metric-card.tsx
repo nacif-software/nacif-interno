@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router';
 import { cn } from '@/lib/cn';
 
 export function MetricCard({
@@ -8,9 +9,12 @@ export function MetricCard({
   hint,
   size = 'lg',
   muted,
+  to,
   className,
 }: {
   label: string;
+  /** Torna o card um link (foco e hover visíveis no próprio card). */
+  to?: string;
   /** Rótulo curto para o mobile (ex.: 'Dias no ano'). */
   shortLabel?: string;
   value: ReactNode;
@@ -19,13 +23,13 @@ export function MetricCard({
   muted?: boolean;
   className?: string;
 }) {
-  return (
-    <div
-      className={cn(
-        'flex flex-col gap-[10px] rounded-card border border-line bg-card p-4 md:p-6',
-        className,
-      )}
-    >
+  const className_ = cn(
+    'flex flex-col gap-[10px] rounded-card border border-line bg-card p-4 md:p-6',
+    to && 'text-inherit transition-colors hover:border-brand hover:text-inherit',
+    className,
+  );
+  const content = (
+    <>
       <span className="text-eyebrow text-[11px] md:text-[12px]">
         <span className="md:hidden">{shortLabel ?? label}</span>
         <span className="max-md:hidden">{label}</span>
@@ -40,6 +44,14 @@ export function MetricCard({
         {value}
       </span>
       {hint && <span className="hidden text-[14px] text-ink-muted md:block">{hint}</span>}
-    </div>
+    </>
   );
+  if (to) {
+    return (
+      <Link to={to} className={className_}>
+        {content}
+      </Link>
+    );
+  }
+  return <div className={className_}>{content}</div>;
 }

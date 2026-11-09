@@ -66,8 +66,8 @@ export function snapshotConflicts(row: CommunicationRow): ConflictDto[] {
   return meta?.conflicts ?? [];
 }
 
-export function toQueueItemDto(row: CommunicationRow): QueueItemDto {
-  return { ...toSummaryDto(row), hasConflicts: snapshotConflicts(row).length > 0 };
+export function toQueueItemDto(row: CommunicationRow, authorBalance: number): QueueItemDto {
+  return { ...toSummaryDto(row), hasConflicts: snapshotConflicts(row).length > 0, authorBalance };
 }
 
 export function toDetailDto(

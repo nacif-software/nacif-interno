@@ -11,6 +11,7 @@ import { useEffect, useMemo } from 'react';
 import { Controller } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 import { isApiError } from '@/lib/api-client';
+import { cn } from '@/lib/cn';
 import { useIsDesktop } from '@/lib/use-media-query';
 import { useCurrentUser } from '@/modules/core/controllers/use-session';
 import { useProjects } from '@/modules/core/controllers/use-projects';
@@ -26,6 +27,7 @@ import {
 import { useConflicts } from '../../controllers/use-conflicts';
 import { useSettings } from '../../controllers/use-settings';
 import { paths } from '../../manifest';
+import { useMyBalance } from '../../controllers/use-balance';
 import { ConflictAlert } from '../components/conflict-alert';
 import { DateRangePicker } from '../components/date-range-picker';
 import { FormFooter } from '../components/form-footer';
@@ -124,6 +126,12 @@ export function CommunicationFormPage() {
     );
   });
 
+  const balance = useMyBalance();
+  const plannedDays = startDate && endDate ? countBusinessDays(startDate, endDate) : null;
+  // Na edição, a comunicação ainda não debitou (está em análise): o saldo atual já é a base.
+  const balanceAfter =
+    balance.data && plannedDays !== null ? balance.data.balance - plannedDays : null;
+
   const backTo = mode === 'edit' && code ? paths.detail(code) : paths.base;
   const busy = create.isPending || updatePeriod.isPending;
   const coverName = covers.data?.find((c) => c.id === coverId)?.name;
@@ -221,6 +229,23 @@ export function CommunicationFormPage() {
           />
 
           <ConflictAlert result={conflicts.data} />
+          {balanceAfter !== null && (
+            <div className="flex flex-col gap-3" data-testid="balance-after">
+              <p
+                className={cn(
+                  'text-[14px]',
+                  balanceAfter < 0 ? 'font-semibold text-danger' : 'text-ink-muted',
+                )}
+              >
+                {MESSAGES.balanceAfterThis(balanceAfter)}
+              </p>
+              {balanceAfter < 0 && (
+                <Alert variant="warning" title={MESSAGES.balanceNegativeWarningTitle}>
+                  {MESSAGES.balanceNegativeWarning(balanceAfter)}
+                </Alert>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col gap-4 rounded-card border border-line bg-card p-[18px] md:gap-[22px] md:p-7">
             <Field label="Quem cobre suas entregas" error={form.formState.errors.coverId?.message}>

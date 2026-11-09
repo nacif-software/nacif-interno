@@ -59,11 +59,14 @@ export function ApprovalQueuePage() {
 
   const onApprove = (item: QueueItemDto) => {
     setBusyId(item.id);
-    approve.mutate(item.id, {
-      onSuccess: () => toast.success(MESSAGES.approvedToast),
-      onError: (e) => toast.error(e.message),
-      onSettled: () => setBusyId(null),
-    });
+    approve.mutate(
+      { id: item.id },
+      {
+        onSuccess: () => toast.success(MESSAGES.approvedToast),
+        onError: (e) => toast.error(e.message),
+        onSettled: () => setBusyId(null),
+      },
+    );
   };
 
   const onBatch = () => {
@@ -99,7 +102,7 @@ export function ApprovalQueuePage() {
       <div className="max-md:hidden">
         <PageHeader
           title="Fila de aprovação"
-          subtitle={`${inReviewCount} ${inReviewCount === 1 ? 'comunicação' : 'comunicações'} em análise${user.role === 'ADMIN' ? '' : ' para você'}`}
+          subtitle={`${inReviewCount} ${inReviewCount === 1 ? 'comunicação' : 'comunicações'} em análise${user.role === 'ADMIN' ? '' : ` para você. ${MESSAGES.balanceAdminOnlyHint}`}`}
           actions={
             <>
               <StatusFilterChips
