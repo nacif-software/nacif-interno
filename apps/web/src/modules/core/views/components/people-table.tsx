@@ -109,14 +109,19 @@ export function PeopleTable({
               </div>
               <Select
                 aria-label={`Projeto de ${u.name}`}
-                value={u.project?.id ?? ''}
-                onChange={(e) => patch(u.id, { projectId: e.target.value || null })}
+                value={u.projects[0]?.id ?? ''}
+                onChange={(e) =>
+                  patch(u.id, { projectIds: e.target.value ? [e.target.value] : [] })
+                }
                 className="py-[7px] text-[13px]"
               >
                 <option value="">Sem projeto</option>
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
+                    {u.projects.length > 1 && u.projects[0]?.id === p.id
+                      ? ` (+${u.projects.length - 1})`
+                      : ''}
                   </option>
                 ))}
               </Select>

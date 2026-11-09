@@ -18,15 +18,15 @@ Usuários do seed: `caio@nacif.xyz` (administrador), `marina@nacif.xyz` (aprovad
 
 ### Dia a dia
 
-| Quero...                                    | Comando                                                                                                   |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Rodar só a API ou só o web                  | `make dev-api` / `make dev-web`                                                                           |
-| Zerar o banco local e refazer o seed        | `make db-reset`                                                                                           |
-| Mudar o schema                              | editar `apps/api/src/db/schema.ts`, `make migrate-new name=descricao`, `make migrate`                     |
-| Mudar o `wrangler.jsonc`                    | `make types` (regera `worker-configuration.d.ts`)                                                         |
+| Quero...                                    | Comando                                                                                                        |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Rodar só a API ou só o web                  | `make dev-api` / `make dev-web`                                                                                |
+| Zerar o banco local e refazer o seed        | `make db-reset`                                                                                                |
+| Mudar o schema                              | editar `apps/api/src/db/schema.ts`, `make migrate-new name=descricao`, `make migrate`                          |
+| Mudar o `wrangler.jsonc`                    | `make types` (regera `worker-configuration.d.ts`)                                                              |
 | Ver o banco local                           | `pnpm --filter @nacif/api exec wrangler d1 execute nacif-interno-prod --local --command "select * from users"` |
-| Testar o build de produção do web no Worker | `make build-web && make dev-api`, depois http://localhost:8787                                            |
-| Checar o bundle antes de publicar           | `make deploy-check`                                                                                       |
+| Testar o build de produção do web no Worker | `make build-web && make dev-api`, depois http://localhost:8787                                                 |
+| Checar o bundle antes de publicar           | `make deploy-check`                                                                                            |
 
 Variáveis locais ficam em `apps/api/.dev.vars` (criado a partir de `.dev.vars.example`; não é versionado). As de produção ficam em `vars` no `apps/api/wrangler.jsonc`.
 

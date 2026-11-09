@@ -23,7 +23,7 @@ export type CalendarBar = z.infer<typeof calendarBarSchema>;
 
 export const calendarRowSchema = z.object({
   user: z.object({ id: z.string(), name: z.string(), initials: z.string() }),
-  project: projectRefSchema.nullable(),
+  projects: z.array(projectRefSchema),
   isApprover: z.boolean(),
   bars: z.array(calendarBarSchema),
 });

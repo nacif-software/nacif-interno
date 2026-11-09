@@ -10,6 +10,7 @@ import {
 } from '@nacif/shared';
 import type { CommunicationRow } from '../../../db/types';
 import type { AuthenticatedUser } from '../../../infra/http/context';
+import { projectRefs } from '../../core/users/user.mapper';
 
 export function toSummaryDto(row: CommunicationRow): CommunicationSummaryDto {
   const decision = row.decisions[0] ?? null;
@@ -19,13 +20,14 @@ export function toSummaryDto(row: CommunicationRow): CommunicationSummaryDto {
     startDate: row.startDate,
     endDate: row.endDate,
     businessDays: row.businessDays,
+    deductedDays: row.deductedDays,
     status: row.status,
     submittedAt: row.submittedAt.toISOString(),
     cancelledAt: row.cancelledAt?.toISOString() ?? null,
     author: { id: row.author.id, name: row.author.name },
-    cover: { id: row.cover.id, name: row.cover.name },
+    cover: row.cover ? { id: row.cover.id, name: row.cover.name } : null,
     approver: { id: row.approver.id, name: row.approver.name },
-    project: { id: row.project.id, name: row.project.name },
+    projects: projectRefs(row.author),
     decision: decision
       ? {
           type: decision.type,
@@ -72,11 +74,13 @@ export function toDetailDto(
   row: CommunicationRow,
   actor: AuthenticatedUser,
   liveConflicts: ConflictDto[],
+  authorBalance: number,
 ): CommunicationDetailDto {
   const isAuthor = actor.id === row.authorId;
   return {
     ...toSummaryDto(row),
     notes: row.notes,
+    authorBalance,
     flow: row.events.map(toFlowEventDto),
     conflicts: liveConflicts,
     permissions: {

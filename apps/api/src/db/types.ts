@@ -1,6 +1,7 @@
 import type {
   approvalBatches,
   availabilityDefaultApprovers,
+  availabilityLedgerEntries,
   availabilitySettings,
   communications,
   decisions,
@@ -8,6 +9,7 @@ import type {
   passwordSetupTokens,
   projects,
   sessions,
+  userProjects,
   users,
 } from './schema';
 
@@ -26,18 +28,24 @@ export type Decision = typeof decisions.$inferSelect;
 export type NewDecision = typeof decisions.$inferInsert;
 export type FlowEvent = typeof flowEvents.$inferSelect;
 export type NewFlowEvent = typeof flowEvents.$inferInsert;
+export type UserProject = typeof userProjects.$inferSelect;
+export type LedgerEntry = typeof availabilityLedgerEntries.$inferSelect;
+export type NewLedgerEntry = typeof availabilityLedgerEntries.$inferInsert;
 
-export type UserWithProject = User & { project: Project | null };
+/** Pessoa com seus projetos (N:N). */
+export type UserWithProjects = User & { projects: (UserProject & { project: Project })[] };
 
 /** Projeto com aprovador padrão e contagem de membros ativos. */
 export type ProjectRow = Project & { defaultApprover: User | null; memberCount: number };
 
 /** Comunicação com as relações que os mappers e as regras de permissão leem. */
 export type CommunicationRow = Communication & {
-  author: User;
-  cover: User;
+  author: UserWithProjects;
+  /** Nula nas comunicações importadas da planilha. */
+  cover: User | null;
   approver: User;
-  project: Project;
+  /** @deprecated Projeto escolhido no envio; nulo nas novas (a comunicação vale para todos os projetos da pessoa). */
+  project: Project | null;
   /** Decisão vigente (não revertida), no máximo uma. */
   decisions: Decision[];
   events: (FlowEvent & { actor: User | null })[];

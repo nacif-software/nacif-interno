@@ -1,4 +1,10 @@
-import { COMMUNICATION_STATUSES, DECISION_TYPES, FLOW_EVENT_TYPES, ROLES } from '@nacif/shared';
+import {
+  COMMUNICATION_STATUSES,
+  DECISION_TYPES,
+  FLOW_EVENT_TYPES,
+  LEDGER_ENTRY_TYPES,
+  ROLES,
+} from '@nacif/shared';
 import { sql } from 'drizzle-orm';
 import {
   check,
@@ -49,9 +55,15 @@ export const users = sqliteTable(
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
     passwordHash: text('password_hash'),
     invitedAt: isoTimestamp('invited_at'),
+    /**
+     * @deprecated Substituída por `user_projects` (N:N). Mantida até a migração que a remove,
+     * depois que nenhum código em produção a lê.
+     */
     projectId: text('project_id').references((): AnySQLiteColumn => projects.id, {
       onDelete: 'set null',
     }),
+    /** `YYYY-MM-DD`: data base do crédito anual de dias (aniversários geram ACCRUAL). */
+    creditBaseDate: text('credit_base_date'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -113,12 +125,31 @@ export const projects = sqliteTable(
   (t) => [uniqueIndex('projects_name_key').on(t.name)],
 );
 
+/** Pessoa ↔ projetos (N:N). */
+export const userProjects = sqliteTable(
+  'user_projects',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.projectId] }),
+    index('user_projects_project_id_idx').on(t.projectId),
+  ],
+);
+
 // ------------------------------------------------------ disponibilidade
 
 export const availabilitySettings = sqliteTable('availability_settings', {
   id: integer('id').primaryKey().default(1),
   minNoticeDays: integer('min_notice_days').notNull().default(7),
   maxSimultaneousPerProject: integer('max_simultaneous_per_project').notNull().default(2),
+  /** Dias creditados a cada aniversário da data base do crédito. */
+  daysPerYear: integer('days_per_year').notNull().default(10),
   updatedAt: updatedAt(),
 });
 
@@ -155,17 +186,17 @@ export const communications = sqliteTable(
     authorId: text('author_id')
       .notNull()
       .references(() => users.id),
-    projectId: text('project_id')
-      .notNull()
-      .references(() => projects.id),
+    /** @deprecated Nulo nas comunicações novas: a comunicação vale para todos os projetos da pessoa. */
+    projectId: text('project_id').references(() => projects.id),
     /** `YYYY-MM-DD` */
     startDate: text('start_date').notNull(),
     /** `YYYY-MM-DD` */
     endDate: text('end_date').notNull(),
     businessDays: integer('business_days').notNull(),
-    coverId: text('cover_id')
-      .notNull()
-      .references(() => users.id),
+    /** Dias descontados do saldo quando aprovada; null = `business_days`. Ajustável pelo aprovador. */
+    deductedDays: integer('deducted_days'),
+    /** Nula só nas comunicações importadas da planilha; a UI continua exigindo cobertura. */
+    coverId: text('cover_id').references(() => users.id),
     approverId: text('approver_id')
       .notNull()
       .references(() => users.id),
@@ -192,7 +223,44 @@ export const communications = sqliteTable(
       t.endDate,
     ),
     index('communications_status_start_date_end_date_idx').on(t.status, t.startDate, t.endDate),
+    index('communications_author_id_status_idx').on(t.authorId, t.status),
     check('communications_status_check', sql.raw(`status in (${inList(COMMUNICATION_STATUSES)})`)),
+  ],
+);
+
+/**
+ * Lançamentos do saldo de dias. `days` é sempre positivo: ACCRUAL e GRANT somam, SALE subtrai.
+ * O débito das comunicações aprovadas não fica aqui: é derivado do status (ver `balance.repository.ts`).
+ */
+export const availabilityLedgerEntries = sqliteTable(
+  'availability_ledger_entries',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type', { enum: LEDGER_ENTRY_TYPES }).notNull(),
+    days: integer('days').notNull(),
+    /** `YYYY-MM-DD`: aniversário (ACCRUAL) ou data informada (GRANT/SALE). */
+    referenceDate: text('reference_date').notNull(),
+    /** Ano do aniversário creditado; só em ACCRUAL (idempotência do cron). */
+    referenceYear: integer('reference_year'),
+    note: text('note'),
+    /** Quem lançou; null = crédito automático. */
+    createdById: text('created_by_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('availability_ledger_entries_accrual_key')
+      .on(t.userId, t.type, t.referenceYear)
+      .where(sql`type = 'ACCRUAL'`),
+    index('availability_ledger_entries_user_id_reference_date_idx').on(t.userId, t.referenceDate),
+    check(
+      'availability_ledger_entries_type_check',
+      sql.raw(`type in (${inList(LEDGER_ENTRY_TYPES)})`),
+    ),
+    check('availability_ledger_entries_days_check', sql`days > 0`),
+    check('availability_ledger_entries_note_check', sql`type = 'ACCRUAL' or note is not null`),
   ],
 );
 
@@ -238,11 +306,18 @@ export type FlowEventMetadata =
         startDate: string;
         endDate: string;
         status: string;
+        projectNames?: string[];
       }[];
       conflictNotes: string[];
     }
   | { previous: { startDate: string; endDate: string } }
-  | { decision: 'APPROVED' | 'REJECTED'; justification: string | null; batchId: string | null }
+  | {
+      decision: 'APPROVED' | 'REJECTED';
+      justification: string | null;
+      batchId: string | null;
+      /** Presente quando o aprovador ajustou os dias descontados. */
+      deductedDays?: number;
+    }
   | { batchId: string };
 
 export const flowEvents = sqliteTable(

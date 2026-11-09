@@ -5,6 +5,8 @@ import { communicationSummaryDtoSchema } from './communication';
 
 export const dashboardDtoSchema = z.object({
   year: z.number().int(),
+  /** Saldo de dias atual da pessoa (pode ser negativo). */
+  balance: z.number().int(),
   daysCommunicatedInYear: z.number().int(),
   inReviewCount: z.number().int(),
   inReviewApproverName: z.string().nullable(),

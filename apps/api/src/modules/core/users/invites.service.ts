@@ -13,6 +13,7 @@ import { AppError, NotFoundError } from '../../../infra/http/errors';
 import { logger } from '../../../infra/logger';
 import { generateToken, sha256 } from '../auth/password';
 import { passwordSetupTokenRepository } from '../auth/password-setup-token.repository';
+import { assertActiveProjects } from '../projects/projects.guard';
 import { provisionalName, SETUP_TOKEN_TTL_MS, setupPath } from './setup-link';
 import { toUserDto } from './user.mapper';
 import { usersRepository } from './users.repository';
@@ -58,23 +59,30 @@ export const invitesService = {
       throw new AppError(409, 'CONFLICT', 'Esta pessoa já tem acesso.');
     }
     const userId = existing?.id ?? crypto.randomUUID();
+    const projectIds = input.projectIds ? await assertActiveProjects(input.projectIds) : undefined;
+    const creditBaseDate =
+      input.creditBaseDate !== undefined ? { creditBaseDate: input.creditBaseDate } : {};
     const userStatement = existing
       ? usersRepository.updateById(existing.id, {
           invitedAt: now,
           ...(input.name ? { name: input.name } : {}),
           ...(input.role ? { role: input.role } : {}),
-          ...(input.projectId !== undefined ? { projectId: input.projectId } : {}),
+          ...creditBaseDate,
         })
       : usersRepository.insert({
           id: userId,
           email: input.email,
           name: input.name ?? provisionalName(input.email),
           role: input.role ?? 'MEMBER',
-          projectId: input.projectId ?? null,
           invitedAt: now,
+          ...creditBaseDate,
         });
     const { token, statements } = await setupTokenStatements(userId, now);
-    await db().batch([userStatement, ...statements]);
+    await db().batch([
+      userStatement,
+      ...(projectIds ? usersRepository.setProjectsStatements(userId, projectIds) : []),
+      ...statements,
+    ]);
     const user = await usersRepository.mustFind(userId);
     const link = setupLink(token);
     logger.info({ email: user.email, initials: getInitials(user.name), link }, 'Convite criado');

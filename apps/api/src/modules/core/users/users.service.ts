@@ -4,6 +4,7 @@ import { users } from '../../../db/schema';
 import type { AuthenticatedUser } from '../../../infra/http/context';
 import { AppError, NotFoundError } from '../../../infra/http/errors';
 import { sessionService } from '../auth/session.service';
+import { assertActiveProjects } from '../projects/projects.guard';
 import { toUserDto, toUserOption } from './user.mapper';
 import { usersRepository } from './users.repository';
 
@@ -58,7 +59,10 @@ export const usersService = {
       }
     }
 
-    const updated = await usersRepository.update(id, body);
+    const { projectIds, ...data } = body;
+    const projects = projectIds ? await assertActiveProjects(projectIds) : undefined;
+    // A data base muda o crédito anual: o cron diário (ou `POST /balance/accrual/run`) recupera os anos pendentes.
+    const updated = await usersRepository.update(id, data, projects);
     if (body.active === false) await sessionService.revokeAllForUser(id);
     return toUserDto(updated);
   },

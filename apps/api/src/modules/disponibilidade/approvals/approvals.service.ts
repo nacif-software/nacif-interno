@@ -3,6 +3,7 @@ import {
   canDecideOn,
   monthEnd,
   monthStart,
+  type ApproveBody,
   type ApprovalsQuery,
   type ApprovalsResult,
   type BatchApproveResult,
@@ -12,7 +13,7 @@ import {
 import { and, asc, eq, gte, lte, sql, type SQL } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { batchAll } from '../../../db/client';
-import { communications, decisions, flowEvents } from '../../../db/schema';
+import { communications, decisions, flowEvents, userProjects } from '../../../db/schema';
 import type { CommunicationRow } from '../../../db/types';
 import type { AuthenticatedUser } from '../../../infra/http/context';
 import {
@@ -30,6 +31,14 @@ import { approvalsRepository } from './approvals.repository';
 /** Statements por decisão em `decideStatements`; `batchApprove` e `undoBatch` leem os resultados por esse passo. */
 const STATEMENTS_PER_DECISION = 3;
 
+/** Comunicações de quem participa do projeto (a comunicação vale para todos os projetos da pessoa). */
+function authorInProject(projectId: string): SQL {
+  return sql`exists (
+    select 1 from ${userProjects} up
+    where up.user_id = ${communications.authorId} and up.project_id = ${projectId}
+  )`;
+}
+
 function scopeFor(actor: AuthenticatedUser): SQL | undefined {
   return actor.role === 'ADMIN' ? undefined : eq(communications.approverId, actor.id);
 }
@@ -42,22 +51,39 @@ async function loadDecidable(actor: AuthenticatedUser, id: string): Promise<Comm
   return row;
 }
 
+interface DecideOptions {
+  justification?: string;
+  batchId?: string;
+  /** Dias descontados do saldo, quando o aprovador ajusta (padrão: dias úteis). */
+  deductedDays?: number;
+  deductionNote?: string;
+}
+
 /**
  * Statements de uma decisão, para um `batch()`: UPDATE com guard de status (`returning` vazio se
  * outra requisição decidiu antes), decisão e evento condicionados a essa mesma vitória.
+ * Na aprovação, status e dias descontados entram no mesmo UPDATE.
  */
 function decideStatements(
   actor: AuthenticatedUser,
   row: CommunicationRow,
   type: 'APPROVED' | 'REJECTED',
   now: Date,
-  options: { justification?: string; batchId?: string } = {},
+  options: DecideOptions = {},
 ): BatchItem<'sqlite'>[] {
   const decisionId = crypto.randomUUID();
-  const justification = options.justification ?? null;
+  const justification = options.justification ?? options.deductionNote ?? null;
   const batchId = options.batchId ?? null;
+  const adjusted = type === 'APPROVED' && options.deductedDays !== undefined;
+  const deductedDays = type === 'APPROVED' ? (options.deductedDays ?? row.businessDays) : null;
+  const description =
+    type === 'REJECTED'
+      ? `Recusada por ${actor.name}`
+      : adjusted
+        ? `Aprovada por ${actor.name} (${deductedDays} ${deductedDays === 1 ? 'dia descontado' : 'dias descontados'})`
+        : `Aprovada por ${actor.name}`;
   return [
-    communicationsRepository.update(row.id, { status: type }, 'IN_REVIEW'),
+    communicationsRepository.update(row.id, { status: type, deductedDays }, 'IN_REVIEW'),
     approvalsRepository.insertDecisionIfWon({
       id: decisionId,
       communicationId: row.id,
@@ -73,9 +99,13 @@ function decideStatements(
         type: 'DECISION',
         actorId: actor.id,
         occurredAt: now,
-        description:
-          type === 'APPROVED' ? `Aprovada por ${actor.name}` : `Recusada por ${actor.name}`,
-        metadata: { decision: type, justification, batchId },
+        description,
+        metadata: {
+          decision: type,
+          justification,
+          batchId,
+          ...(adjusted && deductedDays !== null ? { deductedDays } : {}),
+        },
       },
       sql`exists (select 1 from ${decisions} where ${decisions.id} = ${decisionId})`,
     ),
@@ -93,7 +123,7 @@ async function decide(
   row: CommunicationRow,
   type: 'APPROVED' | 'REJECTED',
   now: Date,
-  options: { justification?: string } = {},
+  options: DecideOptions = {},
 ) {
   const results = await batchAll(decideStatements(actor, row, type, now, options));
   if (!decisionApplied(results, 0, 0)) {
@@ -107,7 +137,7 @@ export const approvalsService = {
       scopeFor(actor),
       query.from ? gte(communications.endDate, monthStart(query.from)) : undefined,
       query.to ? lte(communications.startDate, monthEnd(query.to)) : undefined,
-      query.projectId ? eq(communications.projectId, query.projectId) : undefined,
+      query.projectId ? authorInProject(query.projectId) : undefined,
     );
     const where = and(base, eq(communications.status, query.status));
 
@@ -135,10 +165,14 @@ export const approvalsService = {
   async approve(
     actor: AuthenticatedUser,
     id: string,
+    body: ApproveBody = {},
     now: Date = new Date(),
   ): Promise<CommunicationDetailDto> {
     const row = await loadDecidable(actor, id);
-    await decide(actor, row, 'APPROVED', now);
+    await decide(actor, row, 'APPROVED', now, {
+      deductedDays: body.deductedDays,
+      deductionNote: body.deductionNote,
+    });
     return communicationsService.getDetail(actor, id);
   },
 

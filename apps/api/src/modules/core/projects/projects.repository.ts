@@ -1,11 +1,13 @@
-import { eq, getTableColumns, sql } from 'drizzle-orm';
+import { and, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
 import { db } from '../../../db/client';
-import { projects, users } from '../../../db/schema';
-import type { NewProject, ProjectRow } from '../../../db/types';
+import { projects, userProjects, users } from '../../../db/schema';
+import type { NewProject, Project, ProjectRow } from '../../../db/types';
 
-/** Membros ativos do projeto (o Prisma fazia `_count` filtrado). */
+/** Membros ativos do projeto, pela associação N:N. */
 const memberCount = sql<number>`(
-  select count(*) from ${users} where ${users.projectId} = ${projects.id} and ${users.active} = 1
+  select count(*) from ${userProjects} up
+  join ${users} u on u.id = up.user_id
+  where up.project_id = ${projects.id} and u.active = 1
 )`.mapWith(Number);
 
 function selectRows() {
@@ -18,6 +20,13 @@ function selectRows() {
 export const projectsRepository = {
   list(): Promise<ProjectRow[]> {
     return selectRows().orderBy(sql`${projects.name} collate nocase`);
+  },
+  /** Projetos ativos entre os ids dados (para validar associações). */
+  findActiveByIds(ids: string[]): Promise<Project[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    return db().query.projects.findMany({
+      where: and(inArray(projects.id, ids), eq(projects.active, true)),
+    });
   },
   async findById(id: string): Promise<ProjectRow | undefined> {
     const [row] = await selectRows().where(eq(projects.id, id));

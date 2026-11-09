@@ -1,6 +1,7 @@
 import { createRouter } from '../../infra/http/context';
 import type { ApiModule } from '../../infra/http/module';
 import { approvalsRouter } from './approvals/approvals.routes';
+import { balanceRouter } from './balance/balance.routes';
 import { calendarRouter } from './calendar/calendar.routes';
 import { communicationsRouter } from './communications/communications.routes';
 import { dashboardRouter } from './dashboard/dashboard.routes';
@@ -13,6 +14,7 @@ router.route('/', dashboardRouter);
 router.route('/', communicationsRouter);
 router.route('/', approvalsRouter);
 router.route('/', calendarRouter);
+router.route('/', balanceRouter);
 
 export const disponibilidadeModule: ApiModule = {
   slug: 'disponibilidade',

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { JUSTIFICATION_MAX_CHARS, REJECTION_MIN_CHARS } from '../constants';
+import { JUSTIFICATION_MAX_CHARS, LEDGER_NOTE_MIN_CHARS, REJECTION_MIN_CHARS } from '../constants';
 import { isoMonthSchema } from '../date/iso-date';
 import { communicationStatusSchema } from '../enums/communication-status';
 import { MESSAGES } from '../labels/pt-br';
@@ -40,6 +40,23 @@ export const rejectBodySchema = z.object({
     .max(JUSTIFICATION_MAX_CHARS),
 });
 export type RejectBody = z.infer<typeof rejectBodySchema>;
+
+/** Aprovação individual: corpo opcional; ajustar os dias descontados exige nota. */
+export const approveBodySchema = z
+  .object({
+    deductedDays: z.coerce.number().int().min(0).max(366),
+    deductionNote: z
+      .string()
+      .trim()
+      .min(LEDGER_NOTE_MIN_CHARS, { error: MESSAGES.ledgerNoteTooShort })
+      .max(JUSTIFICATION_MAX_CHARS),
+  })
+  .partial()
+  .refine((b) => b.deductedDays === undefined || b.deductionNote !== undefined, {
+    error: MESSAGES.deductionNoteRequired,
+    path: ['deductionNote'],
+  });
+export type ApproveBody = z.infer<typeof approveBodySchema>;
 
 export const batchApproveBodySchema = z.object({
   communicationIds: z.array(z.string().min(1)).min(1).max(100),

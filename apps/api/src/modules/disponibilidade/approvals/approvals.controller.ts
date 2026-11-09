@@ -1,4 +1,4 @@
-import type { ApprovalsQuery, BatchApproveBody, RejectBody } from '@nacif/shared';
+import type { ApprovalsQuery, ApproveBody, BatchApproveBody, RejectBody } from '@nacif/shared';
 import { param, type AppContext } from '../../../infra/http/context';
 import { getInput } from '../../../infra/http/validate';
 import { approvalsService } from './approvals.service';
@@ -10,7 +10,8 @@ export const approvalsController = {
   },
 
   approve: async (c: AppContext) => {
-    return c.json(await approvalsService.approve(c.get('user'), param(c, 'id')));
+    const { body } = getInput<ApproveBody>(c);
+    return c.json(await approvalsService.approve(c.get('user'), param(c, 'id'), body));
   },
 
   reject: async (c: AppContext) => {

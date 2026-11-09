@@ -3,13 +3,15 @@ import { eq } from 'drizzle-orm';
 import { db } from '../db/client';
 import {
   availabilityDefaultApprovers,
+  availabilityLedgerEntries,
   availabilitySettings,
   communications,
   flowEvents,
   projects,
+  userProjects,
   users,
 } from '../db/schema';
-import type { Communication, Project, UserWithProject } from '../db/types';
+import type { Communication, LedgerEntry, Project, UserWithProjects } from '../db/types';
 import { hashPassword } from '../modules/core/auth/password';
 
 export const TEST_PASSWORD = 'senha-forte-123';
@@ -39,12 +41,16 @@ export async function createUser(
     email?: string;
     role?: Role;
     active?: boolean;
+    /** Projetos da pessoa (N:N). `projectId` é atalho para um só. */
+    projectIds?: string[];
     projectId?: string | null;
+    creditBaseDate?: string | null;
     withPassword?: boolean;
   } = {},
-): Promise<UserWithProject> {
+): Promise<UserWithProjects> {
   const slug = Math.random().toString(36).slice(2, 8);
   const id = crypto.randomUUID();
+  const projectIds = overrides.projectIds ?? (overrides.projectId ? [overrides.projectId] : []);
   await db()
     .insert(users)
     .values({
@@ -53,23 +59,33 @@ export async function createUser(
       email: overrides.email ?? `${slug}@nacif.xyz`,
       role: overrides.role ?? 'MEMBER',
       active: overrides.active ?? true,
-      projectId: overrides.projectId ?? null,
+      creditBaseDate: overrides.creditBaseDate ?? null,
       passwordHash: overrides.withPassword === false ? null : await passwordHash(),
     });
+  if (projectIds.length > 0) {
+    await db()
+      .insert(userProjects)
+      .values(projectIds.map((projectId) => ({ userId: id, projectId })));
+  }
   const row = await db().query.users.findFirst({
     where: eq(users.id, id),
-    with: { project: true },
+    with: { projects: { with: { project: true } } },
   });
   if (!row) throw new Error('Usuário não criado');
   return row;
 }
 
 export async function createSettings(
-  overrides: { minNoticeDays?: number; maxSimultaneousPerProject?: number } = {},
+  overrides: {
+    minNoticeDays?: number;
+    maxSimultaneousPerProject?: number;
+    daysPerYear?: number;
+  } = {},
 ) {
   const values = {
     minNoticeDays: overrides.minNoticeDays ?? 7,
     maxSimultaneousPerProject: overrides.maxSimultaneousPerProject ?? 2,
+    daysPerYear: overrides.daysPerYear ?? 10,
   };
   const [row] = await db()
     .insert(availabilitySettings)
@@ -81,14 +97,41 @@ export async function createSettings(
 
 /** Sequências a partir de 9000 para não colidir com as alocadas pelo service (que começam em 1). */
 let seq = 9000;
+/** Lançamento no saldo de dias (crédito anual, crédito manual ou venda). */
+export async function createLedgerEntry(input: {
+  userId: string;
+  type: 'ACCRUAL' | 'GRANT' | 'SALE';
+  days: number;
+  referenceDate: string;
+  referenceYear?: number | null;
+  note?: string | null;
+  createdById?: string | null;
+}): Promise<LedgerEntry> {
+  const [row] = await db()
+    .insert(availabilityLedgerEntries)
+    .values({
+      userId: input.userId,
+      type: input.type,
+      days: input.days,
+      referenceDate: input.referenceDate,
+      referenceYear: input.referenceYear ?? null,
+      note: input.note ?? (input.type === 'ACCRUAL' ? null : 'lançamento de teste'),
+      createdById: input.createdById ?? null,
+    })
+    .returning();
+  if (!row) throw new Error('Lançamento não criado');
+  return row;
+}
+
 export async function createCommunication(input: {
   authorId: string;
-  projectId: string;
-  coverId: string;
+  projectId?: string | null;
+  coverId?: string | null;
   approverId: string;
   startDate: string;
   endDate: string;
   status?: CommunicationStatus;
+  deductedDays?: number | null;
   submittedAt?: Date;
   notes?: string;
 }): Promise<Communication> {
@@ -105,11 +148,17 @@ export async function createCommunication(input: {
         year,
         sequence: seq,
         authorId: input.authorId,
-        projectId: input.projectId,
+        projectId: input.projectId ?? null,
         startDate: input.startDate,
         endDate: input.endDate,
         businessDays: countBusinessDays(input.startDate, input.endDate),
-        coverId: input.coverId,
+        deductedDays:
+          input.deductedDays !== undefined
+            ? input.deductedDays
+            : input.status === 'APPROVED'
+              ? countBusinessDays(input.startDate, input.endDate)
+              : null,
+        coverId: input.coverId ?? null,
         approverId: input.approverId,
         notes: input.notes ?? null,
         status: input.status ?? 'IN_REVIEW',

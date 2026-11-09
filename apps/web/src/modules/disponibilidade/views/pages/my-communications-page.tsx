@@ -86,7 +86,9 @@ export function MyCommunicationsPage() {
                   <span className="font-mono text-[15px] font-medium text-ink">
                     {c.businessDays}
                   </span>
-                  <span className="text-[15px] text-ink-muted">{c.cover.name}</span>
+                  <span className="text-[15px] text-ink-muted">
+                    {c.cover?.name ?? 'Não informada'}
+                  </span>
                   <span className="text-[15px] text-ink-muted">{c.approver.name}</span>
                   <span className="font-mono text-[14px] text-ink-muted">
                     {formatSentDate(c.submittedAt)}

@@ -16,7 +16,8 @@ const communication: CommunicationSummaryDto = {
   author: { id: 'u1', name: 'Pedro Nakano' },
   cover: { id: 'u2', name: 'Marina Duarte' },
   approver: { id: 'u3', name: 'Caio Bertelli' },
-  project: { id: 'p1', name: 'Órion' },
+  projects: [{ id: 'p1', name: 'Órion' }],
+  deductedDays: null,
   decision: null,
 };
 

@@ -28,9 +28,12 @@ export function QueueCard({
         </div>
         <span className="text-[13px] text-ink-muted">
           {formatDateRange(item.startDate, item.endDate, { withYear: false })} ·{' '}
-          {formatBusinessDays(item.businessDays)} · {item.project.name}
+          {formatBusinessDays(item.businessDays)} ·{' '}
+          {item.projects.map((p) => p.name).join(', ') || 'Sem projeto'}
         </span>
-        <span className="text-[13px] text-ink-muted">Cobertura: {item.cover.name}</span>
+        <span className="text-[13px] text-ink-muted">
+          Cobertura: {item.cover?.name ?? 'não informada'}
+        </span>
       </Link>
       {decidable && (
         <div className="flex gap-2">

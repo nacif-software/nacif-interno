@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm';
 import {
   approvalBatches,
   availabilityDefaultApprovers,
+  availabilityLedgerEntries,
   availabilitySettings,
   communications,
   decisions,
@@ -9,6 +10,7 @@ import {
   passwordSetupTokens,
   projects,
   sessions,
+  userProjects,
   users,
 } from './schema';
 
@@ -18,9 +20,32 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [projects.id],
     relationName: 'projectMembers',
   }),
+  projects: many(userProjects),
+  ledgerEntries: many(availabilityLedgerEntries, { relationName: 'ledgerOwner' }),
   sessions: many(sessions),
   passwordSetupTokens: many(passwordSetupTokens),
 }));
+
+export const userProjectsRelations = relations(userProjects, ({ one }) => ({
+  user: one(users, { fields: [userProjects.userId], references: [users.id] }),
+  project: one(projects, { fields: [userProjects.projectId], references: [projects.id] }),
+}));
+
+export const availabilityLedgerEntriesRelations = relations(
+  availabilityLedgerEntries,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [availabilityLedgerEntries.userId],
+      references: [users.id],
+      relationName: 'ledgerOwner',
+    }),
+    createdBy: one(users, {
+      fields: [availabilityLedgerEntries.createdById],
+      references: [users.id],
+      relationName: 'ledgerAuthor',
+    }),
+  }),
+);
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
   defaultApprover: one(users, {
@@ -29,6 +54,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     relationName: 'projectDefaultApprover',
   }),
   members: many(users, { relationName: 'projectMembers' }),
+  memberships: many(userProjects),
   communications: many(communications),
 }));
 

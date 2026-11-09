@@ -12,7 +12,8 @@ const base: Omit<
   author: { id: 'u1', name: 'Marina Duarte' },
   cover: { id: 'u2', name: 'Pedro Nakano' },
   approver: { id: 'u3', name: 'Caio Bertelli' },
-  project: { id: 'p1', name: 'Órion' },
+  projects: [{ id: 'p1', name: 'Órion' }],
+  deductedDays: null,
 };
 
 const items: CommunicationSummaryDto[] = [

@@ -68,7 +68,9 @@ export function QueueTable({
                 <span className="truncate text-[15px] font-semibold text-ink">
                   {item.author.name}
                 </span>
-                <span className="text-[13px] text-ink-muted">{item.project.name}</span>
+                <span className="text-[13px] text-ink-muted">
+                  {item.projects.map((p) => p.name).join(', ') || 'Sem projeto'}
+                </span>
               </Link>
               <span className="text-[15px] text-ink">
                 {formatDateRange(item.startDate, item.endDate)}
@@ -76,7 +78,9 @@ export function QueueTable({
               <span className="font-mono text-[15px] font-medium text-ink">
                 {item.businessDays}
               </span>
-              <span className="truncate text-[15px] text-ink-muted">{item.cover.name}</span>
+              <span className="truncate text-[15px] text-ink-muted">
+                {item.cover?.name ?? 'Não informada'}
+              </span>
               <span className="font-mono text-[14px] text-ink-muted">
                 {formatSentDate(item.submittedAt)}
               </span>

@@ -49,13 +49,18 @@ export const conflictDtoSchema = z.object({
   startDate: isoDateSchema,
   endDate: isoDateSchema,
   status: communicationStatusSchema,
+  /** Projetos em comum com quem está comunicando. */
+  projectNames: z.array(z.string()),
 });
 export type ConflictDto = z.infer<typeof conflictDtoSchema>;
 
 export const conflictsResultSchema = z.object({
   conflicts: z.array(conflictDtoSchema),
   limitReached: z.boolean(),
-  projectName: z.string().nullable(),
+  /** Projetos em que o limite de pessoas simultâneas já foi atingido. */
+  limitReachedProjects: z.array(projectRefSchema),
+  /** Projetos da pessoa considerados na busca. */
+  projects: z.array(projectRefSchema),
 });
 export type ConflictsResult = z.infer<typeof conflictsResultSchema>;
 
@@ -73,13 +78,17 @@ export const communicationSummaryDtoSchema = z.object({
   startDate: isoDateSchema,
   endDate: isoDateSchema,
   businessDays: z.number().int(),
+  /** Dias descontados do saldo quando aprovada (null enquanto não decidida). */
+  deductedDays: z.number().int().nullable(),
   status: communicationStatusSchema,
   submittedAt: z.string(),
   cancelledAt: z.string().nullable(),
   author: personRefSchema,
-  cover: personRefSchema,
+  /** Nula nas comunicações importadas da planilha. */
+  cover: personRefSchema.nullable(),
   approver: personRefSchema,
-  project: projectRefSchema,
+  /** Projetos do autor. */
+  projects: z.array(projectRefSchema),
   decision: decisionDtoSchema.nullable(),
 });
 export type CommunicationSummaryDto = z.infer<typeof communicationSummaryDtoSchema>;
@@ -103,6 +112,8 @@ export type CommunicationPermissions = z.infer<typeof communicationPermissionsSc
 
 export const communicationDetailDtoSchema = communicationSummaryDtoSchema.extend({
   notes: z.string().nullable(),
+  /** Saldo de dias atual do autor, para o aviso de saldo após aprovar. */
+  authorBalance: z.number().int(),
   flow: z.array(flowEventDtoSchema),
   conflicts: z.array(conflictDtoSchema),
   permissions: communicationPermissionsSchema,

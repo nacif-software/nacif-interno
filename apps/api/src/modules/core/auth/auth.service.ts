@@ -53,7 +53,7 @@ export function createAuthService(provider: AuthProvider = localPasswordProvider
       const user = await provider.authenticate({ email, password });
       if (!user) throw new InvalidCredentialsError();
       if (!user.active) throw new UserInactiveError();
-      const full = await usersRepository.findByIdWithProject(user.id);
+      const full = await usersRepository.findByIdWithProjects(user.id);
       if (!full) throw new InvalidCredentialsError();
       return toSessionUser(full);
     },
@@ -85,7 +85,7 @@ export function createAuthService(provider: AuthProvider = localPasswordProvider
         passwordSetupTokenRepository.invalidateAllForUser(record.userId, now),
       ]);
       await sessionService.revokeAllForUser(record.userId);
-      const full = await usersRepository.findByIdWithProject(record.userId);
+      const full = await usersRepository.findByIdWithProjects(record.userId);
       if (!full) throw new AppError(404, 'NOT_FOUND', 'Usuário não encontrado.');
       return toSessionUser(full);
     },

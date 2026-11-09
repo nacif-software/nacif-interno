@@ -19,7 +19,8 @@ export const SEED_PEOPLE = [
     name: 'Caio Bertelli',
     email: 'caio@nacif.xyz',
     role: 'ADMIN',
-    project: 'Órion',
+    projects: ['Órion'],
+    creditBaseDate: '2024-03-04',
     active: true,
   },
   {
@@ -27,7 +28,8 @@ export const SEED_PEOPLE = [
     name: 'Marina Duarte',
     email: 'marina@nacif.xyz',
     role: 'APPROVER',
-    project: 'Órion',
+    projects: ['Órion', 'Atlas'],
+    creditBaseDate: '2024-09-16',
     active: true,
   },
   {
@@ -35,7 +37,8 @@ export const SEED_PEOPLE = [
     name: 'Pedro Nakano',
     email: 'pedro@nacif.xyz',
     role: 'MEMBER',
-    project: 'Órion',
+    projects: ['Órion'],
+    creditBaseDate: '2025-08-22',
     active: true,
   },
   {
@@ -43,7 +46,8 @@ export const SEED_PEOPLE = [
     name: 'Júlia Reis',
     email: 'julia@nacif.xyz',
     role: 'MEMBER',
-    project: 'Atlas',
+    projects: ['Atlas'],
+    creditBaseDate: '2025-08-22',
     active: true,
   },
   {
@@ -51,7 +55,8 @@ export const SEED_PEOPLE = [
     name: 'Rafael Sousa',
     email: 'rafael@nacif.xyz',
     role: 'MEMBER',
-    project: 'Atlas',
+    projects: ['Atlas', 'Vega'],
+    creditBaseDate: '2026-02-02',
     active: true,
   },
   {
@@ -59,7 +64,8 @@ export const SEED_PEOPLE = [
     name: 'Bruna Alencar',
     email: 'bruna@nacif.xyz',
     role: 'MEMBER',
-    project: 'Vega',
+    projects: ['Vega'],
+    creditBaseDate: '2026-04-02',
     active: true,
   },
   {
@@ -67,7 +73,8 @@ export const SEED_PEOPLE = [
     name: 'Thiago Lemos',
     email: 'thiago@nacif.xyz',
     role: 'MEMBER',
-    project: 'Vega',
+    projects: ['Vega'],
+    creditBaseDate: '2024-12-09',
     active: false,
   },
 ] as const satisfies readonly {
@@ -75,7 +82,9 @@ export const SEED_PEOPLE = [
   name: string;
   email: string;
   role: Role;
-  project: SeedProjectName;
+  projects: readonly SeedProjectName[];
+  /** Data base do crédito anual (`YYYY-MM-DD`). */
+  creditBaseDate: string;
   active: boolean;
 }[];
 
@@ -84,6 +93,7 @@ export type SeedPersonKey = (typeof SEED_PEOPLE)[number]['key'];
 export const SEED_SETTINGS = {
   minNoticeDays: 7,
   maxSimultaneousPerProject: 2,
+  daysPerYear: 10,
   defaultApprovers: ['caio', 'marina'] as const satisfies readonly SeedPersonKey[],
 };
 
@@ -246,5 +256,56 @@ export const SEED_COMMUNICATIONS: SeedCommunication[] = [
     endDate: '2026-11-27',
     status: 'IN_REVIEW',
     submittedAt: '2026-08-24T12:00:00Z',
+  },
+];
+
+/**
+ * Lançamentos do saldo de dias (os créditos anuais automáticos o cron gera a partir da data base).
+ * Nota obrigatória fora de ACCRUAL, como no banco.
+ */
+export const SEED_LEDGER: {
+  id: string;
+  person: SeedPersonKey;
+  type: 'GRANT' | 'SALE';
+  days: number;
+  referenceDate: string;
+  note: string;
+  by: SeedPersonKey;
+}[] = [
+  {
+    id: 'seed-ledger-pedro-grant',
+    person: 'pedro',
+    type: 'GRANT',
+    days: 15,
+    referenceDate: '2025-08-22',
+    note: 'Concedido para todos com mais de 2 anos de casa',
+    by: 'caio',
+  },
+  {
+    id: 'seed-ledger-julia-grant',
+    person: 'julia',
+    type: 'GRANT',
+    days: 10,
+    referenceDate: '2025-08-22',
+    note: 'Concedido para todos com mais de 1 ano de casa e menos de 2',
+    by: 'caio',
+  },
+  {
+    id: 'seed-ledger-pedro-sale',
+    person: 'pedro',
+    type: 'SALE',
+    days: 7,
+    referenceDate: '2025-10-15',
+    note: 'Venda acordada em outubro',
+    by: 'caio',
+  },
+  {
+    id: 'seed-ledger-marina-grant',
+    person: 'marina',
+    type: 'GRANT',
+    days: 15,
+    referenceDate: '2025-08-22',
+    note: 'Concedido para todos com mais de 2 anos de casa',
+    by: 'caio',
   },
 ];

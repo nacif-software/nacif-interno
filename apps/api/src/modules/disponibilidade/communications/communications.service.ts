@@ -31,13 +31,14 @@ import { communications, flowEvents, type FlowEventMetadata } from '../../../db/
 import type { CommunicationRow } from '../../../db/types';
 import type { AuthenticatedUser } from '../../../infra/http/context';
 import {
-  AppError,
   ForbiddenError,
   InvalidStateError,
   NotFoundError,
   ValidationError,
 } from '../../../infra/http/errors';
+import { projectRefs } from '../../core/users/user.mapper';
 import { usersRepository } from '../../core/users/users.repository';
+import { balanceRepository } from '../balance/balance.repository';
 import { settingsRepository } from '../settings/settings.repository';
 import { allocateCode } from './communication-code.service';
 import { snapshotConflicts, toDetailDto, toSummaryDto } from './communication.mapper';
@@ -128,16 +129,15 @@ export const communicationsService = {
     query: ConflictsQuery,
     excludeCommunicationId?: string,
   ): Promise<ConflictsResult> {
-    if (!actor.projectId) return { conflicts: [], limitReached: false, projectName: null };
     const settings = await settingsRepository.get();
     const result = await findConflicts({
-      projectId: actor.projectId,
+      authorId: actor.id,
+      projectIds: actor.projects.map((p) => p.projectId),
       range: query,
-      excludeUserId: actor.id,
       excludeCommunicationId,
       maxSimultaneousPerProject: settings.maxSimultaneousPerProject,
     });
-    return { ...result, projectName: actor.project?.name ?? null };
+    return { ...result, projects: projectRefs(actor) };
   },
 
   async create(
@@ -145,21 +145,14 @@ export const communicationsService = {
     body: CreateCommunicationBody,
     now: Date = new Date(),
   ): Promise<CommunicationDetailDto> {
-    if (!actor.projectId) {
-      throw new AppError(
-        422,
-        'VALIDATION_ERROR',
-        'Você precisa estar associado a um projeto. Procure um administrador.',
-      );
-    }
-    const projectId = actor.projectId;
     await assertPeople(actor, body.coverId, body.approverId);
     const settings = await assertNotice(body.startDate, now);
     const businessDays = countBusinessDays(body.startDate, body.endDate);
+    // A comunicação vale para todos os projetos da pessoa; o conflito olha cada um deles.
     const { conflicts } = await findConflicts({
-      projectId,
+      authorId: actor.id,
+      projectIds: actor.projects.map((p) => p.projectId),
       range: body,
-      excludeUserId: actor.id,
       maxSimultaneousPerProject: settings.maxSimultaneousPerProject,
     });
     const approver = await usersRepository.findById(body.approverId);
@@ -178,7 +171,7 @@ export const communicationsService = {
             year,
             sequence,
             authorId: actor.id,
-            projectId,
+            projectId: null,
             startDate: body.startDate,
             endDate: body.endDate,
             businessDays,
@@ -217,20 +210,23 @@ export const communicationsService = {
   async getDetail(actor: AuthenticatedUser, idOrCode: string): Promise<CommunicationDetailDto> {
     const row = await loadOrThrow(idOrCode);
     if (!canViewCommunication(actor, row)) throw new ForbiddenError();
-    const settings = await settingsRepository.get();
+    const [settings, authorBalance] = await Promise.all([
+      settingsRepository.get(),
+      balanceRepository.balanceOf(row.authorId),
+    ]);
     const live =
       row.status === 'IN_REVIEW'
         ? (
             await findConflicts({
-              projectId: row.projectId,
+              authorId: row.authorId,
+              projectIds: row.author.projects.map((p) => p.projectId),
               range: { startDate: row.startDate, endDate: row.endDate },
-              excludeUserId: row.authorId,
               excludeCommunicationId: row.id,
               maxSimultaneousPerProject: settings.maxSimultaneousPerProject,
             })
           ).conflicts
         : snapshotConflicts(row);
-    return toDetailDto(row, actor, live);
+    return toDetailDto(row, actor, live, authorBalance);
   },
 
   async updatePeriod(
@@ -248,9 +244,9 @@ export const communicationsService = {
     const settings = await assertNotice(body.startDate, now);
     const businessDays = countBusinessDays(body.startDate, body.endDate);
     const { conflicts } = await findConflicts({
-      projectId: row.projectId,
+      authorId: actor.id,
+      projectIds: actor.projects.map((p) => p.projectId),
       range: body,
-      excludeUserId: actor.id,
       excludeCommunicationId: row.id,
       maxSimultaneousPerProject: settings.maxSimultaneousPerProject,
     });

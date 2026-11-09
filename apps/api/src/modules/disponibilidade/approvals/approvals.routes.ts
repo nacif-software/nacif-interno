@@ -1,4 +1,9 @@
-import { approvalsQuerySchema, batchApproveBodySchema, rejectBodySchema } from '@nacif/shared';
+import {
+  approvalsQuerySchema,
+  approveBodySchema,
+  batchApproveBodySchema,
+  rejectBodySchema,
+} from '@nacif/shared';
 import { createRouter, guard } from '../../../infra/http/context';
 import { requireAuth } from '../../../infra/http/require-auth';
 import { requireRole } from '../../../infra/http/require-role';
@@ -19,7 +24,12 @@ approvalsRouter.post(
   approvalsController.batch,
 );
 approvalsRouter.post('/approvals/batch/:batchId/undo', approvalsController.undo);
-approvalsRouter.post('/approvals/:id/approve', approvalsController.approve);
+// Corpo opcional: `{}` aprova com os dias úteis; `deductedDays` + `deductionNote` ajustam o desconto.
+approvalsRouter.post(
+  '/approvals/:id/approve',
+  validate({ body: approveBodySchema }),
+  approvalsController.approve,
+);
 approvalsRouter.post(
   '/approvals/:id/reject',
   validate({ body: rejectBodySchema }),

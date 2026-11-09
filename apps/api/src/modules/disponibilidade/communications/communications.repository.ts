@@ -6,7 +6,7 @@ import type { CommunicationRow, NewCommunication } from '../../../db/types';
 /** Relações que os mappers leem; a decisão vigente é a última não revertida. */
 function withRelations() {
   return {
-    author: true as const,
+    author: { with: { projects: { with: { project: true as const } } } },
     cover: true as const,
     approver: true as const,
     project: true as const,

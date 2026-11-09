@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { roleSchema } from '../enums/role';
 import { nacifEmailSchema } from './auth';
+import { isoDateSchema } from '../date/iso-date';
 import { projectRefSchema } from './common';
 
 export const userDtoSchema = z.object({
@@ -11,7 +12,8 @@ export const userDtoSchema = z.object({
   role: roleSchema,
   active: z.boolean(),
   invitePending: z.boolean(),
-  project: projectRefSchema.nullable(),
+  projects: z.array(projectRefSchema),
+  creditBaseDate: isoDateSchema.nullable(),
   createdAt: z.string(),
 });
 export type UserDto = z.infer<typeof userDtoSchema>;
@@ -20,7 +22,7 @@ export const userOptionSchema = z.object({
   id: z.string(),
   name: z.string(),
   role: roleSchema,
-  projectName: z.string().nullable(),
+  projectNames: z.array(z.string()),
 });
 export type UserOption = z.infer<typeof userOptionSchema>;
 
@@ -42,7 +44,8 @@ export const inviteBodySchema = z.object({
   email: nacifEmailSchema,
   name: z.string().trim().min(2).max(120).optional(),
   role: roleSchema.optional(),
-  projectId: z.string().nullable().optional(),
+  projectIds: z.array(z.string().min(1)).max(20).optional(),
+  creditBaseDate: isoDateSchema.nullable().optional(),
 });
 export type InviteBody = z.infer<typeof inviteBodySchema>;
 
@@ -58,7 +61,8 @@ export const updateUserBodySchema = z
     name: z.string().trim().min(2).max(120),
     role: roleSchema,
     active: z.boolean(),
-    projectId: z.string().nullable(),
+    projectIds: z.array(z.string().min(1)).max(20),
+    creditBaseDate: isoDateSchema.nullable(),
   })
   .partial();
 export type UpdateUserBody = z.infer<typeof updateUserBodySchema>;

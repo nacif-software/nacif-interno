@@ -8,3 +8,4 @@ export * from './communication';
 export * from './approval';
 export * from './calendar';
 export * from './dashboard';
+export * from './balance';
