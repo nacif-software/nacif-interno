@@ -42,23 +42,21 @@ export function DashboardPage() {
       <Hero minNoticeDays={settings.data?.minNoticeDays ?? 7} />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
-        <Link to={paths.balance} className="contents text-inherit hover:text-inherit">
-          <MetricCard
-            label={MESSAGES.balanceTitle}
-            shortLabel="Saldo"
-            value={
-              <span data-testid="balance-value" className={cn(d.balance < 0 && 'text-danger')}>
-                {d.balance}
-              </span>
-            }
-            hint={
-              d.balance < 0
-                ? MESSAGES.balanceNegativeHint
-                : MESSAGES.balanceCommunicatedInYear(d.daysCommunicatedInYear, d.year)
-            }
-            className="transition-colors hover:border-brand"
-          />
-        </Link>
+        <MetricCard
+          to={paths.balance}
+          label={MESSAGES.balanceTitle}
+          shortLabel="Saldo"
+          value={
+            <span data-testid="balance-value" className={cn(d.balance < 0 && 'text-danger')}>
+              {d.balance}
+            </span>
+          }
+          hint={
+            d.balance < 0
+              ? MESSAGES.balanceNegativeHint
+              : MESSAGES.balanceCommunicatedInYear(d.daysCommunicatedInYear, d.year)
+          }
+        />
         <MetricCard
           label="Comunicações em análise"
           shortLabel="Em análise"

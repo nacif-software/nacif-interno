@@ -1,5 +1,6 @@
 import {
   approveBodySchema,
+  formatBusinessDays,
   formatDateRange,
   MESSAGES,
   type ApproveBody,
@@ -37,7 +38,7 @@ export function AdjustDeductionModal({
   }, [open, communication?.businessDays, form]);
   const watched = useWatch({ control: form.control, name: 'deductedDays' });
   if (!communication) return null;
-  const days = Number(watched ?? communication.businessDays);
+  const days = watched === '' || watched === undefined ? null : Number(watched);
   const onSubmit = form.handleSubmit((v) => onConfirm(v));
   return (
     <Modal
@@ -58,7 +59,7 @@ export function AdjustDeductionModal({
             loading={loading}
             className="px-[22px]"
           >
-            {MESSAGES.approveWithDays(Number.isFinite(days) ? days : communication.businessDays)}
+            {days !== null && Number.isFinite(days) ? MESSAGES.approveWithDays(days) : 'Aprovar'}
           </Button>
         </>
       }
@@ -70,7 +71,7 @@ export function AdjustDeductionModal({
         noValidate
       >
         <Field
-          label={MESSAGES.adjustDeductionDaysLabel}
+          label={MESSAGES.deductedDaysLabel}
           required
           error={form.formState.errors.deductedDays?.message}
         >
@@ -79,7 +80,7 @@ export function AdjustDeductionModal({
               {...p}
               min={0}
               max={366}
-              suffix={`de ${communication.businessDays} ${communication.businessDays === 1 ? 'dia útil' : 'dias úteis'}`}
+              suffix={`de ${formatBusinessDays(communication.businessDays)}`}
               className="max-w-[220px]"
               {...form.register('deductedDays')}
               autoFocus

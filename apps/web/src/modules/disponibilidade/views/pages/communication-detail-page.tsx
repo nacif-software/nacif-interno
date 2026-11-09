@@ -8,6 +8,7 @@ import { useApprove, useReject } from '../../controllers/use-approvals';
 import { useCancelCommunication, useCommunication } from '../../controllers/use-communications';
 import { paths } from '../../manifest';
 import { AdjustDeductionModal } from '../components/adjust-deduction-modal';
+import { BalanceAfter } from '../components/balance-after';
 import { CancelModal } from '../components/cancel-modal';
 import { FlowTimeline } from '../components/flow-timeline';
 import { RejectModal } from '../components/reject-modal';
@@ -35,9 +36,9 @@ export function CommunicationDetailPage() {
       />
     );
   const c = query.data;
-  const deducted = c.deductedDays ?? c.businessDays;
-  const balanceAfter = c.authorBalance - deducted;
+  const balanceAfter = c.authorBalance - c.businessDays;
   const isAuthor = me.id === c.author.id;
+  const debits = c.status === 'APPROVED';
 
   return (
     <div className="flex flex-col gap-6">
@@ -73,17 +74,19 @@ export function CommunicationDetailPage() {
               <span
                 className={cn(
                   'text-[26px] leading-none font-bold',
-                  c.deductedDays === null ? 'text-ink-muted' : 'text-ink',
+                  debits ? 'text-ink' : 'text-ink-muted',
                 )}
               >
-                {c.deductedDays ?? c.businessDays}
+                {debits ? (c.deductedDays ?? c.businessDays) : '—'}
               </span>
               <span className="text-[13px] text-ink-muted">
                 {c.status === 'IN_REVIEW'
                   ? MESSAGES.deductedDaysPending
-                  : c.deductedDays !== null && c.deductedDays !== c.businessDays
-                    ? 'Ajustado pelo aprovador'
-                    : undefined}
+                  : debits && c.deductedDays !== null && c.deductedDays !== c.businessDays
+                    ? MESSAGES.deductedDaysAdjusted
+                    : !debits
+                      ? MESSAGES.deductedDaysNotApplicable
+                      : undefined}
               </span>
             </div>
             <div className="flex flex-col gap-2 border-l border-line pl-6 max-md:border-l-0 max-md:pl-0">
@@ -108,13 +111,15 @@ export function CommunicationDetailPage() {
           )}
 
           {c.status === 'IN_REVIEW' && (
-            <p
-              className={cn('text-[14px]', balanceAfter < 0 ? 'text-danger' : 'text-ink-muted')}
-              data-testid="author-balance"
-            >
-              {isAuthor ? 'Seu saldo' : `Saldo de ${c.author.name}`}: {c.authorBalance} →{' '}
-              <span className="font-semibold">{balanceAfter}</span>
-              {balanceAfter < 0 && ` · ${MESSAGES.balanceNegativeHint}`}
+            <p className="text-[14px] text-ink-muted" data-testid="author-balance">
+              {isAuthor ? MESSAGES.balanceMineLabel : MESSAGES.balanceOf(c.author.name)}:{' '}
+              <BalanceAfter before={c.authorBalance} deducted={c.businessDays} />
+              {balanceAfter < 0 && (
+                <span className="text-danger"> · {MESSAGES.balanceNegativeHint}</span>
+              )}
+              {me.role === 'APPROVER' && !isAuthor && (
+                <span className="block text-[13px]">{MESSAGES.balanceAdminOnlyHint}</span>
+              )}
             </p>
           )}
 
@@ -164,7 +169,7 @@ export function CommunicationDetailPage() {
                   Recusar
                 </Button>
                 <Button variant="outline" onClick={() => setAdjustOpen(true)}>
-                  {MESSAGES.adjustDeductionAction}
+                  {MESSAGES.adjustDeductionTitle}
                 </Button>
               </>
             )}

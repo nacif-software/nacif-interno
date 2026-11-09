@@ -78,10 +78,10 @@ export function BalancePage() {
           value={<span className={cn(negative && 'text-danger')}>{b.balance}</span>}
           hint={negative ? MESSAGES.balanceNegativeHint : undefined}
         />
-        <MetricCard label="Créditos" value={b.credits} size="md" />
-        <MetricCard label="Vendas" value={b.sales} size="md" />
+        <MetricCard label={MESSAGES.balanceCreditsLabel} value={b.credits} size="md" />
+        <MetricCard label={MESSAGES.balanceSalesLabel} value={b.sales} size="md" />
         <MetricCard
-          label="Dias descontados"
+          label={MESSAGES.deductedDaysLabel}
           shortLabel="Descontados"
           value={b.deducted}
           size="md"

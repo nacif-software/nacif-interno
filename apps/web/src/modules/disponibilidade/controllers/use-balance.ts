@@ -4,10 +4,11 @@ import { apiFetch } from '@/lib/api-client';
 import { qk } from '@/lib/query-keys';
 
 /** Extrato e saldo da própria pessoa. */
-export function useMyBalance() {
+export function useMyBalance(enabled = true) {
   return useQuery({
     queryKey: qk.disp.balance(),
     queryFn: () => apiFetch<BalanceDto>('/disponibilidade/balance'),
+    enabled,
   });
 }
 

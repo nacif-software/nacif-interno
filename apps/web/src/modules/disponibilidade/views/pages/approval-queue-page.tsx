@@ -102,7 +102,7 @@ export function ApprovalQueuePage() {
       <div className="max-md:hidden">
         <PageHeader
           title="Fila de aprovação"
-          subtitle={`${inReviewCount} ${inReviewCount === 1 ? 'comunicação' : 'comunicações'} em análise${user.role === 'ADMIN' ? '' : ' para você'}`}
+          subtitle={`${inReviewCount} ${inReviewCount === 1 ? 'comunicação' : 'comunicações'} em análise${user.role === 'ADMIN' ? '' : ` para você. ${MESSAGES.balanceAdminOnlyHint}`}`}
           actions={
             <>
               <StatusFilterChips

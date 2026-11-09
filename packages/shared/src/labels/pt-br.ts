@@ -119,7 +119,9 @@ export const MESSAGES = {
   balanceTitle: 'Saldo de dias',
   balanceMine: 'Meu saldo',
   balanceOf: (name: string) => `Saldo de ${name}`,
-  balanceDays: (days: number) => `${days} ${Math.abs(days) === 1 ? 'dia' : 'dias'}`,
+  balanceMineLabel: 'Seu saldo',
+  balanceCreditsLabel: 'Créditos',
+  balanceSalesLabel: 'Vendas',
   balanceCommunicatedInYear: (days: number, year: number) =>
     `${days} ${days === 1 ? 'dia comunicado' : 'dias comunicados'} em ${year}.`,
   balanceAfterThis: (days: number) =>
@@ -137,14 +139,14 @@ export const MESSAGES = {
   balanceEntryCommunication: 'Indisponibilidade',
   balanceBaseDate: (date: string) => `Data base do crédito: ${date}.`,
   balanceNoBaseDate: 'Sem data base do crédito: nenhum crédito anual automático.',
-  adjustDeductionAction: 'Ajustar dias descontados',
   adjustDeductionTitle: 'Ajustar dias descontados',
   adjustDeductionDescription: (businessDays: number) =>
     `O período tem ${businessDays} ${businessDays === 1 ? 'dia útil' : 'dias úteis'}. Informe quantos dias serão descontados do saldo e o motivo; a aprovação é registrada com o ajuste.`,
-  adjustDeductionDaysLabel: 'Dias descontados',
   adjustDeductionNoteLabel: 'Motivo do ajuste',
   adjustDeductionNoteHint: `Mínimo de ${LEDGER_NOTE_MIN_CHARS} caracteres. Fica visível no fluxo da comunicação.`,
   approveWithDays: (days: number) => `Aprovar com ${days} ${days === 1 ? 'dia' : 'dias'}`,
   deductedDaysLabel: 'Dias descontados',
   deductedDaysPending: 'Definidos na aprovação',
+  deductedDaysAdjusted: 'Ajustado pelo aprovador',
+  deductedDaysNotApplicable: 'Só comunicações aprovadas descontam',
 } as const;

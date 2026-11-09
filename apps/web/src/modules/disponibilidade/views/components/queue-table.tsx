@@ -3,23 +3,9 @@ import { Link } from 'react-router';
 import { cn } from '@/lib/cn';
 import { Button, Checkbox, StatusBadge } from '@/ui';
 import { paths } from '../../manifest';
+import { BalanceAfter } from './balance-after';
 
 const GRID = 'grid-cols-[44px_1.4fr_1.3fr_80px_100px_1.1fr_1fr_110px_190px]';
-
-/** `17 → 12`: saldo do autor hoje e depois de aprovar com os dias úteis; negativo em vermelho. */
-export function BalanceAfter({ item, className }: { item: QueueItemDto; className?: string }) {
-  const after = item.authorBalance - (item.deductedDays ?? item.businessDays);
-  return (
-    <span
-      className={cn('font-mono text-[14px] text-ink-muted', className)}
-      aria-label={MESSAGES.balanceAfterApproval(item.authorBalance, after)}
-      title={MESSAGES.balanceTitle}
-    >
-      {item.authorBalance} →{' '}
-      <span className={cn(after < 0 && 'font-semibold text-danger')}>{after}</span>
-    </span>
-  );
-}
 
 export function QueueTable({
   items,
@@ -93,7 +79,11 @@ export function QueueTable({
               <span className="font-mono text-[15px] font-medium text-ink">
                 {item.businessDays}
               </span>
-              <BalanceAfter item={item} />
+              {decidable ? (
+                <BalanceAfter before={item.authorBalance} deducted={item.businessDays} />
+              ) : (
+                <span className="font-mono text-[14px] text-ink-muted">—</span>
+              )}
               <span className="truncate text-[15px] text-ink-muted">
                 {item.cover?.name ?? MESSAGES.coverNotInformed}
               </span>

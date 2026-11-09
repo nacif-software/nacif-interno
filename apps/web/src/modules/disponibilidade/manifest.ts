@@ -13,7 +13,6 @@ export const paths = {
   approvals: `${BASE}/aprovacoes`,
   calendar: `${BASE}/calendario`,
   balance: `${BASE}/saldo`,
-  balanceOf: (userId: string) => `${BASE}/saldo/${encodeURIComponent(userId)}`,
   admin: `${BASE}/administracao`,
 };
 

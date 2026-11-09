@@ -7,7 +7,7 @@ import {
   type RejectBody,
 } from '@nacif/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button, Field, Modal, Textarea } from '@/ui';
 
@@ -28,7 +28,7 @@ export function RejectModal({
     resolver: zodResolver(rejectBodySchema),
     defaultValues: { justification: '' },
   });
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open) form.reset({ justification: '' });
   }, [open, form]);
   if (!communication) return null;
