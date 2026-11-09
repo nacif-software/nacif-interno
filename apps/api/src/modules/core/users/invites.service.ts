@@ -13,7 +13,8 @@ import { AppError, NotFoundError } from '../../../infra/http/errors';
 import { logger } from '../../../infra/logger';
 import { generateToken, sha256 } from '../auth/password';
 import { passwordSetupTokenRepository } from '../auth/password-setup-token.repository';
-import { assertActiveProjects } from '../projects/projects.guard';
+import { assertActiveProjects } from '../projects/projects.service';
+import { emitCreditBaseDateChanged } from './user-hooks';
 import { provisionalName, SETUP_TOKEN_TTL_MS, setupPath } from './setup-link';
 import { toUserDto } from './user.mapper';
 import { usersRepository } from './users.repository';
@@ -83,6 +84,7 @@ export const invitesService = {
       ...(projectIds ? usersRepository.setProjectsStatements(userId, projectIds) : []),
       ...statements,
     ]);
+    if (input.creditBaseDate) await emitCreditBaseDateChanged(userId);
     const user = await usersRepository.mustFind(userId);
     const link = setupLink(token);
     logger.info({ email: user.email, initials: getInitials(user.name), link }, 'Convite criado');

@@ -142,8 +142,8 @@ describe('saldo de dias', () => {
   });
 
   it('crédito anual: só a partir do 1º aniversário, com catch-up, 29/02 e sem duplicar', async () => {
-    const { caio } = await seedTeam();
-    const old = await createUser({ name: 'Antiga', creditBaseDate: '2023-02-29' }); // base inválida? não: 2023 não é bissexto
+    await seedTeam();
+    const old = await createUser({ name: 'Antiga', creditBaseDate: '2023-03-10' });
     const base = await createUser({ name: 'Base ontem', creditBaseDate: addDays(today, -1) });
     const leap = await createUser({ name: 'Bissexto', creditBaseDate: '2024-02-29' });
     const inactive = await createUser({
@@ -152,7 +152,6 @@ describe('saldo de dias', () => {
       creditBaseDate: '2020-01-01',
     });
     await createUser({ name: 'Sem data base' });
-    void caio;
 
     const first = await accrualService.runCatchUp(new Date());
     const years = (id: string) =>
@@ -181,7 +180,8 @@ describe('saldo de dias', () => {
     expect((await accrualService.runCatchUp(new Date())).created).toBe(0);
     await db().update(users).set({ active: true }).where(eq(users.id, inactive.id));
     const third = await accrualService.runCatchUp(new Date());
-    expect(third.created).toBe(thisYear - 2020 - (today < `${thisYear}-01-01` ? 1 : 0));
+    // base 01/01/2020: um crédito por ano de 2021 até o ano atual
+    expect(third.created).toBe(thisYear - 2020);
 
     // endpoint manual só para admin
     const admin = buildTestApp();
@@ -189,6 +189,18 @@ describe('saldo de dias', () => {
     expect((await admin.post('/api/disponibilidade/balance/accrual/run')).body).toEqual({
       created: 0,
     });
+
+    // definir a data base pela Administração lança os créditos pendentes na hora
+    const fresh = await createUser({ name: 'Recém-cadastrada' });
+    const patched = await admin
+      .patch(`/api/users/${fresh.id}`)
+      .send({ creditBaseDate: '2024-01-15' });
+    expect(patched.status).toBe(200);
+    expect(patched.body.creditBaseDate).toBe('2024-01-15');
+    expect((await years(fresh.id)).map((r) => r.year)).toEqual(
+      [2025, 2026].filter((y) => y <= thisYear),
+    );
+    expect(await balanceRepository.balanceOf(fresh.id)).toBe(20);
   });
 
   it('aprovador ajusta os dias descontados com nota; sem nota é 422; lote usa dias úteis', async () => {

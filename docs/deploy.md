@@ -60,7 +60,7 @@ Detalhes que importam:
 3. Confira: `curl -s https://interno.nacif.software/api/health` → `{"status":"ok","db":"ok"}`; abra o app e faça login.
 4. Problema? Veja "Rollback". Logs ao vivo: `wrangler tail`; histórico: Workers Logs no painel (retenção de 7 dias).
 
-**Regra para migrações.** Como a migração roda antes do código novo e **não é desfeita** num rollback, toda migração tem que ser compatível com o código que está em produção: adicionar tabela, coluna com default ou índice é seguro; remover ou renomear coluna só num PR posterior, depois que nenhum código em produção a usa. O template de PR lembra disso.
+**Regra para migrações.** Como a migração roda antes do código novo e **não é desfeita** num rollback, toda migração tem que ser compatível com o código que está em produção: adicionar tabela, coluna com default ou índice é seguro; remover ou renomear coluna só num PR posterior, depois que nenhum código em produção a usa. O template de PR lembra disso. Migração que **recria uma tabela** (o SQLite não altera `NOT NULL`) precisa recriar também as tabelas filhas apontando para a nova antes de qualquer `DROP`: com FKs ativas, apagar ou renomear a tabela pai com filhas penduradas dispara o `ON DELETE CASCADE` ou reescreve as referências (ver `drizzle/0002_*.sql`). Antes de publicar uma dessas, guarde o bookmark do Time Travel (abaixo).
 
 ## Domínio e a zona `nacif.software`
 

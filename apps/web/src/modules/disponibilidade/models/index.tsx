@@ -26,7 +26,7 @@ export function communicationSubtitle(c: CommunicationSummaryDto): string {
         ? `Cancelada pelo autor em ${formatDayMonthFromInstant(c.cancelledAt)}.`
         : 'Cancelada pelo autor.';
     default:
-      return `Cobertura: ${c.cover?.name ?? 'não informada'} · Aprovador: ${c.approver.name}`;
+      return `Cobertura: ${c.cover?.name ?? MESSAGES.coverNotInformed} · Aprovador: ${c.approver.name}`;
   }
 }
 

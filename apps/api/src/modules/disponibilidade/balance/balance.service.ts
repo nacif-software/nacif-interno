@@ -19,9 +19,10 @@ export const balanceService = {
   async statement(userId: string): Promise<BalanceDto> {
     const user = await usersRepository.findById(userId);
     if (!user) throw new NotFoundError('Pessoa não encontrada.');
-    const [entries, approved] = await Promise.all([
+    const [entries, approved, balance] = await Promise.all([
       balanceRepository.entriesOf(userId),
       balanceRepository.approvedOf(userId),
+      balanceRepository.balanceOf(userId),
     ]);
     const lines: StatementLine[] = [
       ...entries.map((e) => ({
@@ -54,7 +55,8 @@ export const balanceService = {
     return {
       user: { id: user.id, name: user.name },
       creditBaseDate: user.creditBaseDate ?? null,
-      balance: credits - sales - deducted,
+      // O saldo vem da mesma consulta usada no painel e na fila, para não haver duas contas.
+      balance,
       credits,
       sales,
       deducted,

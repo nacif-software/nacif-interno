@@ -12,7 +12,8 @@ CREATE TABLE `availability_ledger_entries` (
 	FOREIGN KEY (`created_by_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null,
 	CONSTRAINT "availability_ledger_entries_type_check" CHECK(type in ('ACCRUAL', 'GRANT', 'SALE')),
 	CONSTRAINT "availability_ledger_entries_days_check" CHECK(days > 0),
-	CONSTRAINT "availability_ledger_entries_note_check" CHECK(type = 'ACCRUAL' or note is not null)
+	CONSTRAINT "availability_ledger_entries_note_check" CHECK(type = 'ACCRUAL' or note is not null),
+	CONSTRAINT "availability_ledger_entries_year_check" CHECK(type <> 'ACCRUAL' or reference_year is not null)
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `availability_ledger_entries_accrual_key` ON `availability_ledger_entries` (`user_id`,`type`,`reference_year`) WHERE type = 'ACCRUAL';--> statement-breakpoint

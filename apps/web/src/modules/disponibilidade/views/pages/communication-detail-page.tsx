@@ -63,7 +63,7 @@ export function CommunicationDetailPage() {
             <div className="flex flex-col gap-2 border-l border-line pl-6">
               <span className="text-eyebrow">Cobertura</span>
               <span className="text-[18px] leading-[1.2] font-semibold text-ink">
-                {c.cover?.name ?? 'Não informada'}
+                {c.cover?.name ?? MESSAGES.coverNotInformed}
               </span>
             </div>
             <div className="flex flex-col gap-2 border-l border-line pl-6">

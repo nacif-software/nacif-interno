@@ -114,4 +114,6 @@ export const MESSAGES = {
   deductionNoteRequired: 'Explique o ajuste dos dias descontados.',
   balanceNegativeHint: 'Saldo negativo: fale com um administrador.',
   balanceAdminOnlyHint: 'Créditos e vendas são registrados por um administrador.',
+  coverNotInformed: 'Não informada',
+  noProject: 'Sem projeto',
 } as const;

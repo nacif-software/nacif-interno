@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "7cbf11ba-8828-4823-8f69-b08dd295e9e5",
-  "prevId": "9a9b9b32-5338-4544-a685-4bb2fe4bf34a",
+  "id": "e12abe43-2b2c-4546-9d07-91d479df66d8",
+  "prevId": "1fd07e1a-3d14-4ec6-a0c6-7085f301703b",
   "tables": {
     "approval_batches": {
       "name": "approval_batches",
@@ -267,6 +267,10 @@
         "availability_ledger_entries_note_check": {
           "name": "availability_ledger_entries_note_check",
           "value": "type = 'ACCRUAL' or note is not null"
+        },
+        "availability_ledger_entries_year_check": {
+          "name": "availability_ledger_entries_year_check",
+          "value": "type <> 'ACCRUAL' or reference_year is not null"
         }
       }
     },

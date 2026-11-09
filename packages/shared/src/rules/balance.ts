@@ -31,8 +31,3 @@ export function withRunningBalance<T extends StatementInput>(
   });
   return result.reverse();
 }
-
-/** Saldo de uma pessoa depois de aprovar uma comunicação com `deductedDays`. */
-export function balanceAfter(balance: number, deductedDays: number): number {
-  return balance - deductedDays;
-}

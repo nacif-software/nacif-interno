@@ -52,7 +52,8 @@ export const approveBodySchema = z
       .max(JUSTIFICATION_MAX_CHARS),
   })
   .partial()
-  .refine((b) => b.deductedDays === undefined || b.deductionNote !== undefined, {
+  // Os dois campos andam juntos: ajuste sem nota não explica nada; nota sem ajuste não tem onde entrar.
+  .refine((b) => (b.deductedDays === undefined) === (b.deductionNote === undefined), {
     error: MESSAGES.deductionNoteRequired,
     path: ['deductionNote'],
   });

@@ -5,10 +5,8 @@ import {
   todayIso,
   type AccrualRunResult,
 } from '@nacif/shared';
-import { and, eq, isNotNull, lte } from 'drizzle-orm';
-import { db } from '../../../db/client';
-import { users } from '../../../db/schema';
 import type { NewLedgerEntry } from '../../../db/types';
+import { usersRepository } from '../../core/users/users.repository';
 import { settingsRepository } from '../settings/settings.repository';
 import { balanceRepository } from './balance.repository';
 
@@ -22,14 +20,7 @@ export const accrualService = {
     // 03:00 UTC é 00:00 em São Paulo: o "hoje" é o do fuso do time, para não creditar um dia cedo.
     const today = todayIso(APP_TIMEZONE, now);
     const settings = await settingsRepository.get();
-    const people = await db().query.users.findMany({
-      where: and(
-        eq(users.active, true),
-        isNotNull(users.creditBaseDate),
-        lte(users.creditBaseDate, today),
-        onlyUserId ? eq(users.id, onlyUserId) : undefined,
-      ),
-    });
+    const people = await usersRepository.listAccrualCandidates(today, onlyUserId);
     const credited = await balanceRepository.creditedYears(people.map((p) => p.id));
     const entries: NewLedgerEntry[] = people.flatMap((person) => {
       const base = person.creditBaseDate;

@@ -107,24 +107,28 @@ export function PeopleTable({
                   </Select>
                 )}
               </div>
-              <Select
-                aria-label={`Projeto de ${u.name}`}
-                value={u.projects[0]?.id ?? ''}
-                onChange={(e) =>
-                  patch(u.id, { projectIds: e.target.value ? [e.target.value] : [] })
-                }
-                className="py-[7px] text-[13px]"
-              >
-                <option value="">Sem projeto</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                    {u.projects.length > 1 && u.projects[0]?.id === p.id
-                      ? ` (+${u.projects.length - 1})`
-                      : ''}
-                  </option>
-                ))}
-              </Select>
+              {u.projects.length > 1 ? (
+                // Edição de vários projetos vem com a tela de saldos (issue #32); aqui só mostra.
+                <span className="text-[13px] text-ink-muted" aria-label={`Projetos de ${u.name}`}>
+                  {u.projects.map((p) => p.name).join(', ')}
+                </span>
+              ) : (
+                <Select
+                  aria-label={`Projeto de ${u.name}`}
+                  value={u.projects[0]?.id ?? ''}
+                  onChange={(e) =>
+                    patch(u.id, { projectIds: e.target.value ? [e.target.value] : [] })
+                  }
+                  className="py-[7px] text-[13px]"
+                >
+                  <option value="">{MESSAGES.noProject}</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
               <div className="flex md:justify-end">
                 <Toggle
                   checked={u.active}

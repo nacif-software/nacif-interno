@@ -261,6 +261,11 @@ export const availabilityLedgerEntries = sqliteTable(
     ),
     check('availability_ledger_entries_days_check', sql`days > 0`),
     check('availability_ledger_entries_note_check', sql`type = 'ACCRUAL' or note is not null`),
+    // Sem o ano, o índice único parcial não pegaria duplicatas de ACCRUAL.
+    check(
+      'availability_ledger_entries_year_check',
+      sql`type <> 'ACCRUAL' or reference_year is not null`,
+    ),
   ],
 );
 

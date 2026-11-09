@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   anniversaryOn,
-  balanceAfter,
   defaultApproverFor,
   pendingAnniversaryYears,
   signedLedgerDays,
@@ -43,9 +42,6 @@ describe('saldo de dias', () => {
       ['2025-10-15', 3],
       ['2025-08-22', 10],
     ]);
-  });
-  it('saldo após aprovar pode ficar negativo', () => {
-    expect(balanceAfter(3, 5)).toBe(-2);
   });
 });
 

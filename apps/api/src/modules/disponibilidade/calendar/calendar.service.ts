@@ -11,22 +11,18 @@ import {
   type CalendarQuery,
   type CalendarRow,
 } from '@nacif/shared';
-import { and, asc, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNotNull, lte, type SQLWrapper } from 'drizzle-orm';
 import { db } from '../../../db/client';
-import { communications, userProjects, users } from '../../../db/schema';
+import { communications, users } from '../../../db/schema';
+import { memberOfProject } from '../../core/projects/user-projects.repository';
 import { projectRefs } from '../../core/users/user.mapper';
 
 export const calendarService = {
   async month(query: CalendarQuery): Promise<CalendarMonthDto> {
     const bounds = { startDate: monthStart(query.month), endDate: monthEnd(query.month) };
 
-    const inProject = (userColumn: typeof users.id | typeof communications.authorId) =>
-      query.projectId
-        ? sql`exists (
-            select 1 from ${userProjects} up
-            where up.user_id = ${userColumn} and up.project_id = ${query.projectId}
-          )`
-        : undefined;
+    const inProject = (userColumn: SQLWrapper) =>
+      query.projectId ? memberOfProject(userColumn, query.projectId) : undefined;
     const [people, rows] = await Promise.all([
       db().query.users.findMany({
         where: and(eq(users.active, true), isNotNull(users.passwordHash), inProject(users.id)),

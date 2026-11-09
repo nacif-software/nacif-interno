@@ -1,4 +1,4 @@
-import { formatDateRange, formatSentDate, type QueueItemDto } from '@nacif/shared';
+import { formatDateRange, formatSentDate, type QueueItemDto, MESSAGES } from '@nacif/shared';
 import { Link } from 'react-router';
 import { cn } from '@/lib/cn';
 import { Button, Checkbox, StatusBadge } from '@/ui';
@@ -69,7 +69,7 @@ export function QueueTable({
                   {item.author.name}
                 </span>
                 <span className="text-[13px] text-ink-muted">
-                  {item.projects.map((p) => p.name).join(', ') || 'Sem projeto'}
+                  {item.projects.map((p) => p.name).join(', ') || MESSAGES.noProject}
                 </span>
               </Link>
               <span className="text-[15px] text-ink">
@@ -79,7 +79,7 @@ export function QueueTable({
                 {item.businessDays}
               </span>
               <span className="truncate text-[15px] text-ink-muted">
-                {item.cover?.name ?? 'Não informada'}
+                {item.cover?.name ?? MESSAGES.coverNotInformed}
               </span>
               <span className="font-mono text-[14px] text-ink-muted">
                 {formatSentDate(item.submittedAt)}

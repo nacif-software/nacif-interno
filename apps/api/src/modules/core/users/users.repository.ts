@@ -1,4 +1,4 @@
-import { and, count, eq, sql, type SQL } from 'drizzle-orm';
+import { and, count, eq, isNotNull, lte, sql, type SQL } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { batchAll, db } from '../../../db/client';
 import { userProjects, users } from '../../../db/schema';
@@ -75,6 +75,17 @@ export const usersRepository = {
     const row = await this.findByIdWithProjects(id);
     if (!row) throw new Error(`Usuário ${id} não encontrado após gravar.`);
     return row;
+  },
+  /** Pessoas ativas com data base do crédito já atingida (candidatas ao crédito anual). */
+  listAccrualCandidates(today: string, onlyUserId?: string) {
+    return db().query.users.findMany({
+      where: and(
+        eq(users.active, true),
+        isNotNull(users.creditBaseDate),
+        lte(users.creditBaseDate, today),
+        onlyUserId ? eq(users.id, onlyUserId) : undefined,
+      ),
+    });
   },
   async countActiveAdmins(): Promise<number> {
     const [row] = await db()

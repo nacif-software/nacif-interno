@@ -13,7 +13,7 @@ import {
 import { and, asc, eq, gte, lte, sql, type SQL } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { batchAll } from '../../../db/client';
-import { communications, decisions, flowEvents, userProjects } from '../../../db/schema';
+import { communications, decisions, flowEvents } from '../../../db/schema';
 import type { CommunicationRow } from '../../../db/types';
 import type { AuthenticatedUser } from '../../../infra/http/context';
 import {
@@ -26,18 +26,11 @@ import { toQueueItemDto } from '../communications/communication.mapper';
 import { communicationsRepository } from '../communications/communications.repository';
 import { communicationsService } from '../communications/communications.service';
 import { flowEventsRepository } from '../communications/flow-events.repository';
+import { memberOfProject } from '../../core/projects/user-projects.repository';
 import { approvalsRepository } from './approvals.repository';
 
 /** Statements por decisão em `decideStatements`; `batchApprove` e `undoBatch` leem os resultados por esse passo. */
 const STATEMENTS_PER_DECISION = 3;
-
-/** Comunicações de quem participa do projeto (a comunicação vale para todos os projetos da pessoa). */
-function authorInProject(projectId: string): SQL {
-  return sql`exists (
-    select 1 from ${userProjects} up
-    where up.user_id = ${communications.authorId} and up.project_id = ${projectId}
-  )`;
-}
 
 function scopeFor(actor: AuthenticatedUser): SQL | undefined {
   return actor.role === 'ADMIN' ? undefined : eq(communications.approverId, actor.id);
@@ -137,7 +130,7 @@ export const approvalsService = {
       scopeFor(actor),
       query.from ? gte(communications.endDate, monthStart(query.from)) : undefined,
       query.to ? lte(communications.startDate, monthEnd(query.to)) : undefined,
-      query.projectId ? authorInProject(query.projectId) : undefined,
+      query.projectId ? memberOfProject(communications.authorId, query.projectId) : undefined,
     );
     const where = and(base, eq(communications.status, query.status));
 
@@ -237,7 +230,7 @@ export const approvalsService = {
       approvalsRepository.revertDecision(decision.id, now),
       communicationsRepository.update(
         decision.communicationId,
-        { status: 'IN_REVIEW' },
+        { status: 'IN_REVIEW', deductedDays: null },
         'APPROVED',
       ),
       flowEventsRepository.insertIf(

@@ -1,4 +1,4 @@
-import { formatBusinessDays, type CalendarMonthDto } from '@nacif/shared';
+import { formatBusinessDays, type CalendarMonthDto, MESSAGES } from '@nacif/shared';
 import { Link } from 'react-router';
 import { cn } from '@/lib/cn';
 import { paths } from '../../manifest';
@@ -34,7 +34,7 @@ export function CalendarGrid({ data }: { data: CalendarMonthDto }) {
             <div className="flex w-[200px] shrink-0 flex-col justify-center gap-[2px] border-r border-line px-5">
               <span className="truncate text-[15px] font-semibold text-ink">{row.user.name}</span>
               <span className="truncate text-[13px] text-ink-muted">
-                {row.projects.map((p) => p.name).join(', ') || 'Sem projeto'}
+                {row.projects.map((p) => p.name).join(', ') || MESSAGES.noProject}
                 {row.isApprover && ' · aprovador'}
               </span>
             </div>
