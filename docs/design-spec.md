@@ -94,6 +94,22 @@ Pessoas: botão `Convidar por e-mail` (primário escuro pequeno). Tabela grid `1
 Configurações (card padding 26, seções com border-top): `Antecedência mínima` input 88px mono valor `7` + `dias antes do início` · `Limite de pessoas simultaneamente indisponíveis` input `2` + `por projeto` · `Aprovadores padrão` chips lilás `Caio Bertelli`, `Marina Duarte` + chip tracejado `+ adicionar`, hint `Usados quando o membro do time não escolhe um aprovador.` · botão `Salvar configurações` à direita.
 **Acréscimo necessário (não desenhado):** CRUD de projetos e associação pessoa↔projeto, com os mesmos componentes de tabela.
 
+### 08 Saldo de dias (acrescentado em 2026-11-09, épica #29)
+
+Substitui a planilha de controle de dias. Mesmos tokens e componentes; nada novo de estilo. Termo: **saldo de dias**.
+
+**02 Painel**: o primeiro card de métrica passa a ser `Saldo de dias` → valor grande (ex.: `5`), texto de apoio `12 dias comunicados em 2026.` O card inteiro é link para o extrato (hover: borda roxa). Saldo negativo: valor em #DC2626 e apoio `Saldo negativo: fale com um administrador.`
+
+**08 Extrato "Meu saldo"** (rota `/disponibilidade/saldo`; item `Saldo` na nav do membro; aprovador e admin chegam pelo card). H2 `Meu saldo` (ou `Saldo de <Pessoa>` para o admin, com breadcrumb `Administração / <Pessoa>`), subtítulo `Data base do crédito: 22 ago 2025.` ou `Sem data base do crédito: nenhum crédito anual automático.` Quatro cards: `Saldo de dias` (44/700) · `Créditos` · `Vendas` · `Dias descontados` (30/700). Tabela grid `120px 1fr 90px 110px`, header 48px #F7F7F8: `Data` (mono) · `Lançamento` (título 15/600 + nota 13 #4A4A55) · `Dias` (mono; créditos `+10` em #16A34A, débitos `-5` em #080D24) · `Saldo após` (mono, à direita; negativo em #DC2626). Lançamentos: `Crédito anual`, `Crédito` (nota), `Venda de dias` (nota), `Indisponibilidade 05 – 09 out` (link para o detalhe). Ordem: mais recente primeiro. Mobile: linhas empilhadas, sem header. Vazio: `Nenhum lançamento ainda` + `Créditos anuais, créditos manuais, vendas e comunicações aprovadas aparecem aqui.`
+
+**03 Formulário**: abaixo do aviso de conflito, linha `Saldo após esta comunicação: 3 dias.` (14, #4A4A55). Se negativo: linha em #DC2626 600 + alerta amarelo `Saldo insuficiente` · `Esta comunicação deixa seu saldo em −2 dias. Você pode enviar; o aprovador vai ver isso.` Não bloqueia o envio.
+
+**05 Fila**: coluna nova `Saldo` (100px, mono 14) entre `Dias` e `Cobertura`: `5 → 3` (saldo atual → após aprovar com os dias úteis); o segundo número em #DC2626 600 quando negativo. Grid `44px 1.4fr 1.3fr 80px 100px 1.1fr 1fr 110px 190px`. Card mobile ganha linha `Saldo: 5 → 3`.
+
+**04 Detalhe**: card de métricas com 4 colunas: `DIAS ÚTEIS` · `DIAS DESCONTADOS` (em análise: valor em #4A4A55 + `Definidos na aprovação`; depois: valor; `Ajustado pelo aprovador` quando difere dos dias úteis) · `COBERTURA` (`Não informada` nas importadas) · `APROVADOR`. Em análise, linha `Saldo de <Autor>: 5 → 3` (para o próprio autor: `Seu saldo: …`), em #DC2626 com `· Saldo negativo: fale com um administrador.` quando negativo. Ações de quem decide: `Aprovar` (roxo) · `Recusar` · `Ajustar dias descontados` (contorno). Modal (lg) `Ajustar dias descontados`: descrição `<Autor> · <período>. O período tem N dias úteis. Informe quantos dias serão descontados do saldo e o motivo; a aprovação é registrada com o ajuste.` · campo `Dias descontados` (NumberInput, sufixo `de N dias úteis`) · `Motivo do ajuste` (textarea, mínimo 10, hint `Fica visível no fluxo da comunicação.`) · botões `Voltar` · `Aprovar com N dias` (roxo). Fluxo: `Aprovada por Marina Duarte (0 dias descontados) em …` + motivo entre aspas.
+
+**Regras**: saldo = créditos − vendas − dias descontados das aprovadas; pode ficar negativo (aviso, não bloqueio). Crédito anual de 10 dias (configurável) no aniversário da data base, a partir do primeiro aniversário. Venda de dias e crédito manual só por administrador (tela 07, ver issue #32). A regra 5 de A.5 passa a valer para o texto de apoio do card: "dias comunicados no ano" continua informativo; o saldo é o número principal.
+
 ### M1 Dashboard mobile
 
 Header 56: `NACIF` (18) + avatar 30 `MD`. H2 `Suas comunicações` (26) · botão roxo full `Nova comunicação` · métricas 2 col `Dias no ano` → `14`, `Em análise` → `1` (30/700) · lista: `14 – 18 set` + badge (11/600, 4px 9px) + `5 dias úteis · cobertura Pedro Nakano`; `05 – 09 out` Em análise `5 dias úteis · cobertura Júlia Reis`; `02 – 04 jul` Recusada `3 dias úteis`. Tab bar: `Início` (ativo 600 #5316E8) · `Comunicações` · `Time`.
@@ -135,7 +151,7 @@ Header: `Fila de aprovação` + badge contador `6` (#DDD2FB/#5316E8). Chips `Em 
 2. Antecedência mínima 7 dias (configurável), exibida no hero e no formulário. Violar → erro de validação no formulário (copy a definir: `O início deve ser pelo menos 7 dias após hoje.`).
 3. Período contínuo; dias passados desabilitados; pode cruzar meses.
 4. Contagem em dias úteis (exclui sáb/dom; sem feriados no MVP).
-5. `Dias comunicados no ano` é informativo, não saldo.
+5. `Dias comunicados no ano` é informativo; o saldo real é o `Saldo de dias` (seção 08).
 6. Conflito: sobreposição com comunicação **aprovada** de outra pessoa no **mesmo projeto** → aviso amarelo não bloqueante + nota no fluxo visível ao aprovador. Limite de simultâneos (2) alimenta esse aviso; não bloqueia.
 7. Cobertura obrigatória; aprovador pré-preenchido com o padrão do projeto (fallback: aprovadores padrão globais), editável.
 8. Enviar → `EM_ANALISE` imediatamente + evento `Enviada` e `Em análise` com o mesmo timestamp; toast `Comunicação enviada a <aprovador>.`

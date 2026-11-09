@@ -2,6 +2,7 @@ import { formatBusinessDays, formatDateRange, type QueueItemDto, MESSAGES } from
 import { Link } from 'react-router';
 import { Button, StatusBadge } from '@/ui';
 import { paths } from '../../manifest';
+import { BalanceAfter } from './queue-table';
 
 export function QueueCard({
   item,
@@ -33,6 +34,9 @@ export function QueueCard({
         </span>
         <span className="text-[13px] text-ink-muted">
           Cobertura: {item.cover?.name ?? MESSAGES.coverNotInformed}
+        </span>
+        <span className="text-[13px] text-ink-muted">
+          Saldo: <BalanceAfter item={item} className="text-[13px]" />
         </span>
       </Link>
       {decidable && (

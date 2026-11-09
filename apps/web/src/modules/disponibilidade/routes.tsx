@@ -4,6 +4,7 @@ import { RequireRole } from '@/modules/core/views/guards/require-role';
 import { AppShell } from '@/modules/core/views/layouts/app-shell';
 import { AdminPage } from './views/pages/admin-page';
 import { ApprovalQueuePage } from './views/pages/approval-queue-page';
+import { BalancePage } from './views/pages/balance-page';
 import { CommunicationDetailPage } from './views/pages/communication-detail-page';
 import { CommunicationFormPage } from './views/pages/communication-form-page';
 import { DashboardPage } from './views/pages/dashboard-page';
@@ -22,13 +23,17 @@ export const disponibilidadeRoutes: RouteObject[] = [
           { path: 'comunicacoes', Component: MyCommunicationsPage },
           { path: 'comunicacoes/:code', Component: CommunicationDetailPage },
           { path: 'calendario', Component: TeamCalendarPage },
+          { path: 'saldo', Component: BalancePage },
           {
             element: <RequireRole roles={['APPROVER', 'ADMIN']} />,
             children: [{ path: 'aprovacoes', Component: ApprovalQueuePage }],
           },
           {
             element: <RequireRole roles={['ADMIN']} />,
-            children: [{ path: 'administracao', Component: AdminPage }],
+            children: [
+              { path: 'administracao', Component: AdminPage },
+              { path: 'saldo/:userId', Component: BalancePage },
+            ],
           },
         ],
       },

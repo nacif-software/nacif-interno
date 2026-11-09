@@ -1,5 +1,6 @@
 import { formatDateRange, MESSAGES } from '@nacif/shared';
 import { Link } from 'react-router';
+import { cn } from '@/lib/cn';
 import { Button, Card, CardHeader, EmptyState, SkeletonCard } from '@/ui';
 import { useDashboard } from '../../controllers/use-dashboard';
 import { useSettings } from '../../controllers/use-settings';
@@ -41,13 +42,23 @@ export function DashboardPage() {
       <Hero minNoticeDays={settings.data?.minNoticeDays ?? 7} />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
-        <MetricCard
-          label="Dias comunicados no ano"
-          shortLabel="Dias no ano"
-          value={d.daysCommunicatedInYear}
-          hint={empty ? undefined : `Contador informativo, referente a ${d.year}.`}
-          muted={empty}
-        />
+        <Link to={paths.balance} className="contents text-inherit hover:text-inherit">
+          <MetricCard
+            label={MESSAGES.balanceTitle}
+            shortLabel="Saldo"
+            value={
+              <span data-testid="balance-value" className={cn(d.balance < 0 && 'text-danger')}>
+                {d.balance}
+              </span>
+            }
+            hint={
+              d.balance < 0
+                ? MESSAGES.balanceNegativeHint
+                : MESSAGES.balanceCommunicatedInYear(d.daysCommunicatedInYear, d.year)
+            }
+            className="transition-colors hover:border-brand"
+          />
+        </Link>
         <MetricCard
           label="Comunicações em análise"
           shortLabel="Em análise"

@@ -16,6 +16,8 @@ export type ApprovalsQuery = z.infer<typeof approvalsQuerySchema>;
 
 export const queueItemDtoSchema = communicationSummaryDtoSchema.extend({
   hasConflicts: z.boolean(),
+  /** Saldo de dias atual do autor, para o aprovador ver o saldo após aprovar. */
+  authorBalance: z.number().int(),
 });
 export type QueueItemDto = z.infer<typeof queueItemDtoSchema>;
 

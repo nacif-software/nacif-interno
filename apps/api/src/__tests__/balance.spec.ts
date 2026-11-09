@@ -230,6 +230,10 @@ describe('saldo de dias', () => {
     await loginAs(agent, 'marina@nacif.xyz');
     const detail = await agent.get(`/api/disponibilidade/communications/${holidaySwap.id}`);
     expect(detail.body.authorBalance).toBe(10);
+    const queue = await agent.get('/api/disponibilidade/approvals');
+    expect(queue.body.items.map((i: { authorBalance: number }) => i.authorBalance)).toEqual([
+      10, 10,
+    ]);
     expect(detail.body.deductedDays).toBeNull();
 
     const noNote = await agent

@@ -5,7 +5,12 @@ import { disponibilidadeModule } from '@/modules/disponibilidade/manifest';
 describe('navItems por papel', () => {
   it('membro, aprovador e admin veem os itens do design', () => {
     const nav = disponibilidadeModule.navItems!;
-    expect(nav('MEMBER').map((i) => i.label)).toEqual(['Início', 'Minhas comunicações', 'Time']);
+    expect(nav('MEMBER').map((i) => i.label)).toEqual([
+      'Início',
+      'Minhas comunicações',
+      'Saldo',
+      'Time',
+    ]);
     expect(nav('APPROVER').map((i) => i.label)).toEqual([
       'Início',
       'Aprovações',

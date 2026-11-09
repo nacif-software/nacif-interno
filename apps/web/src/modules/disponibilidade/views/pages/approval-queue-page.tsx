@@ -59,11 +59,14 @@ export function ApprovalQueuePage() {
 
   const onApprove = (item: QueueItemDto) => {
     setBusyId(item.id);
-    approve.mutate(item.id, {
-      onSuccess: () => toast.success(MESSAGES.approvedToast),
-      onError: (e) => toast.error(e.message),
-      onSettled: () => setBusyId(null),
-    });
+    approve.mutate(
+      { id: item.id },
+      {
+        onSuccess: () => toast.success(MESSAGES.approvedToast),
+        onError: (e) => toast.error(e.message),
+        onSettled: () => setBusyId(null),
+      },
+    );
   };
 
   const onBatch = () => {

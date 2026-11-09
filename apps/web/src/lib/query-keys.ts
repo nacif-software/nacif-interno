@@ -12,6 +12,7 @@ export const qk = {
     all: ['disp'] as const,
     settings: ['disp', 'settings'] as const,
     dashboard: ['disp', 'dashboard'] as const,
+    balance: (userId: string | null = null) => ['disp', 'balance', userId] as const,
     communications: (filters: Record<string, unknown> = {}) =>
       ['disp', 'communications', filters] as const,
     communication: (code: string) => ['disp', 'communication', code] as const,

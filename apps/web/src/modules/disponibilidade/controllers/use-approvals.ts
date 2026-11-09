@@ -1,5 +1,6 @@
 import type {
   ApprovalsResult,
+  ApproveBody,
   BatchApproveResult,
   BatchUndoResult,
   CommunicationDetailDto,
@@ -33,12 +34,14 @@ function useAfterDecision() {
   };
 }
 
+/** Aprova; com `body` (dias descontados + motivo) registra o ajuste do desconto no saldo. */
 export function useApprove() {
   const after = useAfterDecision();
   return useMutation({
-    mutationFn: (id: string) =>
+    mutationFn: ({ id, body }: { id: string; body?: ApproveBody }) =>
       apiFetch<CommunicationDetailDto>(`/disponibilidade/approvals/${id}/approve`, {
         method: 'POST',
+        body: body ?? {},
       }),
     onSuccess: after,
   });
