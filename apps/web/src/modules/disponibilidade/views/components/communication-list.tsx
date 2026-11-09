@@ -1,4 +1,4 @@
-import { formatSentOn, type CommunicationSummaryDto } from '@nacif/shared';
+import { formatSentOn, type CommunicationSummaryDto, MESSAGES } from '@nacif/shared';
 import { Link } from 'react-router';
 import { StatusBadge } from '@/ui';
 import { paths } from '../../manifest';
@@ -26,7 +26,7 @@ export function CommunicationList({ items }: { items: CommunicationSummaryDto[] 
               <span className="text-[13px] text-ink-muted md:hidden">
                 {c.status === 'REJECTED' || c.status === 'CANCELLED'
                   ? communicationTitle(c, false).split(' · ')[1]
-                  : `${communicationTitle(c, false).split(' · ')[1]} · cobertura ${c.cover.name}`}
+                  : `${communicationTitle(c, false).split(' · ')[1]} · cobertura ${c.cover?.name ?? MESSAGES.coverNotInformed}`}
               </span>
             </div>
             <div className="flex shrink-0 items-center gap-5">

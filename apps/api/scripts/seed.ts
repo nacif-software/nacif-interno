@@ -14,22 +14,25 @@ import {
   toZonedIsoDate,
 } from '@nacif/shared';
 import bcrypt from 'bcryptjs';
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   availabilityDefaultApprovers,
+  availabilityLedgerEntries,
   availabilitySettings,
   communicationCounters,
   communications,
   decisions,
   flowEvents,
   projects,
+  userProjects,
   users,
   type FlowEventMetadata,
 } from '../src/db/schema';
 import {
   SEED_COMMUNICATIONS,
+  SEED_LEDGER,
   SEED_PEOPLE,
   SEED_PROJECTS,
   SEED_SETTINGS,
@@ -86,20 +89,46 @@ async function buildStatements(): Promise<string[]> {
   }
 
   for (const p of SEED_PEOPLE) {
+    const userId = `seed-user-${p.key}`;
     const values = {
       name: p.name,
       email: p.email,
       role: p.role,
       active: p.active,
       passwordHash,
-      projectId: projectId(p.project),
+      creditBaseDate: p.creditBaseDate,
     };
     statements.push(
       toStatement(
         qb
           .insert(users)
-          .values({ id: `seed-user-${p.key}`, ...values })
+          .values({ id: userId, ...values })
           .onConflictDoUpdate({ target: users.id, set: values }),
+      ),
+      // Projetos da pessoa (N:N): substitui a associação a cada seed.
+      toStatement(qb.delete(userProjects).where(eq(userProjects.userId, userId))),
+      ...p.projects.map((name) =>
+        toStatement(qb.insert(userProjects).values({ userId, projectId: projectId(name) })),
+      ),
+    );
+  }
+
+  for (const entry of SEED_LEDGER) {
+    const values = {
+      userId: person(entry.person).id,
+      type: entry.type,
+      days: entry.days,
+      referenceDate: entry.referenceDate,
+      referenceYear: null,
+      note: entry.note,
+      createdById: person(entry.by).id,
+    };
+    statements.push(
+      toStatement(
+        qb
+          .insert(availabilityLedgerEntries)
+          .values({ id: entry.id, ...values })
+          .onConflictDoUpdate({ target: availabilityLedgerEntries.id, set: values }),
       ),
     );
   }
@@ -107,6 +136,7 @@ async function buildStatements(): Promise<string[]> {
   const settings = {
     minNoticeDays: SEED_SETTINGS.minNoticeDays,
     maxSimultaneousPerProject: SEED_SETTINGS.maxSimultaneousPerProject,
+    daysPerYear: SEED_SETTINGS.daysPerYear,
   };
   statements.push(
     toStatement(
@@ -140,10 +170,12 @@ async function buildStatements(): Promise<string[]> {
       year,
       sequence,
       authorId: author.id,
-      projectId: projectId(author.project),
+      projectId: null,
       startDate: c.startDate,
       endDate: c.endDate,
       businessDays: countBusinessDays(c.startDate, c.endDate),
+      // Aprovadas descontam os dias úteis (o seed não tem ajustes do aprovador).
+      deductedDays: c.status === 'APPROVED' ? countBusinessDays(c.startDate, c.endDate) : null,
       coverId: person(c.cover).id,
       approverId: approver.id,
       notes: c.notes ?? null,

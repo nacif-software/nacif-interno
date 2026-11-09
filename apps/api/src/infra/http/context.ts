@@ -1,11 +1,11 @@
 import { Hono, type Context, type MiddlewareHandler } from 'hono';
-import type { UserWithProject } from '../../db/types';
+import type { UserWithProjects } from '../../db/types';
 import type { ApiModule } from './module';
 import { NotFoundError } from './errors';
 import type { ValidatedInput } from './validate';
 
 /** Pessoa autenticada, como `requireAuth` deixa em `c.get('user')`. */
-export type AuthenticatedUser = UserWithProject;
+export type AuthenticatedUser = UserWithProjects;
 
 /** Variáveis de contexto compartilhadas por toda a API. */
 export type AppEnv = {

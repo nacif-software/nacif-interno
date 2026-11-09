@@ -9,7 +9,7 @@ export const sessionRepository = {
   findWithUser(id: string) {
     return db().query.sessions.findFirst({
       where: eq(sessions.id, id),
-      with: { user: { with: { project: true } } },
+      with: { user: { with: { projects: { with: { project: true } } } } },
     });
   },
   touch(id: string, lastSeenAt: Date, expiresAt: Date) {

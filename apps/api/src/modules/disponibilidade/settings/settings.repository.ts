@@ -31,11 +31,13 @@ export const settingsRepository = {
   async update(data: {
     minNoticeDays: number;
     maxSimultaneousPerProject: number;
+    daysPerYear: number;
     defaultApproverIds: string[];
   }): Promise<SettingsRow> {
     const values = {
       minNoticeDays: data.minNoticeDays,
       maxSimultaneousPerProject: data.maxSimultaneousPerProject,
+      daysPerYear: data.daysPerYear,
     };
     const statements: BatchItem<'sqlite'>[] = [
       db()

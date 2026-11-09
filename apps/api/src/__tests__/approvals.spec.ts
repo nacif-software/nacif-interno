@@ -203,7 +203,9 @@ describe('approvals', () => {
       `/api/disponibilidade/calendar?month=2026-10&projectId=${orion.id}`,
     );
     expect(
-      filtered.body.rows.every((r: { project: { name: string } }) => r.project.name === 'Órion'),
+      filtered.body.rows.every(
+        (r: { projects: { name: string }[] }) => r.projects[0]?.name === 'Órion',
+      ),
     ).toBe(true);
   });
 
@@ -215,9 +217,12 @@ describe('approvals', () => {
     expect(read.body).toMatchObject({ minNoticeDays: 7, maxSimultaneousPerProject: 2 });
     expect(
       (
-        await member
-          .put('/api/disponibilidade/settings')
-          .send({ minNoticeDays: 3, maxSimultaneousPerProject: 1, defaultApproverIds: [] })
+        await member.put('/api/disponibilidade/settings').send({
+          minNoticeDays: 3,
+          maxSimultaneousPerProject: 1,
+          daysPerYear: 10,
+          defaultApproverIds: [],
+        })
       ).status,
     ).toBe(403);
 
@@ -225,14 +230,20 @@ describe('approvals', () => {
     await loginAs(admin, 'caio@nacif.xyz');
     expect(
       (
-        await admin
-          .put('/api/disponibilidade/settings')
-          .send({ minNoticeDays: 3, maxSimultaneousPerProject: 1, defaultApproverIds: [pedro.id] })
+        await admin.put('/api/disponibilidade/settings').send({
+          minNoticeDays: 3,
+          maxSimultaneousPerProject: 1,
+          daysPerYear: 10,
+          defaultApproverIds: [pedro.id],
+        })
       ).status,
     ).toBe(422);
-    const ok = await admin
-      .put('/api/disponibilidade/settings')
-      .send({ minNoticeDays: 3, maxSimultaneousPerProject: 1, defaultApproverIds: [marina.id] });
+    const ok = await admin.put('/api/disponibilidade/settings').send({
+      minNoticeDays: 3,
+      maxSimultaneousPerProject: 1,
+      daysPerYear: 10,
+      defaultApproverIds: [marina.id],
+    });
     expect(ok.status).toBe(200);
     expect(ok.body.defaultApprovers).toEqual([{ id: marina.id, name: 'Marina Duarte' }]);
   });

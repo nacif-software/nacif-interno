@@ -3,6 +3,7 @@ import {
   canDecideOn,
   monthEnd,
   monthStart,
+  type ApproveBody,
   type ApprovalsQuery,
   type ApprovalsResult,
   type BatchApproveResult,
@@ -25,6 +26,7 @@ import { toQueueItemDto } from '../communications/communication.mapper';
 import { communicationsRepository } from '../communications/communications.repository';
 import { communicationsService } from '../communications/communications.service';
 import { flowEventsRepository } from '../communications/flow-events.repository';
+import { memberOfProject } from '../../core/projects/user-projects.repository';
 import { approvalsRepository } from './approvals.repository';
 
 /** Statements por decisão em `decideStatements`; `batchApprove` e `undoBatch` leem os resultados por esse passo. */
@@ -42,22 +44,39 @@ async function loadDecidable(actor: AuthenticatedUser, id: string): Promise<Comm
   return row;
 }
 
+interface DecideOptions {
+  justification?: string;
+  batchId?: string;
+  /** Dias descontados do saldo, quando o aprovador ajusta (padrão: dias úteis). */
+  deductedDays?: number;
+  deductionNote?: string;
+}
+
 /**
  * Statements de uma decisão, para um `batch()`: UPDATE com guard de status (`returning` vazio se
  * outra requisição decidiu antes), decisão e evento condicionados a essa mesma vitória.
+ * Na aprovação, status e dias descontados entram no mesmo UPDATE.
  */
 function decideStatements(
   actor: AuthenticatedUser,
   row: CommunicationRow,
   type: 'APPROVED' | 'REJECTED',
   now: Date,
-  options: { justification?: string; batchId?: string } = {},
+  options: DecideOptions = {},
 ): BatchItem<'sqlite'>[] {
   const decisionId = crypto.randomUUID();
-  const justification = options.justification ?? null;
+  const justification = options.justification ?? options.deductionNote ?? null;
   const batchId = options.batchId ?? null;
+  const adjusted = type === 'APPROVED' && options.deductedDays !== undefined;
+  const deductedDays = type === 'APPROVED' ? (options.deductedDays ?? row.businessDays) : null;
+  const description =
+    type === 'REJECTED'
+      ? `Recusada por ${actor.name}`
+      : adjusted
+        ? `Aprovada por ${actor.name} (${deductedDays} ${deductedDays === 1 ? 'dia descontado' : 'dias descontados'})`
+        : `Aprovada por ${actor.name}`;
   return [
-    communicationsRepository.update(row.id, { status: type }, 'IN_REVIEW'),
+    communicationsRepository.update(row.id, { status: type, deductedDays }, 'IN_REVIEW'),
     approvalsRepository.insertDecisionIfWon({
       id: decisionId,
       communicationId: row.id,
@@ -73,9 +92,13 @@ function decideStatements(
         type: 'DECISION',
         actorId: actor.id,
         occurredAt: now,
-        description:
-          type === 'APPROVED' ? `Aprovada por ${actor.name}` : `Recusada por ${actor.name}`,
-        metadata: { decision: type, justification, batchId },
+        description,
+        metadata: {
+          decision: type,
+          justification,
+          batchId,
+          ...(adjusted && deductedDays !== null ? { deductedDays } : {}),
+        },
       },
       sql`exists (select 1 from ${decisions} where ${decisions.id} = ${decisionId})`,
     ),
@@ -93,7 +116,7 @@ async function decide(
   row: CommunicationRow,
   type: 'APPROVED' | 'REJECTED',
   now: Date,
-  options: { justification?: string } = {},
+  options: DecideOptions = {},
 ) {
   const results = await batchAll(decideStatements(actor, row, type, now, options));
   if (!decisionApplied(results, 0, 0)) {
@@ -107,7 +130,7 @@ export const approvalsService = {
       scopeFor(actor),
       query.from ? gte(communications.endDate, monthStart(query.from)) : undefined,
       query.to ? lte(communications.startDate, monthEnd(query.to)) : undefined,
-      query.projectId ? eq(communications.projectId, query.projectId) : undefined,
+      query.projectId ? memberOfProject(communications.authorId, query.projectId) : undefined,
     );
     const where = and(base, eq(communications.status, query.status));
 
@@ -135,10 +158,14 @@ export const approvalsService = {
   async approve(
     actor: AuthenticatedUser,
     id: string,
+    body: ApproveBody = {},
     now: Date = new Date(),
   ): Promise<CommunicationDetailDto> {
     const row = await loadDecidable(actor, id);
-    await decide(actor, row, 'APPROVED', now);
+    await decide(actor, row, 'APPROVED', now, {
+      deductedDays: body.deductedDays,
+      deductionNote: body.deductionNote,
+    });
     return communicationsService.getDetail(actor, id);
   },
 
@@ -203,7 +230,7 @@ export const approvalsService = {
       approvalsRepository.revertDecision(decision.id, now),
       communicationsRepository.update(
         decision.communicationId,
-        { status: 'IN_REVIEW' },
+        { status: 'IN_REVIEW', deductedDays: null },
         'APPROVED',
       ),
       flowEventsRepository.insertIf(

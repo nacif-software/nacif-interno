@@ -54,7 +54,7 @@ export const sessionUserSchema = z.object({
   email: z.string(),
   role: roleSchema,
   active: z.boolean(),
-  project: projectRefSchema.nullable(),
+  projects: z.array(projectRefSchema),
 });
 export type SessionUser = z.infer<typeof sessionUserSchema>;
 

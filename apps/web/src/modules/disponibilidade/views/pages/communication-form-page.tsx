@@ -5,6 +5,7 @@ import {
   formatDateRange,
   MESSAGES,
   todayIso,
+  defaultApproverFor,
 } from '@nacif/shared';
 import { useEffect, useMemo } from 'react';
 import { Controller } from 'react-hook-form';
@@ -55,11 +56,11 @@ export function CommunicationFormPage() {
     existing.data?.id,
   );
 
-  // Aprovador padrão: do projeto da pessoa; senão o primeiro aprovador padrão global.
+  // Aprovador padrão: o dos projetos da pessoa quando é um só; senão o primeiro aprovador padrão global.
   const defaultApproverId = useMemo(() => {
-    const fromProject = projects.data?.find((p) => p.id === user.project?.id)?.defaultApprover?.id;
-    return fromProject ?? settings.data?.defaultApprovers[0]?.id ?? '';
-  }, [projects.data, settings.data, user.project?.id]);
+    const mine = projects.data?.filter((p) => user.projects.some((up) => up.id === p.id)) ?? [];
+    return defaultApproverFor(mine, settings.data ?? { defaultApprovers: [] })?.id ?? '';
+  }, [projects.data, settings.data, user.projects]);
 
   useEffect(() => {
     if (
@@ -77,7 +78,7 @@ export function CommunicationFormPage() {
       const c = existing.data;
       setValue('startDate', c.startDate);
       setValue('endDate', c.endDate);
-      setValue('coverId', c.cover.id);
+      setValue('coverId', c.cover?.id ?? '');
       setValue('approverId', c.approver.id);
       setValue('notes', c.notes ?? '');
     }
@@ -232,7 +233,9 @@ export function CommunicationFormPage() {
                 >
                   {covers.data?.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.projectName ? `${c.name} — projeto ${c.projectName}` : c.name}
+                      {c.projectNames.length === 0
+                        ? c.name
+                        : `${c.name} — ${c.projectNames.length === 1 ? 'projeto' : 'projetos'} ${c.projectNames.join(', ')}`}
                     </option>
                   ))}
                 </Select>

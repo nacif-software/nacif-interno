@@ -19,7 +19,7 @@ describe('auth', () => {
       name: 'Marina Duarte',
       role: 'APPROVER',
       initials: 'MD',
-      project: { name: 'Órion' },
+      projects: [{ name: 'Órion' }],
     });
     const cookie = res.headers['set-cookie']?.[0] ?? '';
     expect(cookie).toContain(`${SESSION_COOKIE_NAME}=`);
@@ -70,7 +70,7 @@ describe('auth', () => {
     const { atlas } = await seedTeam();
     const { setupLink, user } = await invitesService.invite({
       email: 'nova@nacif.xyz',
-      projectId: atlas.id,
+      projectIds: [atlas.id],
     });
     expect(user.invitePending).toBe(true);
     const token = setupLink.split('/').pop() ?? '';

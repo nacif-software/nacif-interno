@@ -5,6 +5,7 @@ import { bindDb, db } from '../db/client';
 import {
   approvalBatches,
   availabilityDefaultApprovers,
+  availabilityLedgerEntries,
   availabilitySettings,
   communicationCounters,
   communications,
@@ -13,6 +14,7 @@ import {
   passwordSetupTokens,
   projects,
   sessions,
+  userProjects,
   users,
 } from '../db/schema';
 
@@ -35,6 +37,8 @@ beforeEach(async () => {
     db().delete(approvalBatches),
     db().delete(communications),
     db().delete(communicationCounters),
+    db().delete(availabilityLedgerEntries),
+    db().delete(userProjects),
     db().delete(availabilityDefaultApprovers),
     db().delete(availabilitySettings),
     db().delete(passwordSetupTokens),

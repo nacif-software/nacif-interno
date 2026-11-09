@@ -11,6 +11,10 @@ export const BATCH_UNDO_TOAST_MS = 10_000;
 
 export const DEFAULT_MIN_NOTICE_DAYS = 7;
 export const DEFAULT_MAX_SIMULTANEOUS_PER_PROJECT = 2;
+/** Dias creditados a cada aniversário da data base do crédito. */
+export const DEFAULT_DAYS_PER_YEAR = 10;
+/** Nota mínima em créditos manuais, vendas e ajustes de dias descontados. */
+export const LEDGER_NOTE_MIN_CHARS = 10;
 
 export const APP_TIMEZONE = 'America/Sao_Paulo';
 

@@ -47,8 +47,9 @@ export function CommunicationDetailPage() {
                 {formatDateRange(c.startDate, c.endDate)}
               </h1>
               <p className="text-[15px] text-ink-muted">
-                {c.author.name} · projeto {c.project.name} · enviada em{' '}
-                {formatSentDate(c.submittedAt)}
+                {c.author.name}
+                {c.projects.length > 0 && ` · ${c.projects.map((p) => p.name).join(', ')}`} ·
+                enviada em {formatSentDate(c.submittedAt)}
               </p>
             </div>
             <StatusBadge status={c.status} size="lg" />
@@ -62,7 +63,7 @@ export function CommunicationDetailPage() {
             <div className="flex flex-col gap-2 border-l border-line pl-6">
               <span className="text-eyebrow">Cobertura</span>
               <span className="text-[18px] leading-[1.2] font-semibold text-ink">
-                {c.cover.name}
+                {c.cover?.name ?? MESSAGES.coverNotInformed}
               </span>
             </div>
             <div className="flex flex-col gap-2 border-l border-line pl-6">

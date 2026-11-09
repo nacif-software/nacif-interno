@@ -96,7 +96,7 @@ describe('communications', () => {
     expect(preview.body.conflicts).toHaveLength(1);
     expect(preview.body.conflicts[0].name).toBe('Marina Duarte');
     expect(preview.body.limitReached).toBe(false);
-    expect(preview.body.projectName).toBe('Órion');
+    expect(preview.body.projects.map((p: { name: string }) => p.name)).toEqual(['Órion']);
 
     const res = await agent
       .post('/api/disponibilidade/communications')

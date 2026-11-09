@@ -15,7 +15,7 @@ const caio: SessionUser = {
   email: 'caio@nacif.xyz',
   role: 'ADMIN',
   active: true,
-  project: null,
+  projects: [],
 };
 
 function user(overrides: Partial<UserDto> & Pick<UserDto, 'id' | 'name' | 'email'>): UserDto {
@@ -24,7 +24,8 @@ function user(overrides: Partial<UserDto> & Pick<UserDto, 'id' | 'name' | 'email
     role: 'MEMBER',
     active: true,
     invitePending: false,
-    project: null,
+    projects: [],
+    creditBaseDate: null,
     createdAt: '2026-01-01T00:00:00Z',
     ...overrides,
   };

@@ -27,6 +27,7 @@ export function SettingsCard({
     defaultValues: {
       minNoticeDays: settings.minNoticeDays,
       maxSimultaneousPerProject: settings.maxSimultaneousPerProject,
+      daysPerYear: settings.daysPerYear,
       defaultApproverIds: settings.defaultApprovers.map((a) => a.id),
     },
   });
@@ -77,6 +78,21 @@ export function SettingsCard({
           <p className="text-[13px] text-danger">
             {form.formState.errors.maxSimultaneousPerProject.message}
           </p>
+        )}
+      </div>
+      <div className="flex flex-col gap-3 border-t border-line pt-[22px]">
+        <label htmlFor="daysPerYear" className="text-[15px] font-semibold text-ink">
+          Crédito anual
+        </label>
+        <NumberInput
+          id="daysPerYear"
+          min={1}
+          max={365}
+          suffix="dias por ano, no aniversário da data base"
+          {...form.register('daysPerYear')}
+        />
+        {form.formState.errors.daysPerYear && (
+          <p className="text-[13px] text-danger">{form.formState.errors.daysPerYear.message}</p>
         )}
       </div>
       <div className="flex flex-col gap-3 border-t border-line pt-[22px]">

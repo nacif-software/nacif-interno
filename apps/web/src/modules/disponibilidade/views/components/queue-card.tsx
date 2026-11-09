@@ -1,4 +1,4 @@
-import { formatBusinessDays, formatDateRange, type QueueItemDto } from '@nacif/shared';
+import { formatBusinessDays, formatDateRange, type QueueItemDto, MESSAGES } from '@nacif/shared';
 import { Link } from 'react-router';
 import { Button, StatusBadge } from '@/ui';
 import { paths } from '../../manifest';
@@ -28,9 +28,12 @@ export function QueueCard({
         </div>
         <span className="text-[13px] text-ink-muted">
           {formatDateRange(item.startDate, item.endDate, { withYear: false })} ·{' '}
-          {formatBusinessDays(item.businessDays)} · {item.project.name}
+          {formatBusinessDays(item.businessDays)} ·{' '}
+          {item.projects.map((p) => p.name).join(', ') || MESSAGES.noProject}
         </span>
-        <span className="text-[13px] text-ink-muted">Cobertura: {item.cover.name}</span>
+        <span className="text-[13px] text-ink-muted">
+          Cobertura: {item.cover?.name ?? MESSAGES.coverNotInformed}
+        </span>
       </Link>
       {decidable && (
         <div className="flex gap-2">

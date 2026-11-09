@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, inArray, lte, sum } from 'drizzle-orm';
 import { db } from '../../../db/client';
 import { communications } from '../../../db/schema';
 import type { AuthenticatedUser } from '../../../infra/http/context';
+import { balanceRepository } from '../balance/balance.repository';
 import { toSummaryDto } from '../communications/communication.mapper';
 import { communicationsRepository } from '../communications/communications.repository';
 
@@ -13,7 +14,7 @@ export const dashboardService = {
     const mine = eq(communications.authorId, actor.id);
     const counting = inArray(communications.status, ['APPROVED', 'IN_REVIEW']);
 
-    const [communicated, inReview, next, recent] = await Promise.all([
+    const [communicated, inReview, next, recent, balance] = await Promise.all([
       db()
         .select({ total: sum(communications.businessDays).mapWith(Number) })
         .from(communications)
@@ -39,10 +40,12 @@ export const dashboardService = {
         orderBy: [desc(communications.submittedAt)],
         limit: 5,
       }),
+      balanceRepository.balanceOf(actor.id),
     ]);
 
     return {
       year,
+      balance,
       daysCommunicatedInYear: communicated[0]?.total ?? 0,
       inReviewCount: inReview.length,
       inReviewApproverName: inReview[0]?.approver.name ?? null,

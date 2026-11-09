@@ -10,6 +10,7 @@ export function toSettingsDto(row: SettingsRow): SettingsDto {
   return {
     minNoticeDays: row.minNoticeDays,
     maxSimultaneousPerProject: row.maxSimultaneousPerProject,
+    daysPerYear: row.daysPerYear,
     defaultApprovers: row.defaultApprovers.map((d) => ({ id: d.user.id, name: d.user.name })),
   };
 }

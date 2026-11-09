@@ -1,7 +1,7 @@
 import type { CommunicationStatus } from '../enums/communication-status';
 import type { FlowEventType } from '../enums/flow-event-type';
 import type { Role } from '../enums/role';
-import { ALLOWED_EMAIL_DOMAIN, REJECTION_MIN_CHARS } from '../constants';
+import { ALLOWED_EMAIL_DOMAIN, LEDGER_NOTE_MIN_CHARS, REJECTION_MIN_CHARS } from '../constants';
 
 /** Rótulos de status como aparecem em badges. */
 export const STATUS_LABEL: Record<CommunicationStatus, string> = {
@@ -109,4 +109,11 @@ export const MESSAGES = {
   conflictFlagged: (name: string, range: string) => `Conflito sinalizado com ${name} (${range}).`,
   defaultApproverHint: 'Aprovador padrão do seu projeto.',
   defaultApproversHint: 'Usados quando o membro do time não escolhe um aprovador.',
+  // Saldo de dias
+  ledgerNoteTooShort: `A nota precisa ter pelo menos ${LEDGER_NOTE_MIN_CHARS} caracteres.`,
+  deductionNoteRequired: 'Explique o ajuste dos dias descontados.',
+  balanceNegativeHint: 'Saldo negativo: fale com um administrador.',
+  balanceAdminOnlyHint: 'Créditos e vendas são registrados por um administrador.',
+  coverNotInformed: 'Não informada',
+  noProject: 'Sem projeto',
 } as const;

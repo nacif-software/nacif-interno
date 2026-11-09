@@ -11,42 +11,42 @@ import {
   type CalendarQuery,
   type CalendarRow,
 } from '@nacif/shared';
-import { and, asc, eq, gte, inArray, isNotNull, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNotNull, lte, type SQLWrapper } from 'drizzle-orm';
 import { db } from '../../../db/client';
 import { communications, users } from '../../../db/schema';
+import { memberOfProject } from '../../core/projects/user-projects.repository';
+import { projectRefs } from '../../core/users/user.mapper';
 
 export const calendarService = {
   async month(query: CalendarQuery): Promise<CalendarMonthDto> {
     const bounds = { startDate: monthStart(query.month), endDate: monthEnd(query.month) };
 
+    const inProject = (userColumn: SQLWrapper) =>
+      query.projectId ? memberOfProject(userColumn, query.projectId) : undefined;
     const [people, rows] = await Promise.all([
       db().query.users.findMany({
-        where: and(
-          eq(users.active, true),
-          isNotNull(users.passwordHash),
-          query.projectId ? eq(users.projectId, query.projectId) : undefined,
-        ),
-        with: { project: true },
+        where: and(eq(users.active, true), isNotNull(users.passwordHash), inProject(users.id)),
+        with: { projects: { with: { project: true } } },
       }),
       db().query.communications.findMany({
         where: and(
           inArray(communications.status, [...CALENDAR_STATUSES]),
           lte(communications.startDate, bounds.endDate),
           gte(communications.endDate, bounds.startDate),
-          query.projectId ? eq(communications.projectId, query.projectId) : undefined,
+          inProject(communications.authorId),
         ),
         orderBy: [asc(communications.startDate)],
       }),
     ]);
 
-    // Projeto (quem não tem projeto vai para o fim) e nome, com ordenação pt-BR.
+    // Primeiro projeto (quem não tem projeto vai para o fim) e nome, com ordenação pt-BR.
     const collator = new Intl.Collator('pt-BR');
+    const firstProject = (u: (typeof people)[number]) => projectRefs(u)[0]?.name ?? null;
     people.sort((a, b) => {
-      if (!a.project !== !b.project) return a.project ? -1 : 1;
-      return (
-        collator.compare(a.project?.name ?? '', b.project?.name ?? '') ||
-        collator.compare(a.name, b.name)
-      );
+      const pa = firstProject(a);
+      const pb = firstProject(b);
+      if (!pa !== !pb) return pa ? -1 : 1;
+      return collator.compare(pa ?? '', pb ?? '') || collator.compare(a.name, b.name);
     });
 
     const byUser = new Map<string, typeof rows>();
@@ -58,7 +58,7 @@ export const calendarService = {
 
     const calendarRows: CalendarRow[] = people.map((u) => ({
       user: { id: u.id, name: u.name, initials: getInitials(u.name) },
-      project: u.project ? { id: u.project.id, name: u.project.name } : null,
+      projects: projectRefs(u),
       isApprover: isApproverRole(u.role),
       bars: (byUser.get(u.id) ?? []).flatMap((c) => {
         const range = { startDate: c.startDate, endDate: c.endDate };

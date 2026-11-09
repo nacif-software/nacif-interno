@@ -1,4 +1,4 @@
-import { formatSentDate } from '@nacif/shared';
+import { formatSentDate, MESSAGES } from '@nacif/shared';
 import { Link, useSearchParams } from 'react-router';
 import { PageHeader } from '@/modules/core/views/layouts/page-header';
 import { Button, Card, EmptyState, SkeletonCard, StatusBadge } from '@/ui';
@@ -86,7 +86,9 @@ export function MyCommunicationsPage() {
                   <span className="font-mono text-[15px] font-medium text-ink">
                     {c.businessDays}
                   </span>
-                  <span className="text-[15px] text-ink-muted">{c.cover.name}</span>
+                  <span className="text-[15px] text-ink-muted">
+                    {c.cover?.name ?? MESSAGES.coverNotInformed}
+                  </span>
                   <span className="text-[15px] text-ink-muted">{c.approver.name}</span>
                   <span className="font-mono text-[14px] text-ink-muted">
                     {formatSentDate(c.submittedAt)}
