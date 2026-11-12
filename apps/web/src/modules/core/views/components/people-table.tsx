@@ -1,11 +1,12 @@
 import { MESSAGES, ROLE_LABEL, ROLES, type ProjectDto, type UserDto } from '@nacif/shared';
 import { cn } from '@/lib/cn';
-import { RoleChip, Select, Toggle, useToast } from '@/ui';
+import { Input, RoleChip, Select, Toggle, useToast } from '@/ui';
 import { useCurrentUser } from '../../controllers/use-session';
 import { useResendInvite, useResetPassword, useUpdateUser } from '../../controllers/use-users';
+import { ProjectChips } from './project-chips';
 import type { SetupLink } from './setup-link-modal';
 
-const GRID = 'md:grid-cols-[1.6fr_1.4fr_1fr_1fr_120px]';
+const GRID = 'md:grid-cols-[1.3fr_1.1fr_1.2fr_1.3fr_150px_80px]';
 const LINK_ACTION = 'w-fit text-[13px] text-brand hover:text-ink cursor-pointer';
 
 export function PeopleTable({
@@ -36,11 +37,13 @@ export function PeopleTable({
           GRID,
         )}
       >
-        {['Pessoa', 'E-mail', 'Papel', 'Projeto'].map((h) => (
-          <span key={h} className="text-eyebrow">
-            {h}
-          </span>
-        ))}
+        {['Pessoa', 'E-mail', 'Papel', MESSAGES.projectsLabel, MESSAGES.creditBaseDateLabel].map(
+          (h) => (
+            <span key={h} className="text-eyebrow">
+              {h}
+            </span>
+          ),
+        )}
         <span className="text-eyebrow text-right">Ativo</span>
       </div>
       <ul>
@@ -50,7 +53,8 @@ export function PeopleTable({
             <li
               key={u.id}
               className={cn(
-                'grid grid-cols-1 gap-3 border-b border-line px-[22px] py-4 last:border-b-0 md:min-h-16 md:grid-cols-[1.6fr_1.4fr_1fr_1fr_120px] md:items-center md:gap-4 md:py-0',
+                'grid grid-cols-1 gap-3 border-b border-line px-[22px] py-4 last:border-b-0 md:min-h-16 md:items-center md:gap-4 md:py-0',
+                GRID,
                 !u.active && 'opacity-70',
               )}
             >
@@ -107,28 +111,34 @@ export function PeopleTable({
                   </Select>
                 )}
               </div>
-              {u.projects.length > 1 ? (
-                // Edição de vários projetos vem com a tela de saldos (issue #32); aqui só mostra.
-                <span className="text-[13px] text-ink-muted" aria-label={`Projetos de ${u.name}`}>
-                  {u.projects.map((p) => p.name).join(', ')}
-                </span>
-              ) : (
-                <Select
-                  aria-label={`Projeto de ${u.name}`}
-                  value={u.projects[0]?.id ?? ''}
-                  onChange={(e) =>
-                    patch(u.id, { projectIds: e.target.value ? [e.target.value] : [] })
+              <ProjectChips
+                label={`Projetos de ${u.name}`}
+                selected={u.projects}
+                options={projects.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name }))}
+                onChange={(projectIds) => patch(u.id, { projectIds })}
+                disabled={update.isPending}
+              />
+              <Input
+                type="date"
+                aria-label={`Data base de ${u.name}`}
+                title={MESSAGES.creditBaseDateHint}
+                defaultValue={u.creditBaseDate ?? ''}
+                className="py-[7px] font-mono text-[13px]"
+                onBlur={(e) => {
+                  const next = e.target.value || null;
+                  if (next !== (u.creditBaseDate ?? null)) {
+                    update.mutate(
+                      { id: u.id, creditBaseDate: next },
+                      {
+                        onSuccess: () => {
+                          if (next) toast.success(MESSAGES.creditBaseDateSaved(u.name));
+                        },
+                        onError: (err) => toast.error(err.message),
+                      },
+                    );
                   }
-                  className="py-[7px] text-[13px]"
-                >
-                  <option value="">{MESSAGES.noProject}</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </Select>
-              )}
+                }}
+              />
               <div className="flex md:justify-end">
                 <Toggle
                   checked={u.active}

@@ -91,6 +91,7 @@ export function SettingsCard({
           suffix="dias por ano, no aniversário da data base"
           {...form.register('daysPerYear')}
         />
+        <p className="text-[13px] text-ink-muted">{MESSAGES.daysPerYearHint}</p>
         {form.formState.errors.daysPerYear && (
           <p className="text-[13px] text-danger">{form.formState.errors.daysPerYear.message}</p>
         )}
