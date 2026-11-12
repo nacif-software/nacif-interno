@@ -1,9 +1,9 @@
 import { MESSAGES, ROLE_LABEL, ROLES, type ProjectDto, type UserDto } from '@nacif/shared';
 import { cn } from '@/lib/cn';
-import { Input, RoleChip, Select, Toggle, useToast } from '@/ui';
+import { RefChips, RoleChip, Select, Toggle, useToast } from '@/ui';
 import { useCurrentUser } from '../../controllers/use-session';
 import { useResendInvite, useResetPassword, useUpdateUser } from '../../controllers/use-users';
-import { ProjectChips } from './project-chips';
+import { BaseDateInput } from './base-date-input';
 import type { SetupLink } from './setup-link-modal';
 
 const GRID = 'md:grid-cols-[1.3fr_1.1fr_1.2fr_1.3fr_150px_80px]';
@@ -111,33 +111,37 @@ export function PeopleTable({
                   </Select>
                 )}
               </div>
-              <ProjectChips
+              <RefChips
                 label={`Projetos de ${u.name}`}
                 selected={u.projects}
                 options={projects.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name }))}
                 onChange={(projectIds) => patch(u.id, { projectIds })}
+                addLabel={MESSAGES.projectsAdd}
+                emptyLabel={MESSAGES.noProject}
+                size="md"
                 disabled={update.isPending}
+                className="gap-[6px]"
               />
-              <Input
-                type="date"
-                aria-label={`Data base de ${u.name}`}
-                title={MESSAGES.creditBaseDateHint}
-                defaultValue={u.creditBaseDate ?? ''}
+              <BaseDateInput
+                key={u.creditBaseDate ?? ''}
+                name={u.name}
+                value={u.creditBaseDate}
+                disabled={update.isPending}
                 className="py-[7px] font-mono text-[13px]"
-                onBlur={(e) => {
-                  const next = e.target.value || null;
-                  if (next !== (u.creditBaseDate ?? null)) {
-                    update.mutate(
-                      { id: u.id, creditBaseDate: next },
-                      {
-                        onSuccess: () => {
-                          if (next) toast.success(MESSAGES.creditBaseDateSaved(u.name));
-                        },
-                        onError: (err) => toast.error(err.message),
-                      },
-                    );
-                  }
-                }}
+                onSave={(next) =>
+                  update.mutateAsync({ id: u.id, creditBaseDate: next }).then(
+                    () =>
+                      toast.success(
+                        next
+                          ? MESSAGES.creditBaseDateSaved(u.name)
+                          : MESSAGES.creditBaseDateCleared(u.name),
+                      ),
+                    (err: Error) => {
+                      toast.error(err.message);
+                      throw err;
+                    },
+                  )
+                }
               />
               <div className="flex md:justify-end">
                 <Toggle

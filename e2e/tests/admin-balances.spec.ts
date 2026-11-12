@@ -10,7 +10,7 @@ test('administrador lança crédito e venda, vê o extrato da pessoa e associa d
 
   // Júlia (seed): crédito 10 → saldo inicial lido da tabela
   const row = page.locator('li').filter({ has: page.getByRole('link', { name: 'Júlia Reis' }) });
-  const initial = Number((await row.locator('span.font-semibold').first().textContent())?.trim());
+  const initial = Number((await row.getByTestId('row-balance').textContent())?.trim());
 
   await row.getByRole('button', { name: 'Lançar crédito' }).click();
   const dialog = page.getByRole('dialog');
@@ -21,7 +21,7 @@ test('administrador lança crédito e venda, vê o extrato da pessoa e associa d
   await expect(page.getByRole('status').filter({ hasText: 'lançado' })).toContainText(
     'Crédito de 5 dias lançado para Júlia Reis.',
   );
-  await expect(row.locator('span.font-semibold').first()).toHaveText(String(initial + 5));
+  await expect(row.getByTestId('row-balance')).toHaveText(String(initial + 5));
 
   await row.getByRole('button', { name: 'Registrar venda' }).click();
   await dialog.getByLabel(/^Dias/).fill('2');
@@ -30,7 +30,7 @@ test('administrador lança crédito e venda, vê o extrato da pessoa e associa d
   await expect(page.getByRole('status').filter({ hasText: 'registrada' })).toContainText(
     'Venda de 2 dias registrada para Júlia Reis.',
   );
-  await expect(row.locator('span.font-semibold').first()).toHaveText(String(initial + 3));
+  await expect(row.getByTestId('row-balance')).toHaveText(String(initial + 3));
 
   // extrato da pessoa
   await row.getByRole('link', { name: 'Júlia Reis' }).click();

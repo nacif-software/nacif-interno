@@ -7,7 +7,6 @@ import {
   type PersonRef,
 } from '@nacif/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLayoutEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { Button, Field, Input, Modal, NumberInput, Textarea } from '@/ui';
@@ -30,20 +29,11 @@ export function LedgerEntryModal({
   onConfirm: (body: CreateLedgerEntryBody) => void;
   loading: boolean;
 }) {
-  const defaults = (): FormInput => ({
-    type,
-    days: 1,
-    referenceDate: todayIso(APP_TIMEZONE),
-    note: '',
-  });
+  // O chamador troca a `key` a cada abertura: o formulário nasce limpo, sem efeito de reset.
   const form = useForm<FormInput, unknown, CreateLedgerEntryBody>({
     resolver: zodResolver(createLedgerEntryBodySchema),
-    defaultValues: defaults(),
+    defaultValues: { type, days: 1, referenceDate: todayIso(APP_TIMEZONE), note: '' },
   });
-  useLayoutEffect(() => {
-    if (open) form.reset(defaults());
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset só na abertura
-  }, [open, type]);
   if (!person) return null;
   const isSale = type === 'SALE';
   const onSubmit = form.handleSubmit((v) => onConfirm(v));

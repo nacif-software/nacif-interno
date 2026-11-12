@@ -78,6 +78,7 @@ export function BalancesCard({ items }: { items: BalanceOverviewItem[] }) {
               {it.creditBaseDate ? formatDate(it.creditBaseDate) : '—'}
             </span>
             <span
+              data-testid="row-balance"
               className={cn(
                 'font-mono text-[15px] font-semibold',
                 it.balance < 0 ? 'text-danger' : 'text-ink',
@@ -110,6 +111,7 @@ export function BalancesCard({ items }: { items: BalanceOverviewItem[] }) {
         ))}
       </ul>
       <LedgerEntryModal
+        key={modal ? `${modal.item.user.id}:${modal.type}` : 'closed'}
         person={modal?.item.user ?? null}
         type={modal?.type ?? 'GRANT'}
         open={modal !== null}

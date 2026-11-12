@@ -154,7 +154,10 @@ export const MESSAGES = {
   balancesEmpty: 'Nenhuma pessoa cadastrada.',
   creditBaseDateLabel: 'Data base',
   creditBaseDateHint: 'Vazia = sem crédito anual automático.',
-  creditBaseDateSaved: (name: string) => `Data base de ${name} salva. Créditos pendentes lançados.`,
+  creditBaseDateSaved: (name: string) => `Data base de ${name} salva.`,
+  creditBaseDateCleared: (name: string) => `Data base de ${name} removida.`,
+  creditBaseDateOptional: 'Data base (opcional)',
+  projectsOptional: 'Projetos (opcional)',
   projectsLabel: 'Projetos',
   projectsAdd: '+ adicionar',
   lastEntryLabel: 'Último lançamento',
@@ -166,10 +169,10 @@ export const MESSAGES = {
   ledgerDateLabel: 'Data',
   ledgerNoteLabel: 'Nota',
   ledgerNoteHint: `Mínimo de ${LEDGER_NOTE_MIN_CHARS} caracteres. Aparece no extrato da pessoa.`,
+  defaultApproversAdd: '+ adicionar',
   grantToast: (days: number, name: string) =>
     `Crédito de ${days} ${days === 1 ? 'dia' : 'dias'} lançado para ${name}.`,
   saleToast: (days: number, name: string) =>
     `Venda de ${days} ${days === 1 ? 'dia' : 'dias'} registrada para ${name}.`,
-  daysPerYearHint:
-    'Lançado automaticamente todo dia às 00:00 de Brasília, no aniversário da data base.',
+  daysPerYearHint: 'Lançado automaticamente todo dia às 00:00 de Brasília.',
 } as const;

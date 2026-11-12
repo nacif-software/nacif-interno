@@ -10,7 +10,7 @@ import type { z } from 'zod';
 type SettingsFormInput = z.input<typeof updateSettingsBodySchema>;
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
-import { Badge, Button, Chip, DropdownMenu, MenuItem, NumberInput, useToast } from '@/ui';
+import { Button, NumberInput, RefChips, useToast } from '@/ui';
 import { useUpdateSettings } from '../../controllers/use-settings';
 
 export function SettingsCard({
@@ -37,10 +37,6 @@ export function SettingsCard({
       onError: (e) => toast.error(e.message),
     });
   });
-  const nameOf = (id: string) =>
-    approvers.find((a) => a.id === id)?.name ??
-    settings.defaultApprovers.find((a) => a.id === id)?.name ??
-    id;
 
   return (
     <form
@@ -102,44 +98,21 @@ export function SettingsCard({
           control={form.control}
           name="defaultApproverIds"
           render={({ field }) => {
-            const selected = field.value;
-            const available = approvers.filter((a) => !selected.includes(a.id));
+            const selected = field.value
+              .map(
+                (id) =>
+                  approvers.find((a) => a.id === id) ??
+                  settings.defaultApprovers.find((a) => a.id === id),
+              )
+              .filter((a): a is { id: string; name: string } => Boolean(a));
             return (
-              <div
-                className="flex flex-wrap items-center gap-2"
-                role="group"
-                aria-label="Aprovadores padrão"
-              >
-                {selected.map((id) => (
-                  <Badge key={id} tone="brand" size="lg" className="gap-2">
-                    {nameOf(id)}
-                    <button
-                      type="button"
-                      aria-label={`Remover ${nameOf(id)}`}
-                      className="cursor-pointer opacity-70 hover:opacity-100"
-                      onClick={() => field.onChange(selected.filter((v) => v !== id))}
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                ))}
-                {available.length > 0 && (
-                  <DropdownMenu
-                    align="left"
-                    trigger={({ open: _open, ...props }) => (
-                      <Chip {...props} dashed aria-haspopup="menu">
-                        + adicionar
-                      </Chip>
-                    )}
-                  >
-                    {available.map((a) => (
-                      <MenuItem key={a.id} onClick={() => field.onChange([...selected, a.id])}>
-                        {a.name}
-                      </MenuItem>
-                    ))}
-                  </DropdownMenu>
-                )}
-              </div>
+              <RefChips
+                label="Aprovadores padrão"
+                selected={selected}
+                options={approvers.map((a) => ({ id: a.id, name: a.name }))}
+                onChange={field.onChange}
+                addLabel={MESSAGES.defaultApproversAdd}
+              />
             );
           }}
         />
