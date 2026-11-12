@@ -6,7 +6,10 @@ import { PeopleTable } from '@/modules/core/views/components/people-table';
 import { ProjectsTable } from '@/modules/core/views/components/projects-table';
 import { SetupLinkModal, type SetupLink } from '@/modules/core/views/components/setup-link-modal';
 import { Card, SkeletonCard } from '@/ui';
+import { MESSAGES } from '@nacif/shared';
+import { useBalanceOverview } from '../../controllers/use-balance';
 import { useSettings } from '../../controllers/use-settings';
+import { BalancesCard } from '../components/balances-card';
 import { SettingsCard } from '../components/settings-card';
 
 export function AdminPage() {
@@ -14,6 +17,7 @@ export function AdminPage() {
   const projects = useProjects();
   const approvers = useUserOptions('approver');
   const settings = useSettings();
+  const balances = useBalanceOverview();
   const [setup, setSetup] = useState<SetupLink | null>(null);
 
   const loading = users.isPending || projects.isPending || settings.isPending;
@@ -31,7 +35,17 @@ export function AdminPage() {
                 projects={projects.data ?? []}
                 onSetupLink={setSetup}
               />
-              <InviteForm onInvited={setSetup} />
+              <InviteForm onInvited={setSetup} projects={projects.data ?? []} />
+            </Card>
+          )}
+        </section>
+        <section className="flex flex-col gap-5">
+          <h2 className="text-section-title">{MESSAGES.balancesTitle}</h2>
+          {balances.isPending ? (
+            <SkeletonCard />
+          ) : (
+            <Card className="overflow-hidden">
+              <BalancesCard items={balances.data ?? []} />
             </Card>
           )}
         </section>
