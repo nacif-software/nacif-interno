@@ -15,6 +15,19 @@ export async function login(page: Page, email: string, password: string = PASSWO
   await page.getByLabel('Senha').fill(password);
   await page.getByRole('button', { name: /Entrar/ }).click();
   await expect(page).toHaveURL(/\/(disponibilidade)?$/);
+  await dismissPushPrompt(page);
+}
+
+/**
+ * Fecha o modal de avisos push se ele aparecer. No Chromium headless a permissão nasce negada e o
+ * modal nem abre; a espera curta cobre um navegador com permissão pendente.
+ */
+export async function dismissPushPrompt(page: Page) {
+  const later = page.getByRole('button', { name: 'Agora não' });
+  await later
+    .waitFor({ state: 'visible', timeout: 1_500 })
+    .then(() => later.click())
+    .catch(() => undefined);
 }
 
 export async function logout(page: Page) {

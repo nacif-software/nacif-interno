@@ -1,3 +1,4 @@
+import { MESSAGES } from '@nacif/shared';
 import { useNavigate } from 'react-router';
 import { Avatar, DropdownMenu, MenuItem } from '@/ui';
 import { useCurrentUser, useLogout } from '../../controllers/use-session';
@@ -36,6 +37,9 @@ export function UserMenu() {
       </div>
       <div className="my-1 border-t border-line" />
       <MenuItem onClick={() => void navigate('/')}>Todos os serviços</MenuItem>
+      <MenuItem onClick={() => void navigate('/notificacoes')}>
+        {MESSAGES.notificationsTitle}
+      </MenuItem>
       <MenuItem
         onClick={() => {
           logout.mutate(undefined, { onSettled: () => void navigate('/login', { replace: true }) });

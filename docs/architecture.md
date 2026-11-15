@@ -71,6 +71,10 @@ HTTP → secureHeaders/cors/bodyLimit → /api/<módulo> router (Hono)
 
 O saldo nunca é gravado: é `Σ ledger (ACCRUAL + GRANT − SALE) − Σ deductedDays das comunicações APPROVED`, calculado por consulta. O cron diário chama `accrualService.runCatchUp(now)` depois de `purgeExpired`: para cada pessoa ativa com data base, cria um lançamento `ACCRUAL` por aniversário já passado e ainda sem lançamento (índice único parcial garante a idempotência; inserts em pedaços de 10 por causa do limite de parâmetros do D1). "Hoje" é calculado em `America/Sao_Paulo` para nunca creditar um dia cedo.
 
+## Notificações push (ADR 0013)
+
+Único canal hoje é o Web Push no navegador, enviado pelo próprio Worker (`modules/core/push`): `pushService.notify(userIds, aviso)` cifra com `@block65/webcrypto-web-push` e faz `fetch` ao serviço de push de cada assinatura da pessoa; 404/410 apagam a assinatura, o resto vira log. Os services chamam `background(pushService.notify(...))` logo depois do `batch` bem-sucedido, e `background()` entrega a promessa ao `executionCtx.waitUntil` (requisição ou cron), então o envio nunca atrasa nem derruba a resposta. Textos em `push.messages.ts` (copy no shared). No web: `public/sw.js` (só push), modal único por dispositivo em `RequireAuth`, tela `/notificacoes` e `manifest.webmanifest` para o iOS.
+
 ## Contrato de erro
 
 `{ error: { code, message, details? } }` com códigos `VALIDATION_ERROR` 422, `UNAUTHENTICATED` 401, `FORBIDDEN` 403, `DOMAIN_NOT_ALLOWED` 403, `INVALID_CREDENTIALS` 401, `USER_INACTIVE` 403, `NOT_FOUND` 404, `INVALID_STATE` 409, `UNDO_WINDOW_EXPIRED` 409, `CONFLICT` 409, `INTERNAL` 500. JSON malformado devolve `VALIDATION_ERROR` 400 e corpo acima de 256 kB devolve `VALIDATION_ERROR` 413.

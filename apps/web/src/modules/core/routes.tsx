@@ -3,6 +3,7 @@ import { RequireAuth } from './views/guards/require-auth';
 import { AppShell } from './views/layouts/app-shell';
 import { HomePage } from './views/pages/home-page';
 import { LoginPage } from './views/pages/login-page';
+import { NotificationsPage } from './views/pages/notifications-page';
 import { SetPasswordPage } from './views/pages/set-password-page';
 
 export const coreRoutes: RouteObject[] = [
@@ -11,7 +12,14 @@ export const coreRoutes: RouteObject[] = [
   {
     Component: RequireAuth,
     children: [
-      { path: '/', element: <AppShell />, children: [{ index: true, Component: HomePage }] },
+      {
+        path: '/',
+        element: <AppShell />,
+        children: [
+          { index: true, Component: HomePage },
+          { path: 'notificacoes', Component: NotificationsPage },
+        ],
+      },
     ],
   },
 ];
