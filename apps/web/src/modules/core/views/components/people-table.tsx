@@ -8,7 +8,7 @@ import { ProjectPicker } from './project-picker';
 import type { SetupLink } from './setup-link-modal';
 
 const GRID = 'md:grid-cols-[1.3fr_1.1fr_1.2fr_1.3fr_150px_80px]';
-const LINK_ACTION = 'w-fit text-[13px] text-brand hover:text-ink cursor-pointer';
+const LINK_ACTION = 'w-fit text-left text-[13px] text-brand hover:text-ink cursor-pointer';
 
 export function PeopleTable({
   users,
@@ -61,7 +61,7 @@ export function PeopleTable({
             >
               <div className="flex flex-col">
                 <span className="text-[15px] font-semibold text-ink">{u.name}</span>
-                {u.invitePending && (
+                {u.invitePending && u.active && (
                   <button
                     type="button"
                     className={LINK_ACTION}
