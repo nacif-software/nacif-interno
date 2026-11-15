@@ -4,9 +4,10 @@ import { PASSWORD, users } from '../fixtures/auth';
 // O Chromium headless responde `Notification.permission === 'denied'` mesmo com a permissão concedida
 // pelo Playwright. O spec testa a UI (modal e tela), não a entrega: forçamos o estado "pendente".
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(Notification, 'permission', { get: () => 'default', configurable: true });
-  });
+  // Em string: o tsconfig do e2e não tem a lib DOM e este trecho roda no navegador.
+  await page.addInitScript(
+    "Object.defineProperty(Notification, 'permission', { get: () => 'default', configurable: true });",
+  );
 });
 
 test('modal de avisos aparece uma vez por navegador e a tela Notificações mostra o estado', async ({
