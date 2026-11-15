@@ -14,10 +14,9 @@ const end = addDays(start, 2);
 
 async function scenario() {
   const team = await seedTeam();
-  const { marina, caio, julia, pedro, orion, atlas } = team;
+  const { marina, caio, julia, pedro } = team;
   const forMarina = await createCommunication({
     authorId: pedro.id,
-    projectId: orion.id,
     coverId: julia.id,
     approverId: marina.id,
     startDate: start,
@@ -25,7 +24,6 @@ async function scenario() {
   });
   const forCaio = await createCommunication({
     authorId: julia.id,
-    projectId: atlas.id,
     coverId: pedro.id,
     approverId: caio.id,
     startDate: start,
@@ -33,7 +31,6 @@ async function scenario() {
   });
   const forMarina2 = await createCommunication({
     authorId: julia.id,
-    projectId: atlas.id,
     coverId: pedro.id,
     approverId: marina.id,
     startDate: addDays(start, 7),
@@ -139,10 +136,9 @@ describe('approvals', () => {
   });
 
   it('calendário recorta períodos ao mês, ignora recusadas, canceladas e inativos, filtra por projeto', async () => {
-    const { marina, caio, julia, pedro, thiago, orion, atlas } = await seedTeam();
+    const { marina, caio, julia, pedro, thiago, orion } = await seedTeam();
     await createCommunication({
       authorId: pedro.id,
-      projectId: orion.id,
       coverId: julia.id,
       approverId: marina.id,
       startDate: '2026-10-28',
@@ -151,7 +147,6 @@ describe('approvals', () => {
     });
     await createCommunication({
       authorId: julia.id,
-      projectId: atlas.id,
       coverId: pedro.id,
       approverId: caio.id,
       startDate: '2026-10-05',
@@ -159,7 +154,6 @@ describe('approvals', () => {
     });
     await createCommunication({
       authorId: julia.id,
-      projectId: atlas.id,
       coverId: pedro.id,
       approverId: caio.id,
       startDate: '2026-10-12',
@@ -168,7 +162,6 @@ describe('approvals', () => {
     });
     await createCommunication({
       authorId: thiago.id,
-      projectId: atlas.id,
       coverId: pedro.id,
       approverId: caio.id,
       startDate: '2026-10-13',

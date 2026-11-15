@@ -171,7 +171,6 @@ export const communicationsService = {
             year,
             sequence,
             authorId: actor.id,
-            projectId: null,
             startDate: body.startDate,
             endDate: body.endDate,
             businessDays,

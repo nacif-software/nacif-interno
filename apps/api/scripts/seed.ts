@@ -170,7 +170,6 @@ async function buildStatements(): Promise<string[]> {
       year,
       sequence,
       authorId: author.id,
-      projectId: null,
       startDate: c.startDate,
       endDate: c.endDate,
       businessDays: countBusinessDays(c.startDate, c.endDate),

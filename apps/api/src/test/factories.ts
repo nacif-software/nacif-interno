@@ -125,7 +125,6 @@ export async function createLedgerEntry(input: {
 
 export async function createCommunication(input: {
   authorId: string;
-  projectId?: string | null;
   coverId?: string | null;
   approverId: string;
   startDate: string;
@@ -148,7 +147,6 @@ export async function createCommunication(input: {
         year,
         sequence: seq,
         authorId: input.authorId,
-        projectId: input.projectId ?? null,
         startDate: input.startDate,
         endDate: input.endDate,
         businessDays: countBusinessDays(input.startDate, input.endDate),

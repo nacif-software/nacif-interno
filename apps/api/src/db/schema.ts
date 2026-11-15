@@ -55,13 +55,9 @@ export const users = sqliteTable(
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
     passwordHash: text('password_hash'),
     invitedAt: isoTimestamp('invited_at'),
-    /**
-     * @deprecated Substituída por `user_projects` (N:N). Mantida até a migração que a remove,
-     * depois que nenhum código em produção a lê.
-     */
-    projectId: text('project_id').references((): AnySQLiteColumn => projects.id, {
-      onDelete: 'set null',
-    }),
+    // `project_id` ainda existe no D1 como coluna morta (nula, sem leitura): o SQLite não faz DROP
+    // COLUMN em coluna com FK/índice e recriar `users` com as 11 filhas não vale o risco. Fora do
+    // schema de propósito; ver migração 0003.
     /** `YYYY-MM-DD`: data base do crédito anual de dias (aniversários geram ACCRUAL). */
     creditBaseDate: text('credit_base_date'),
     createdAt: createdAt(),
@@ -69,7 +65,6 @@ export const users = sqliteTable(
   },
   (t) => [
     uniqueIndex('users_email_key').on(t.email),
-    index('users_project_id_idx').on(t.projectId),
     index('users_active_role_idx').on(t.active, t.role),
     check('users_role_check', sql.raw(`role in (${inList(ROLES)})`)),
   ],
@@ -186,8 +181,6 @@ export const communications = sqliteTable(
     authorId: text('author_id')
       .notNull()
       .references(() => users.id),
-    /** @deprecated Nulo nas comunicações novas: a comunicação vale para todos os projetos da pessoa. */
-    projectId: text('project_id').references(() => projects.id),
     /** `YYYY-MM-DD` */
     startDate: text('start_date').notNull(),
     /** `YYYY-MM-DD` */
@@ -215,12 +208,6 @@ export const communications = sqliteTable(
       t.approverId,
       t.status,
       t.submittedAt,
-    ),
-    index('communications_project_id_status_start_date_end_date_idx').on(
-      t.projectId,
-      t.status,
-      t.startDate,
-      t.endDate,
     ),
     index('communications_status_start_date_end_date_idx').on(t.status, t.startDate, t.endDate),
     index('communications_author_id_status_idx').on(t.authorId, t.status),

@@ -328,7 +328,6 @@ function buildStatements(file: SheetFile, state: ReturnType<typeof readState>, a
             year,
             sequence,
             authorId,
-            projectId: null,
             startDate: r.startDate,
             endDate: r.endDate,
             businessDays,
