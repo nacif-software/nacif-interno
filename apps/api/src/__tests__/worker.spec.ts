@@ -1,4 +1,9 @@
-import { createScheduledController, env } from 'cloudflare:test';
+import {
+  createExecutionContext,
+  createScheduledController,
+  env,
+  waitOnExecutionContext,
+} from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { db } from '../db/client';
 import { passwordSetupTokens, sessions } from '../db/schema';
@@ -32,7 +37,9 @@ describe('cron de manutenção', () => {
       ]);
 
     const controller = createScheduledController({ scheduledTime: now, cron: '0 3 * * *' });
-    await worker.scheduled(controller, env);
+    const ctx = createExecutionContext();
+    await worker.scheduled(controller, env, ctx);
+    await waitOnExecutionContext(ctx);
 
     expect(await countRows(sessions)).toBe(1);
     expect(await countRows(passwordSetupTokens)).toBe(1);

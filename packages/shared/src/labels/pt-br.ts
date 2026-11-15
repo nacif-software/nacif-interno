@@ -175,4 +175,25 @@ export const MESSAGES = {
   saleToast: (days: number, name: string) =>
     `Venda de ${days} ${days === 1 ? 'dia' : 'dias'} registrada para ${name}.`,
   daysPerYearHint: 'Lançado automaticamente todo dia às 00:00 de Brasília.',
+
+  // Avisos push (ADR 0013). Corpos recebem textos já formatados (nome, período, dias).
+  pushNewTitle: 'Nova comunicação para avaliar',
+  pushNewBody: (author: string, range: string, businessDays: string) =>
+    `${author} · ${range} · ${businessDays}`,
+  pushEditedTitle: 'Período alterado',
+  pushEditedBody: (author: string, range: string) => `${author} · agora ${range}`,
+  pushCancelledTitle: 'Comunicação cancelada',
+  pushCancelledBody: (author: string, range: string) => `${author} cancelou ${range}`,
+  pushApprovedTitle: 'Comunicação aprovada',
+  pushApprovedBody: (range: string, approver: string, deducted: string | null) =>
+    `${range} · por ${approver}${deducted ? ` · ${deducted}` : ''}`,
+  pushRejectedTitle: 'Comunicação recusada',
+  pushRejectedBody: (approver: string, justification: string) =>
+    `por ${approver}: ${justification}`,
+  pushRevertedTitle: 'Comunicação voltou para análise',
+  pushRevertedBody: (range: string) => `${range} · aprovação em lote desfeita`,
+  pushAccrualTitle: (days: string) => `Crédito anual de ${days}`,
+  pushGrantTitle: (days: string) => `Crédito de ${days}`,
+  pushSaleTitle: (days: string) => `Venda de ${days} registrada`,
+  pushBalanceBody: (balance: number) => `Saldo de dias: ${balance}`,
 } as const;

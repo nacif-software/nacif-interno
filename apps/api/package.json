@@ -11,12 +11,14 @@
     "seed": "tsx scripts/seed.ts",
     "create-admin": "tsx scripts/create-admin.ts",
     "import-sheet": "tsx scripts/import-sheet.ts",
+    "vapid-keys": "tsx scripts/vapid-keys.ts",
     "deploy:check": "wrangler deploy --dry-run --outdir .wrangler/dry-run",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@block65/webcrypto-web-push": "2.0.0",
     "@nacif/shared": "workspace:*",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.4",

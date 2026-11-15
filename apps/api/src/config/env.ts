@@ -9,6 +9,13 @@ const configSchema = z.object({
     .transform((v) => v === 'true'),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+  // Web Push (ADR 0013). Sem as três, o push fica desligado e o app funciona igual.
+  VAPID_PUBLIC_KEY: z.string().min(80).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(40).optional(),
+  VAPID_SUBJECT: z
+    .string()
+    .regex(/^(mailto:|https:)/, 'VAPID_SUBJECT deve começar com mailto: ou https:')
+    .optional(),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -36,6 +43,13 @@ let current: Config | null = null;
 export function bindConfig(bindings: Env): Config {
   current = parseConfig(bindings);
   return current;
+}
+
+/** Chaves do Web Push, ou null quando o push não está configurado neste ambiente. */
+export function vapidKeys(): { subject: string; publicKey: string; privateKey: string } | null {
+  const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = config();
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !VAPID_SUBJECT) return null;
+  return { subject: VAPID_SUBJECT, publicKey: VAPID_PUBLIC_KEY, privateKey: VAPID_PRIVATE_KEY };
 }
 
 /** Configuração da requisição atual. */

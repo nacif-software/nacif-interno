@@ -8,6 +8,7 @@ import type {
   flowEvents,
   passwordSetupTokens,
   projects,
+  pushSubscriptions,
   sessions,
   userProjects,
   users,
@@ -19,6 +20,8 @@ export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
 export type PasswordSetupToken = typeof passwordSetupTokens.$inferSelect;
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
+export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
 export type AvailabilitySettings = typeof availabilitySettings.$inferSelect;
 export type DefaultApprover = typeof availabilityDefaultApprovers.$inferSelect;
 export type Communication = typeof communications.$inferSelect;

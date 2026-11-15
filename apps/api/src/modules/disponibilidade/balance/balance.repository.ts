@@ -108,19 +108,18 @@ export const balanceRepository = {
   },
   /**
    * Insere créditos anuais ignorando os que já existem (índice único por pessoa e ano).
-   * Devolve quantos entraram de fato.
+   * Devolve os que entraram de fato (pessoa e dias), para o aviso.
    */
-  async insertAccruals(entries: NewLedgerEntry[]): Promise<number> {
-    if (entries.length === 0) return 0;
+  async insertAccruals(entries: NewLedgerEntry[]): Promise<{ userId: string; days: number }[]> {
+    if (entries.length === 0) return [];
     const results = await batchAll(
       chunked(entries, INSERT_CHUNK).map((chunk) =>
-        db()
-          .insert(availabilityLedgerEntries)
-          .values(chunk)
-          .onConflictDoNothing()
-          .returning({ id: availabilityLedgerEntries.id }),
+        db().insert(availabilityLedgerEntries).values(chunk).onConflictDoNothing().returning({
+          userId: availabilityLedgerEntries.userId,
+          days: availabilityLedgerEntries.days,
+        }),
       ),
     );
-    return results.reduce((total, rows) => total + rows.length, 0);
+    return results.flat();
   },
 };

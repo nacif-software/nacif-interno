@@ -20,6 +20,11 @@ export default defineConfig(async () => {
             COOKIE_SECURE: 'false',
             SESSION_TTL_DAYS: '30',
             LOG_LEVEL: 'silent',
+            // Chaves de desenvolvimento (iguais ao .dev.vars.example); o envio real é interceptado nos testes.
+            VAPID_PUBLIC_KEY:
+              'BId_1KBQAzTJ4qDEFOJiF0lVDdNDmDlUaa-t3-vKc9s3ZTmTE_TE2TbBiWbEIX5I4hTh0nDkgI3gu2YJpRNlFN0',
+            VAPID_PRIVATE_KEY: 'rJjwZi9FnFQMjRrK0DwJl6zJvfMJbQuVFgmIZErE87A',
+            VAPID_SUBJECT: 'mailto:dev@nacif.xyz',
           },
         },
       }),

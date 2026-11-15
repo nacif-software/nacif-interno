@@ -19,16 +19,19 @@ A configuração do Worker vive em `apps/api/wrangler.jsonc` e é a fonte de ver
 
 ## Bindings, vars e secrets
 
-| Nome               | Tipo | Produção (`wrangler.jsonc`)          | Dev (`apps/api/.dev.vars`) | Uso                                            |
-| ------------------ | ---- | ------------------------------------ | -------------------------- | ---------------------------------------------- |
-| `DB`               | D1   | `nacif-interno-prod` (`database_id`) | D1 local                   | todo o acesso a dados (Drizzle)                |
-| `APP_ENV`          | var  | `production`                         | `development`              | formato do log; `test` desliga o log de acesso |
-| `APP_URL`          | var  | `https://interno.nacif.software`     | `http://localhost:5173`    | links de definição de senha                    |
-| `COOKIE_SECURE`    | var  | `true`                               | `false`                    | flag `Secure` do cookie de sessão              |
-| `SESSION_TTL_DAYS` | var  | `30`                                 | (padrão 30)                | validade da sessão                             |
-| `LOG_LEVEL`        | var  | `info`                               | `debug`                    | nível do log                                   |
+| Nome                | Tipo       | Produção (`wrangler.jsonc`)             | Dev (`apps/api/.dev.vars`)        | Uso                                                      |
+| ------------------- | ---------- | --------------------------------------- | --------------------------------- | -------------------------------------------------------- |
+| `DB`                | D1         | `nacif-interno-prod` (`database_id`)    | D1 local                          | todo o acesso a dados (Drizzle)                          |
+| `APP_ENV`           | var        | `production`                            | `development`                     | formato do log; `test` desliga o log de acesso           |
+| `APP_URL`           | var        | `https://interno.nacif.software`        | `http://localhost:5173`           | links de definição de senha                              |
+| `COOKIE_SECURE`     | var        | `true`                                  | `false`                           | flag `Secure` do cookie de sessão                        |
+| `SESSION_TTL_DAYS`  | var        | `30`                                    | (padrão 30)                       | validade da sessão                                       |
+| `LOG_LEVEL`         | var        | `info`                                  | `debug`                           | nível do log                                             |
+| `VAPID_PUBLIC_KEY`  | var        | chave pública (base64url, 87 chars)     | par de dev do `.dev.vars.example` | Web Push: `applicationServerKey` do navegador (ADR 0013) |
+| `VAPID_SUBJECT`     | var        | `mailto:wenderson@nacif.xyz`            | `mailto:dev@nacif.xyz`            | contato exigido pelo protocolo VAPID                     |
+| `VAPID_PRIVATE_KEY` | **secret** | `wrangler secret put VAPID_PRIVATE_KEY` | par de dev do `.dev.vars.example` | assina os envios de push; sem ela o push fica desligado  |
 
-Não há secrets hoje. Quando entrarem (Email Service na #10, Access na #7), ficam fora do repositório: `wrangler secret put NOME` em produção e `.dev.vars` em dev, com os nomes listados em `secrets.required` no `wrangler.jsonc` para o `wrangler types` e o `wrangler dev` avisarem o que falta. O `database_id` do D1 não é segredo e fica no `wrangler.jsonc` (placeholder até a #16).
+Único secret hoje: `VAPID_PRIVATE_KEY`. Gere o par com `make vapid-keys` (uma vez por ambiente), coloque a pública e o `VAPID_SUBJECT` em `vars` no `wrangler.jsonc` e grave a privada com `cd apps/api && pnpm wrangler secret put VAPID_PRIVATE_KEY` (cole o valor; nunca no repositório). Sem as três variáveis o app funciona igual, só sem avisos push (`GET /api/push/config` devolve `enabled: false`). O par do `.dev.vars.example` é só de desenvolvimento e testes. Os próximos secrets (Email Service na #10, Access na #7) seguem o mesmo caminho. O `database_id` do D1 não é segredo e fica no `wrangler.jsonc`.
 
 ## Workers Builds
 

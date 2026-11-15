@@ -5,7 +5,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 API := pnpm --filter @nacif/api
 
-.PHONY: help install dev dev-api dev-web types migrate migrate-new seed db-reset create-admin import-sheet build-web deploy-check deploy \
+.PHONY: help install dev dev-api dev-web types migrate migrate-new seed db-reset create-admin import-sheet vapid-keys build-web deploy-check deploy \
 	test test-shared test-web test-api test-e2e test-e2e-ui lint lint-fix typecheck format format-check vocab-check \
 	clean skills-install ci
 
@@ -53,6 +53,9 @@ import-sheet: ## Importa o JSON da planilha (make import-sheet file=~/x.json [db
 	@test -n "$(file)" || { echo "Uso: make import-sheet file=caminho.json [db=local] [admin=e-mail]"; exit 1; }
 	@test -z "$(db)" -o "$(db)" = "local" -o "$(db)" = "remote" || { echo "db deve ser local ou remote (recebido: $(db))"; exit 1; }
 	$(API) import-sheet $(file) $(if $(filter local,$(db)),--local,) $(if $(admin),--admin=$(admin),)
+
+vapid-keys: ## Gera um par de chaves VAPID para o Web Push (guarde a privada como secret)
+	$(API) vapid-keys
 
 build-web: ## Build de produção do web (servido pelo Worker como Static Assets)
 	pnpm --filter @nacif/web build

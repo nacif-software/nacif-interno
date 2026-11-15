@@ -105,6 +105,29 @@ export const passwordSetupTokens = sqliteTable(
   ],
 );
 
+/** Assinaturas de Web Push: uma por pessoa e navegador/dispositivo (ADR 0013). */
+export const pushSubscriptions = sqliteTable(
+  'push_subscriptions',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** URL do serviço de push do navegador; identifica o dispositivo. */
+    endpoint: text('endpoint').notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    userAgent: text('user_agent'),
+    createdAt: createdAt(),
+    /** Último envio aceito pelo serviço de push. */
+    lastUsedAt: isoTimestamp('last_used_at'),
+  },
+  (t) => [
+    uniqueIndex('push_subscriptions_endpoint_key').on(t.endpoint),
+    index('push_subscriptions_user_id_idx').on(t.userId),
+  ],
+);
+
 export const projects = sqliteTable(
   'projects',
   {

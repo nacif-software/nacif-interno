@@ -9,6 +9,9 @@ import {
 } from '@nacif/shared';
 import type { AuthenticatedUser } from '../../../infra/http/context';
 import { NotFoundError } from '../../../infra/http/errors';
+import { background } from '../../../infra/http/background';
+import { pushMessages } from '../../core/push/push.messages';
+import { pushService } from '../../core/push/push.service';
 import { usersRepository } from '../../core/users/users.repository';
 import { balanceRepository } from './balance.repository';
 
@@ -96,6 +99,10 @@ export const balanceService = {
       note: body.note,
       createdById: actor.id,
     });
-    return this.statement(userId);
+    const statement = await this.statement(userId);
+    background(
+      pushService.notify([userId], pushMessages.ledger(body.type, body.days, statement.balance)),
+    );
+    return statement;
   },
 };

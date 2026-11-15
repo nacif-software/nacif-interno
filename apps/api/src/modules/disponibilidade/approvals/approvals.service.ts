@@ -26,7 +26,10 @@ import { toQueueItemDto } from '../communications/communication.mapper';
 import { communicationsRepository } from '../communications/communications.repository';
 import { communicationsService } from '../communications/communications.service';
 import { flowEventsRepository } from '../communications/flow-events.repository';
+import { background } from '../../../infra/http/background';
 import { memberOfProject } from '../../core/projects/user-projects.repository';
+import { pushMessages } from '../../core/push/push.messages';
+import { pushService } from '../../core/push/push.service';
 import { balanceRepository } from '../balance/balance.repository';
 import { approvalsRepository } from './approvals.repository';
 
@@ -168,6 +171,12 @@ export const approvalsService = {
       deductedDays: body.deductedDays,
       deductionNote: body.deductionNote,
     });
+    background(
+      pushService.notify(
+        [row.authorId],
+        pushMessages.approved(row, actor.name, body.deductedDays ?? null),
+      ),
+    );
     return communicationsService.getDetail(actor, id);
   },
 
@@ -179,6 +188,9 @@ export const approvalsService = {
   ): Promise<CommunicationDetailDto> {
     const row = await loadDecidable(actor, id);
     await decide(actor, row, 'REJECTED', now, { justification });
+    background(
+      pushService.notify([row.authorId], pushMessages.rejected(row, actor.name, justification)),
+    );
     return communicationsService.getDetail(actor, id);
   },
 
@@ -204,7 +216,11 @@ export const approvalsService = {
       approvalsRepository.insertBatch({ id: batchId, approverId: actor.id, undoableUntil }),
       ...eligible.flatMap((row) => decideStatements(actor, row, 'APPROVED', now, { batchId })),
     ]);
-    const approvedCount = eligible.filter((_, i) => decisionApplied(results, 1, i)).length;
+    const approved = eligible.filter((_, i) => decisionApplied(results, 1, i));
+    for (const row of approved) {
+      background(pushService.notify([row.authorId], pushMessages.approved(row, actor.name, null)));
+    }
+    const approvedCount = approved.length;
     return {
       batchId,
       approvedCount,
@@ -262,7 +278,11 @@ export const approvalsService = {
       throw new InvalidStateError('Este lote já foi desfeito.');
     }
     // O UPDATE guardado da comunicação é o segundo statement de cada trio após o fechamento do lote.
-    const revertedCount = revertible.filter((_, i) => decisionApplied(results, 2, i)).length;
-    return { revertedCount };
+    const reverted = revertible.filter((_, i) => decisionApplied(results, 2, i));
+    for (const decision of reverted) {
+      const c = decision.communication;
+      background(pushService.notify([c.authorId], pushMessages.reverted(c)));
+    }
+    return { revertedCount: reverted.length };
   },
 };
