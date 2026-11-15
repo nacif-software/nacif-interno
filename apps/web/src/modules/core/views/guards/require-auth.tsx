@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { SkeletonCard } from '@/ui';
 import { useSession } from '../../controllers/use-session';
+import { PushOnboardingModal } from '../components/push-onboarding-modal';
 
 export function RequireAuth() {
   const { user, isLoading } = useSession();
@@ -16,5 +17,10 @@ export function RequireAuth() {
     const next = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?next=${next}`} replace />;
   }
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <PushOnboardingModal />
+    </>
+  );
 }

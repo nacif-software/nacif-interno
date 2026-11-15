@@ -8,6 +8,7 @@ export const qk = {
     options: (purpose: 'cover' | 'approver') => ['users', 'options', purpose] as const,
   },
   projects: ['projects'] as const,
+  push: { config: ['push', 'config'] as const, device: ['push', 'device'] as const },
   disp: {
     all: ['disp'] as const,
     settings: ['disp', 'settings'] as const,

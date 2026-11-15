@@ -196,4 +196,51 @@ export const MESSAGES = {
   pushGrantTitle: (days: string) => `Crédito de ${days}`,
   pushSaleTitle: (days: string) => `Venda de ${days} registrada`,
   pushBalanceBody: (balance: number) => `Saldo de dias: ${balance}`,
+
+  // Tela Notificações e modal de ativação dos avisos (ADR 0013)
+  notificationsTitle: 'Notificações',
+  notificationsSubtitle:
+    'Avisos no navegador, por dispositivo. Poucos e só do que precisa da sua atenção.',
+  pushPromptTitle: 'Avisos no navegador',
+  pushPromptIntro:
+    'Para você não precisar ficar conferindo o sistema, avisamos no navegador só o que precisa da sua atenção. Você liga ou desliga quando quiser em Notificações, no menu do seu nome.',
+  pushPromptRole: (role: string) => `Com o papel ${role}, você recebe:`,
+  pushPromptEnable: 'Ativar avisos',
+  pushPromptLater: 'Agora não',
+  pushPromptUnderstood: 'Entendi',
+  pushIosTitle: 'No iPhone e iPad, primeiro adicione à Tela de Início',
+  pushIosSteps:
+    'Toque em Compartilhar e depois em "Adicionar à Tela de Início". Abra o Nacif por lá e ative os avisos em Notificações.',
+  pushDeviceLabel: 'Avisos neste dispositivo',
+  pushStatusOn: 'Ativo neste navegador.',
+  pushStatusOff: 'Desligado. Ative para receber os avisos neste navegador.',
+  pushStatusBlocked:
+    'Bloqueado no navegador. Libere as notificações nas configurações deste site e tente de novo.',
+  pushStatusUnsupported:
+    'Este navegador não recebe avisos. Use Chrome, Edge ou Firefox no computador, Chrome no Android ou Safari no Mac.',
+  pushStatusUnconfigured: 'Avisos ainda não configurados neste ambiente.',
+  pushStatusNeedsHomeScreen:
+    'No iPhone e iPad, só funciona com o site adicionado à Tela de Início.',
+  pushEnabledToast: 'Avisos ativados neste navegador.',
+  pushDisabledToast: 'Avisos desligados neste navegador.',
+  pushEnableError: 'Não foi possível ativar os avisos neste navegador.',
+  pushEventsTitle: 'O que você recebe',
+  pushEventsAdminNote:
+    'Administradores recebem como aprovadores, quando a comunicação é endereçada a eles.',
+  pushEventsMember: [
+    'Decisão sobre uma comunicação sua: aprovada ou recusada, com o motivo',
+    'Comunicação que voltou para análise (aprovação em lote desfeita)',
+    'Crédito anual, crédito manual ou venda de dias no seu saldo',
+  ],
+  pushEventsApprover: [
+    'Nova comunicação endereçada a você para avaliar',
+    'Período alterado ou comunicação cancelada pelo autor enquanto estava com você',
+  ],
+  pushWhereTitle: 'Onde funciona',
+  pushWhere: [
+    'Computador: Chrome, Edge, Firefox e Safari (Mac).',
+    'Android: Chrome.',
+    'iPhone e iPad: só com o site adicionado à Tela de Início (iOS 16.4 ou mais novo).',
+    'A escolha vale para este navegador e dispositivo. Em outro aparelho, ative de novo.',
+  ],
 } as const;
