@@ -36,7 +36,7 @@ O D1 não tem transação interativa. Escritas com mais de um statement (envio, 
 ## Relacionamentos
 
 - `User` 1—N `Communication` como autor, cobertura e aprovador (três relações nomeadas).
-- `User` N—N `Project` via `user_projects`. Conflito e limite de simultâneos olham cada projeto do autor (a comunicação não tem projeto próprio; `communications.project_id` sai na migração 0003).
+- `User` N—N `Project` via `user_projects`. Conflito e limite de simultâneos olham cada projeto do autor (a comunicação não tem projeto próprio; `communications.project_id` foi removida na migração 0003).
 - `User` 1—N `LedgerEntry` (saldo de dias).
 - `Communication` 1—N `Decision`, 1—N `FlowEvent`.
 - `ApprovalBatch` 1—N `Decision`.
