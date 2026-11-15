@@ -1,4 +1,4 @@
-import { addDays, APP_TIMEZONE, todayIso } from '@nacif/shared';
+import { addDays, APP_TIMEZONE, isoDayOfWeek, todayIso } from '@nacif/shared';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { availabilityLedgerEntries, communications, users } from '../db/schema';
@@ -19,7 +19,13 @@ import {
 } from '../test/factories';
 
 const today = todayIso(APP_TIMEZONE);
-const start = addDays(today, 14);
+/** Próxima segunda-feira com ao menos 14 dias de antecedência: os períodos abaixo contam dias úteis fixos. */
+function nextMonday(minDays: number): string {
+  let d = addDays(today, minDays);
+  while (isoDayOfWeek(d) !== 1) d = addDays(d, 1);
+  return d;
+}
+const start = nextMonday(14);
 
 describe('saldo de dias', () => {
   it('saldo = créditos − vendas − dias descontados das aprovadas; só aprovadas debitam', async () => {
@@ -327,6 +333,21 @@ describe('conflitos com projetos N:N', () => {
       maxSimultaneousPerProject: 2,
     });
     expect(forSolo).toEqual({ conflicts: [], limitReached: false, limitReachedProjects: [] });
+
+    // associar projetos sem mudar outros campos (PATCH só com projectIds)
+    const admin = buildTestApp();
+    await loginAs(admin, 'caio@nacif.xyz');
+    const patched = await admin
+      .patch(`/api/users/${solo.id}`)
+      .send({ projectIds: [lovell.id, roadway.id] });
+    expect(patched.status).toBe(200);
+    expect(patched.body.projects.map((p: { name: string }) => p.name)).toEqual([
+      'Lovell',
+      'Roadway',
+    ]);
+    expect(
+      (await admin.patch(`/api/users/${solo.id}`).send({ projectIds: [] })).body.projects,
+    ).toEqual([]);
 
     // pessoa sem projeto comunica normalmente
     const agent = buildTestApp();

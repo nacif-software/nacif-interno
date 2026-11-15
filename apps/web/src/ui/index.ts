@@ -18,3 +18,4 @@ export * from './skeleton';
 export * from './timeline';
 export * from './toast';
 export * from './toggle';
+export * from './ref-chips';

@@ -30,7 +30,7 @@ export function useInviteUser() {
   return useMutation({
     mutationFn: (body: InviteBody) =>
       apiFetch<InviteResult>('/users/invites', { method: 'POST', body }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.users.all }),
+    onSuccess: () => void qc.invalidateQueries(),
   });
 }
 
@@ -53,9 +53,7 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: ({ id, ...body }: UpdateUserBody & { id: string }) =>
       apiFetch<UserDto>(`/users/${id}`, { method: 'PATCH', body }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.users.all });
-      void qc.invalidateQueries({ queryKey: qk.projects });
-    },
+    // Pessoa muda projetos, data base (lança créditos) ou papel: afeta opções, calendário e saldos.
+    onSuccess: () => void qc.invalidateQueries(),
   });
 }

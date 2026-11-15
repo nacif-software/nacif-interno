@@ -65,10 +65,12 @@ export const usersRepository = {
     data: Partial<NewUser>,
     projectIds?: string[],
   ): Promise<UserWithProjects> {
-    await batchAll([
-      this.updateById(id, data),
+    // `set({})` é inválido no Drizzle: só grava a pessoa quando há algum campo dela.
+    const statements: BatchItem<'sqlite'>[] = [
+      ...(Object.keys(data).length > 0 ? [this.updateById(id, data)] : []),
       ...(projectIds ? this.setProjectsStatements(id, projectIds) : []),
-    ]);
+    ];
+    if (statements.length > 0) await batchAll(statements);
     return this.mustFind(id);
   },
   async mustFind(id: string): Promise<UserWithProjects> {
