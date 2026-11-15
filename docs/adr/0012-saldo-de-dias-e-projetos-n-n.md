@@ -30,7 +30,7 @@ Decisões do responsável pelo produto, tomadas em 2026-11-09:
 
 ## Consequências
 
-- Duas migrações compatíveis com o código em produção (`0001_balance_and_user_projects`, só adições; `0002_communications_nullable_refs`, recria `communications` com `PRAGMA defer_foreign_keys`). A remoção de `users.project_id` e `communications.project_id` fica para um PR futuro, depois que nada em produção ler as colunas.
+- Duas migrações compatíveis com o código em produção (`0001_balance_and_user_projects`, só adições; `0002_communications_nullable_refs`, recria `communications` com `PRAGMA defer_foreign_keys`). `communications.project_id` foi removida na migração 0003 (recriação da tabela com as filhas, como na 0002), depois de um PR só de código parar de lê-la. `users.project_id` ficou como coluna morta no D1: o SQLite não faz `DROP COLUMN` em coluna com FK ou índice, e recriar `users` exigiria recriar as 11 tabelas que apontam para ela; a coluna sai se `users` for recriada por outro motivo.
 - O conflito usa a associação **atual** da pessoa aos projetos; não é retroativo ao histórico.
 - Mudar `days_per_year` não reescreve créditos passados.
 - Inserts do cron em pedaços de 10 linhas (`batchAll`) por causa do limite de parâmetros do D1.
