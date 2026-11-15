@@ -1,5 +1,5 @@
-import type { SessionUser, UserDto } from '@nacif/shared';
-import { screen, waitFor } from '@testing-library/react';
+import type { ProjectDto, SessionUser, UserDto } from '@nacif/shared';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/test/api-mock';
@@ -76,5 +76,93 @@ describe('PeopleTable', () => {
     );
     const [, init] = fetchMock.mock.calls[0]!;
     expect(init?.method).toBe('POST');
+  });
+
+  it('marca projeto no dropdown e envia a lista completa', async () => {
+    const projects: ProjectDto[] = [
+      { id: 'p-atlas', name: 'Atlas', active: true, defaultApprover: null, memberCount: 1 },
+      { id: 'p-vega', name: 'Vega', active: true, defaultApprover: null, memberCount: 0 },
+      { id: 'p-orion', name: 'Órion', active: false, defaultApprover: null, memberCount: 0 },
+    ];
+    const fetchMock = mockApi((url) => {
+      if (url.pathname === '/api/users/u-pedro') return { body: users[1] };
+      return undefined;
+    });
+    const withProject = users.map((u) =>
+      u.id === 'u-pedro' ? { ...u, projects: [{ id: 'p-atlas', name: 'Atlas' }] } : u,
+    );
+    renderWithProviders(
+      <PeopleTable users={withProject} projects={projects} onSetupLink={() => {}} />,
+      { sessionUser: caio },
+    );
+    const group = screen.getByRole('group', { name: 'Projetos de Pedro Nakano' });
+    const ue = userEvent.setup();
+    await ue.click(within(group).getByRole('button', { name: 'Atlas' }));
+    // lista só os projetos ativos da empresa, marcando os da pessoa
+    const boxes = within(group).getAllByRole('checkbox');
+    expect(
+      boxes.map((b) => [b.closest('label')?.textContent, (b as HTMLInputElement).checked]),
+    ).toEqual([
+      ['Atlas', true],
+      ['Vega', false],
+    ]);
+    await ue.click(within(group).getByRole('checkbox', { name: 'Vega' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('/api/users/u-pedro');
+    expect(init?.method).toBe('PATCH');
+    expect(JSON.parse(init?.body as string)).toEqual({ projectIds: ['p-atlas', 'p-vega'] });
+    // o painel continua aberto para marcar mais de um; a marcação é otimista
+    expect(within(group).getByRole('checkbox', { name: 'Vega' })).toBeChecked();
+    expect(within(group).getByRole('button', { name: '2 projetos' })).toBeInTheDocument();
+  });
+
+  it('desfaz a marcação quando o servidor recusa', async () => {
+    const projects: ProjectDto[] = [
+      { id: 'p-atlas', name: 'Atlas', active: true, defaultApprover: null, memberCount: 1 },
+      { id: 'p-vega', name: 'Vega', active: true, defaultApprover: null, memberCount: 0 },
+    ];
+    mockApi((url) => {
+      if (url.pathname === '/api/users/u-pedro')
+        return { status: 409, body: { error: { code: 'CONFLICT', message: 'Projeto inativo.' } } };
+      return undefined;
+    });
+    renderWithProviders(<PeopleTable users={users} projects={projects} onSetupLink={() => {}} />, {
+      sessionUser: caio,
+    });
+    const group = screen.getByRole('group', { name: 'Projetos de Pedro Nakano' });
+    const ue = userEvent.setup();
+    await ue.click(within(group).getByRole('button', { name: 'Sem projeto' }));
+    await ue.click(within(group).getByRole('checkbox', { name: 'Vega' }));
+    await waitFor(() =>
+      expect(within(group).getByRole('checkbox', { name: 'Vega' })).not.toBeChecked(),
+    );
+  });
+
+  it('mostra "Sem projeto" e "N projetos" no resumo do dropdown', () => {
+    mockApi(() => undefined);
+    const projects: ProjectDto[] = [
+      { id: 'p-atlas', name: 'Atlas', active: true, defaultApprover: null, memberCount: 1 },
+      { id: 'p-vega', name: 'Vega', active: true, defaultApprover: null, memberCount: 1 },
+    ];
+    const withProjects = users.map((u) =>
+      u.id === 'u-pedro'
+        ? {
+            ...u,
+            projects: [
+              { id: 'p-atlas', name: 'Atlas' },
+              { id: 'p-vega', name: 'Vega' },
+            ],
+          }
+        : u,
+    );
+    renderWithProviders(
+      <PeopleTable users={withProjects} projects={projects} onSetupLink={() => {}} />,
+      { sessionUser: caio },
+    );
+    const pedro = screen.getByRole('group', { name: 'Projetos de Pedro Nakano' });
+    expect(within(pedro).getByRole('button', { name: '2 projetos' })).toBeInTheDocument();
+    const caioGroup = screen.getByRole('group', { name: 'Projetos de Caio Bertelli' });
+    expect(within(caioGroup).getByRole('button', { name: 'Sem projeto' })).toBeInTheDocument();
   });
 });

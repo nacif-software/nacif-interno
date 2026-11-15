@@ -5,6 +5,11 @@ export function DropdownMenu({
   trigger,
   children,
   align = 'right',
+  compact,
+  closeOnSelect = true,
+  role = 'menu',
+  'aria-label': ariaLabel,
+  className,
 }: {
   trigger: (props: {
     open: boolean;
@@ -14,6 +19,15 @@ export function DropdownMenu({
   }) => ReactNode;
   children: ReactNode;
   align?: 'left' | 'right';
+  /** Menu estreito para colunas apertadas (ex.: projetos da pessoa). Use com `MenuItem compact`. */
+  compact?: boolean;
+  /** `false` para painéis de marcação (checkboxes) que ficam abertos até clicar fora ou Esc. */
+  closeOnSelect?: boolean;
+  /** Painel com checkboxes usa `group` em vez de `menu`. */
+  role?: 'menu' | 'group';
+  'aria-label'?: string;
+  /** Classe do wrapper (ex.: `w-full` para o gatilho ocupar a célula). */
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const id = useId();
@@ -34,7 +48,7 @@ export function DropdownMenu({
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={cn('relative', className)}>
       {trigger({
         open,
         'aria-expanded': open,
@@ -44,10 +58,14 @@ export function DropdownMenu({
       {open && (
         <div
           id={id}
-          role="menu"
-          onClick={() => setOpen(false)}
+          role={role}
+          aria-label={ariaLabel}
+          onClick={closeOnSelect ? () => setOpen(false) : undefined}
           className={cn(
-            'absolute top-[calc(100%+8px)] z-40 min-w-[220px] rounded-card border border-line bg-card p-2 shadow-float',
+            'absolute z-40 rounded-card border border-line bg-card shadow-float',
+            compact
+              ? 'top-[calc(100%+6px)] min-w-[150px] p-1'
+              : 'top-[calc(100%+8px)] min-w-[220px] p-2',
             align === 'right' ? 'right-0' : 'left-0',
           )}
         >
@@ -62,10 +80,12 @@ export function MenuItem({
   children,
   onClick,
   className,
+  compact,
 }: {
   children: ReactNode;
   onClick?: () => void;
   className?: string;
+  compact?: boolean;
 }) {
   return (
     <button
@@ -73,7 +93,8 @@ export function MenuItem({
       role="menuitem"
       onClick={onClick}
       className={cn(
-        'block w-full rounded-badge px-3 py-2 text-left text-[15px] text-ink hover:bg-canvas cursor-pointer',
+        'block w-full rounded-badge text-left text-ink hover:bg-canvas cursor-pointer',
+        compact ? 'px-[10px] py-[6px] text-[13px]' : 'px-3 py-2 text-[15px]',
         className,
       )}
     >

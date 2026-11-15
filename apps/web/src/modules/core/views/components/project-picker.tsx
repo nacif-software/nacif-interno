@@ -1,10 +1,15 @@
 import { MESSAGES, type ProjectRef } from '@nacif/shared';
+import { useState } from 'react';
 import { cn } from '@/lib/cn';
-import { Select } from '@/ui';
+import { Checkbox, DropdownMenu } from '@/ui';
 
 /**
- * Projetos de uma pessoa numa coluna estreita: lista vertical (nome + remover à direita) e um
- * select para adicionar entre os projetos restantes.
+ * Projetos de uma pessoa numa coluna estreita: um dropdown compacto resume (`Sem projeto`, o nome
+ * ou `N projetos`) e lista todos os projetos ativos da empresa, cada um com um checkbox à direita
+ * marcando os da pessoa. Marcar/desmarcar chama `onChange` na hora e o painel fica aberto até
+ * clicar fora. O estado é otimista: se `onChange` devolver uma promise que rejeita, a marcação
+ * volta ao que veio em `selected`; quando `selected` muda (resposta do servidor), o rascunho
+ * acompanha sem fechar o painel.
  */
 export function ProjectPicker({
   label,
@@ -17,52 +22,79 @@ export function ProjectPicker({
   label: string;
   selected: ProjectRef[];
   options: ProjectRef[];
-  onChange: (projectIds: string[]) => void;
+  onChange: (projectIds: string[]) => void | Promise<unknown>;
   disabled?: boolean;
   className?: string;
 }) {
-  const available = options.filter((o) => !selected.some((s) => s.id === o.id));
+  const selectedKey = selected.map((s) => s.id).join(',');
+  const [ids, setIds] = useState(() => selected.map((s) => s.id));
+  // Resposta do servidor mudou os projetos: o rascunho acompanha (ajuste de estado durante o render).
+  const [syncedKey, setSyncedKey] = useState(selectedKey);
+  if (syncedKey !== selectedKey) {
+    setSyncedKey(selectedKey);
+    setIds(selectedKey ? selectedKey.split(',') : []);
+  }
+  // Projetos inativos que a pessoa ainda tem continuam na lista para poderem ser desmarcados.
+  const rows = [...options, ...selected.filter((s) => !options.some((o) => o.id === s.id))];
+  const checked = rows.filter((r) => ids.includes(r.id));
+  const summary =
+    checked.length === 0
+      ? MESSAGES.noProject
+      : checked.length === 1
+        ? checked[0]!.name
+        : MESSAGES.projectsCount(checked.length);
+  const toggle = (id: string, on: boolean) => {
+    const next = on ? [...ids, id] : ids.filter((x) => x !== id);
+    setIds(next);
+    void Promise.resolve(onChange(next)).catch(() => setIds(selected.map((s) => s.id)));
+  };
   return (
-    <div className={cn('flex flex-col gap-[6px]', className)} role="group" aria-label={label}>
-      {selected.map((p) => (
-        <div
-          key={p.id}
-          className="flex items-center justify-between gap-2 rounded-control bg-brand-wash px-[10px] py-[5px] text-[13px] font-semibold text-brand"
-        >
-          <span className="truncate">{p.name}</span>
+    <div className={cn('min-w-0', className)} role="group" aria-label={label}>
+      <DropdownMenu
+        align="left"
+        compact
+        closeOnSelect={false}
+        role="group"
+        aria-label={label}
+        className="w-full"
+        trigger={({ open, ...props }) => (
           <button
             type="button"
-            aria-label={`Remover ${p.name}`}
+            {...props}
+            aria-haspopup="true"
             disabled={disabled}
-            className="cursor-pointer leading-none opacity-70 hover:opacity-100 disabled:cursor-default"
-            onClick={() => onChange(selected.filter((s) => s.id !== p.id).map((s) => s.id))}
+            className={cn(
+              'relative w-full rounded-control border border-line bg-white py-[7px] pr-10 pl-[14px] text-left text-[13px] leading-[1.5] font-semibold cursor-pointer focus:border-ink focus:outline-none disabled:bg-canvas disabled:opacity-70',
+              checked.length > 0 ? 'text-ink' : 'text-ink-muted',
+              open && 'border-ink',
+            )}
           >
-            ×
+            <span className="block truncate">{summary}</span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 right-[14px] -translate-y-1/2 border-x-[5px] border-t-[6px] border-x-transparent border-t-ink-muted"
+            />
           </button>
-        </div>
-      ))}
-      {available.length > 0 ? (
-        <Select
-          aria-label={`${MESSAGES.projectsAddLabel} ${label.toLowerCase()}`}
-          value=""
-          disabled={disabled}
-          onChange={(e) => {
-            if (e.target.value) onChange([...selected.map((s) => s.id), e.target.value]);
-          }}
-          className="py-[6px] text-[13px] text-ink-muted"
-        >
-          <option value="">{MESSAGES.projectsAddLabel}</option>
-          {available.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.name}
-            </option>
-          ))}
-        </Select>
-      ) : (
-        selected.length === 0 && (
-          <span className="text-[13px] text-ink-muted">{MESSAGES.noProject}</span>
-        )
-      )}
+        )}
+      >
+        {rows.length === 0 ? (
+          <p className="px-[10px] py-[6px] text-[13px] text-ink-muted">{MESSAGES.noProject}</p>
+        ) : (
+          rows.map((p) => (
+            <label
+              key={p.id}
+              className="flex items-center justify-between gap-4 rounded-badge px-[10px] py-[6px] text-[13px] text-ink hover:bg-canvas cursor-pointer"
+            >
+              <span className="truncate">{p.name}</span>
+              <Checkbox
+                checked={ids.includes(p.id)}
+                disabled={disabled}
+                onChange={(e) => toggle(p.id, e.target.checked)}
+              />
+            </label>
+          ))
+        )}
+      </DropdownMenu>
     </div>
   );
 }

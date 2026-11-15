@@ -56,7 +56,7 @@ export function InviteForm({
         </Button>
       </div>
       {error && <p className="text-[13px] text-danger">{error}</p>}
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
         <Controller
           control={form.control}
           name="projectIds"
@@ -68,7 +68,7 @@ export function InviteForm({
                 .map((p) => ({ id: p.id, name: p.name }))}
               options={projects.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name }))}
               onChange={field.onChange}
-              className="min-w-[220px]"
+              className="md:w-[220px]"
             />
           )}
         />

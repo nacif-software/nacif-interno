@@ -7,7 +7,7 @@ import { BaseDateInput } from './base-date-input';
 import { ProjectPicker } from './project-picker';
 import type { SetupLink } from './setup-link-modal';
 
-const GRID = 'md:grid-cols-[1.3fr_1.1fr_1.1fr_1.4fr_150px_80px]';
+const GRID = 'md:grid-cols-[1.3fr_1.1fr_1.2fr_1.3fr_150px_80px]';
 const LINK_ACTION = 'w-fit text-[13px] text-brand hover:text-ink cursor-pointer';
 
 export function PeopleTable({
@@ -116,7 +116,12 @@ export function PeopleTable({
                 label={`Projetos de ${u.name}`}
                 selected={u.projects}
                 options={projects.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name }))}
-                onChange={(projectIds) => patch(u.id, { projectIds })}
+                onChange={(projectIds) =>
+                  update.mutateAsync({ id: u.id, projectIds }).catch((err: Error) => {
+                    toast.error(err.message);
+                    throw err;
+                  })
+                }
                 disabled={update.isPending}
               />
               <BaseDateInput
