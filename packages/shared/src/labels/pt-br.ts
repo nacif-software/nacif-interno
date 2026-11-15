@@ -159,7 +159,7 @@ export const MESSAGES = {
   creditBaseDateOptional: 'Data base (opcional)',
   projectsOptional: 'Projetos (opcional)',
   projectsLabel: 'Projetos',
-  projectsAdd: '+ adicionar',
+  projectsCount: (n: number) => `${n} projetos`,
   lastEntryLabel: 'Último lançamento',
   grantAction: 'Lançar crédito',
   saleAction: 'Registrar venda',

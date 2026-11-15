@@ -12,7 +12,7 @@ import { useCreateLedgerEntry } from '../../controllers/use-balance';
 import { paths } from '../../manifest';
 import { LedgerEntryModal } from './ledger-entry-modal';
 
-const GRID = 'md:grid-cols-[1fr_110px_70px_120px_250px]';
+const GRID = 'md:grid-cols-[1fr_110px_70px_120px_312px]';
 
 /** Tabela de saldos da Administração: pessoa, data base, saldo, último movimento e lançamentos. */
 export function BalancesCard({ items }: { items: BalanceOverviewItem[] }) {
@@ -89,11 +89,11 @@ export function BalancesCard({ items }: { items: BalanceOverviewItem[] }) {
             <span className="font-mono text-[14px] text-ink-muted">
               {it.lastEntryDate ? formatDate(it.lastEntryDate) : '—'}
             </span>
-            <div className="flex flex-wrap gap-2 md:justify-end">
+            <div className="flex gap-[10px] max-md:flex-col md:justify-end">
               <Button
                 variant="outline"
                 size="sm"
-                className="py-[7px] text-[13px]"
+                className="whitespace-nowrap px-[14px] py-[8px] text-[13px]"
                 onClick={() => setModal({ item: it, type: 'GRANT' })}
               >
                 {MESSAGES.grantAction}
@@ -101,7 +101,7 @@ export function BalancesCard({ items }: { items: BalanceOverviewItem[] }) {
               <Button
                 variant="secondary"
                 size="sm"
-                className="py-[7px] text-[13px]"
+                className="whitespace-nowrap px-[14px] py-[8px] text-[13px]"
                 onClick={() => setModal({ item: it, type: 'SALE' })}
               >
                 {MESSAGES.saleAction}

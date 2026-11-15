@@ -1,9 +1,10 @@
 import { MESSAGES, ROLE_LABEL, ROLES, type ProjectDto, type UserDto } from '@nacif/shared';
 import { cn } from '@/lib/cn';
-import { RefChips, RoleChip, Select, Toggle, useToast } from '@/ui';
+import { RoleChip, Select, Toggle, useToast } from '@/ui';
 import { useCurrentUser } from '../../controllers/use-session';
 import { useResendInvite, useResetPassword, useUpdateUser } from '../../controllers/use-users';
 import { BaseDateInput } from './base-date-input';
+import { ProjectPicker } from './project-picker';
 import type { SetupLink } from './setup-link-modal';
 
 const GRID = 'md:grid-cols-[1.3fr_1.1fr_1.2fr_1.3fr_150px_80px]';
@@ -53,7 +54,7 @@ export function PeopleTable({
             <li
               key={u.id}
               className={cn(
-                'grid grid-cols-1 gap-3 border-b border-line px-[22px] py-4 last:border-b-0 md:min-h-16 md:items-center md:gap-4 md:py-0',
+                'grid grid-cols-1 gap-3 border-b border-line px-[22px] py-4 last:border-b-0 md:min-h-16 md:items-center md:gap-4 md:py-3',
                 GRID,
                 !u.active && 'opacity-70',
               )}
@@ -111,16 +112,17 @@ export function PeopleTable({
                   </Select>
                 )}
               </div>
-              <RefChips
+              <ProjectPicker
                 label={`Projetos de ${u.name}`}
                 selected={u.projects}
                 options={projects.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name }))}
-                onChange={(projectIds) => patch(u.id, { projectIds })}
-                addLabel={MESSAGES.projectsAdd}
-                emptyLabel={MESSAGES.noProject}
-                size="md"
+                onChange={(projectIds) =>
+                  update.mutateAsync({ id: u.id, projectIds }).catch((err: Error) => {
+                    toast.error(err.message);
+                    throw err;
+                  })
+                }
                 disabled={update.isPending}
-                className="gap-[6px]"
               />
               <BaseDateInput
                 key={u.creditBaseDate ?? ''}

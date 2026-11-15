@@ -53,6 +53,16 @@ export function dayLabel(d: Date): string {
   return `${String(d.getUTCDate()).padStart(2, '0')} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
+/** Trecho do período como a UI mostra: '30 – 02 dez' no mesmo mês, '30 nov – 02 dez' entre meses (sem o ano). */
+export function rangeLabel(start: Date, end: Date): string {
+  const dd = (d: Date) => String(d.getUTCDate()).padStart(2, '0');
+  const sameMonth =
+    start.getUTCMonth() === end.getUTCMonth() && start.getUTCFullYear() === end.getUTCFullYear();
+  return sameMonth
+    ? `${dd(start)} – ${dd(end)} ${MONTHS[end.getUTCMonth()]}`
+    : `${dd(start)} ${MONTHS[start.getUTCMonth()]} – ${dd(end)} ${MONTHS[end.getUTCMonth()]}`;
+}
+
 export function monthTitle(d: Date): string {
   return `${MONTHS_FULL[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
