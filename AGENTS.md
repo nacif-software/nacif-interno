@@ -51,6 +51,7 @@ Tudo passa pelo `Makefile` (rode `make help`). Não há Docker: o Worker roda lo
 | `make deploy-check` / `make deploy`                                        | build do web + `wrangler deploy --dry-run` / o deploy real (é o que o Workers Builds roda)  |
 | `make create-admin email=x@nacif.xyz [db=local]`                           | cria/promove um administrador e imprime o link de senha (escreve no D1 remoto por padrão)   |
 | `make import-sheet file=x.json [db=local] [admin=e-mail]`                  | importa o histórico da planilha de controle de dias (uma vez; ver `docs/deploy.md`)         |
+| `make vapid-keys`                                                          | gera um par de chaves VAPID para o Web Push (a privada vira secret; ver `docs/deploy.md`)   |
 | `make lint` / `make typecheck` / `make format` / `make vocab-check`        | qualidade                                                                                   |
 | `make ci`                                                                  | tudo que o CI roda                                                                          |
 

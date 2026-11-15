@@ -4,24 +4,27 @@ Base `/api`, na mesma origem do web (o Worker serve os dois). JSON. Cookie de se
 
 ## Core
 
-| Método | Rota                                     | Acesso      | Corpo / query → resposta                                                                                                                               |
-| ------ | ---------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| GET    | `/health`                                | público     | `{ status, db }`                                                                                                                                       |
-| POST   | `/auth/login`                            | público     | `{ email, password }` → `{ user }` + cookie. 403 `DOMAIN_NOT_ALLOWED` (`details.email`), 401 `INVALID_CREDENTIALS`, 403 `USER_INACTIVE`                |
-| POST   | `/auth/logout`                           | qualquer    | 204                                                                                                                                                    |
-| GET    | `/auth/me`                               | autenticado | `{ user: SessionUser }`                                                                                                                                |
-| GET    | `/auth/set-password/:token`              | público     | `{ email, name, mode: 'invite' \| 'reset' }`; 404 se inválido ou expirado, 403 `USER_INACTIVE` se a pessoa foi desativada. `reset` quando já tem senha |
-| POST   | `/auth/set-password`                     | público     | `{ token, name?, password }` → `{ user }` + cookie. Revoga as sessões anteriores. `name` obrigatório no convite, ignorado na redefinição               |
-| GET    | `/services`                              | autenticado | `ServiceDescriptor[]`                                                                                                                                  |
-| GET    | `/users?role&active`                     | autenticado | admin: todas as pessoas; demais: só ativas                                                                                                             |
-| GET    | `/users/options?purpose=cover\|approver` | autenticado | `UserOption[]` (exclui quem chama e inativos; `approver` só APPROVER/ADMIN)                                                                            |
-| POST   | `/users/invites`                         | ADMIN       | `{ email, name?, role?, projectIds?, creditBaseDate? }` → 201 `{ user, setupLink }`                                                                    |
-| POST   | `/users/:id/invites/resend`              | ADMIN       | `{ setupLink }`. 409 se a pessoa já tem senha                                                                                                          |
-| POST   | `/users/:id/password-reset`              | ADMIN       | `{ setupLink }` de redefinição (7 dias, uso único). 409 se sem senha ou inativa. A senha atual vale até o link ser usado                               |
-| PATCH  | `/users/:id`                             | ADMIN       | `{ name?, role?, active?, projectIds?, creditBaseDate? }` → `UserDto` (`projects[]`, `creditBaseDate`). Inativar revoga sessões.                       |
-| GET    | `/projects`                              | autenticado | `ProjectDto[]`                                                                                                                                         |
-| POST   | `/projects`                              | ADMIN       | `{ name, defaultApproverId? }` → 201                                                                                                                   |
-| PATCH  | `/projects/:id`                          | ADMIN       | `{ name?, active?, defaultApproverId? }`                                                                                                               |
+| Método | Rota                                     | Acesso      | Corpo / query → resposta                                                                                                                                     |
+| ------ | ---------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/health`                                | público     | `{ status, db }`                                                                                                                                             |
+| POST   | `/auth/login`                            | público     | `{ email, password }` → `{ user }` + cookie. 403 `DOMAIN_NOT_ALLOWED` (`details.email`), 401 `INVALID_CREDENTIALS`, 403 `USER_INACTIVE`                      |
+| POST   | `/auth/logout`                           | qualquer    | 204                                                                                                                                                          |
+| GET    | `/auth/me`                               | autenticado | `{ user: SessionUser }`                                                                                                                                      |
+| GET    | `/auth/set-password/:token`              | público     | `{ email, name, mode: 'invite' \| 'reset' }`; 404 se inválido ou expirado, 403 `USER_INACTIVE` se a pessoa foi desativada. `reset` quando já tem senha       |
+| POST   | `/auth/set-password`                     | público     | `{ token, name?, password }` → `{ user }` + cookie. Revoga as sessões anteriores. `name` obrigatório no convite, ignorado na redefinição                     |
+| GET    | `/services`                              | autenticado | `ServiceDescriptor[]`                                                                                                                                        |
+| GET    | `/users?role&active`                     | autenticado | admin: todas as pessoas; demais: só ativas                                                                                                                   |
+| GET    | `/users/options?purpose=cover\|approver` | autenticado | `UserOption[]` (exclui quem chama e inativos; `approver` só APPROVER/ADMIN)                                                                                  |
+| POST   | `/users/invites`                         | ADMIN       | `{ email, name?, role?, projectIds?, creditBaseDate? }` → 201 `{ user, setupLink }`                                                                          |
+| POST   | `/users/:id/invites/resend`              | ADMIN       | `{ setupLink }`. 409 se a pessoa já tem senha                                                                                                                |
+| POST   | `/users/:id/password-reset`              | ADMIN       | `{ setupLink }` de redefinição (7 dias, uso único). 409 se sem senha ou inativa. A senha atual vale até o link ser usado                                     |
+| PATCH  | `/users/:id`                             | ADMIN       | `{ name?, role?, active?, projectIds?, creditBaseDate? }` → `UserDto` (`projects[]`, `creditBaseDate`). Inativar revoga sessões.                             |
+| GET    | `/projects`                              | autenticado | `ProjectDto[]`                                                                                                                                               |
+| POST   | `/projects`                              | ADMIN       | `{ name, defaultApproverId? }` → 201                                                                                                                         |
+| PATCH  | `/projects/:id`                          | ADMIN       | `{ name?, active?, defaultApproverId? }`                                                                                                                     |
+| GET    | `/push/config`                           | autenticado | `{ enabled, publicKey }`: chave pública VAPID para `pushManager.subscribe`; `enabled: false` quando o ambiente não tem as chaves                             |
+| POST   | `/push/subscriptions`                    | autenticado | `PushSubscription.toJSON()` do navegador (`endpoint`, `keys.p256dh`, `keys.auth`) + `userAgent?`, `replaces?` (endpoint antigo) → 201. Upsert por `endpoint` |
+| DELETE | `/push/subscriptions`                    | autenticado | `{ endpoint }` → 204; 404 se não for da própria pessoa                                                                                                       |
 
 ## Disponibilidade (`/api/disponibilidade`)
 

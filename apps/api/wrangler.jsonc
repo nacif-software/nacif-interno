@@ -33,9 +33,12 @@
     "COOKIE_SECURE": "true",
     "SESSION_TTL_DAYS": "30",
     "LOG_LEVEL": "info",
+    // Web Push (ADR 0013): a chave pública não é segredo; a privada entra por `wrangler secret put VAPID_PRIVATE_KEY`.
+    "VAPID_PUBLIC_KEY": "BFt8xesOTLponXyXtoVrHox5Dj1ZrQo6PrJ1oIFrdMl8l9PuCoEmwAbA0rVJHfUVqau9mY2DtJQe1CnVYxbHWxM",
+    "VAPID_SUBJECT": "mailto:wenderson@nacif.xyz",
   },
   "triggers": {
-    // Limpeza diária de sessões e tokens expirados (03:00 UTC).
+    // Diário às 03:00 UTC (00:00 em São Paulo): limpeza de sessões e tokens expirados e crédito anual de dias.
     "crons": ["0 3 * * *"],
   },
   "observability": {

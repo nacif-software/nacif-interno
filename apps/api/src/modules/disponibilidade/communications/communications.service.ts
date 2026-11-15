@@ -36,7 +36,10 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../../infra/http/errors';
+import { background } from '../../../infra/http/background';
 import { projectRefs } from '../../core/users/user.mapper';
+import { pushMessages } from '../../core/push/push.messages';
+import { pushService } from '../../core/push/push.service';
 import { usersRepository } from '../../core/users/users.repository';
 import { balanceRepository } from '../balance/balance.repository';
 import { settingsRepository } from '../settings/settings.repository';
@@ -161,8 +164,12 @@ export const communicationsService = {
     // Sem transação interativa no D1: o código vem de um upsert atômico e a inserção é um batch.
     // Se duas requisições disputarem a mesma sequência, o unique de `code` falha e tentamos de novo.
     const id = crypto.randomUUID();
+    // Definido na primeira volta do laço (todo caminho que sai dele passa por `allocateCode`).
+    let code!: string;
     for (let attempt = 1; ; attempt++) {
-      const { code, sequence } = await allocateCode(year);
+      const allocated = await allocateCode(year);
+      code = allocated.code;
+      const { sequence } = allocated;
       try {
         await db().batch([
           communicationsRepository.insert({
@@ -203,6 +210,12 @@ export const communicationsService = {
         if (!codeRace || attempt >= CODE_RACE_ATTEMPTS) throw err;
       }
     }
+    background(
+      pushService.notify(
+        [body.approverId],
+        pushMessages.newForApprover({ id, code, ...body }, actor.name, businessDays),
+      ),
+    );
     return this.getDetail(actor, id);
   },
 
@@ -291,6 +304,9 @@ export const communicationsService = {
     if (updated.length === 0) {
       throw new InvalidStateError('Esta comunicação já foi decidida.');
     }
+    background(
+      pushService.notify([row.approverId], pushMessages.edited({ ...row, ...body }, actor.name)),
+    );
     return this.getDetail(actor, row.id);
   },
 
@@ -330,6 +346,7 @@ export const communicationsService = {
     if (updated.length === 0) {
       throw new InvalidStateError('Só é possível cancelar uma comunicação em análise.');
     }
+    background(pushService.notify([row.approverId], pushMessages.cancelled(row, actor.name)));
     return this.getDetail(actor, row.id);
   },
 };

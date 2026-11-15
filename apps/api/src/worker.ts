@@ -1,6 +1,7 @@
 import { createApp } from './app';
 import { bindConfig } from './config/env';
 import { bindDb } from './db/client';
+import { bindBackground } from './infra/http/background';
 import { logger } from './infra/logger';
 import { maintenanceService } from './modules/core/maintenance/maintenance.service';
 import { accrualService } from './modules/disponibilidade/balance/accrual.service';
@@ -14,9 +15,10 @@ export default {
    * Cron diário (ver `triggers.crons` no wrangler.jsonc): limpa sessões e tokens expirados e
    * lança o crédito anual de dias de quem fez aniversário da data base.
    */
-  async scheduled(controller, env) {
+  async scheduled(controller, env, ctx) {
     bindConfig(env);
     bindDb(env.DB);
+    bindBackground(ctx ? (p) => ctx.waitUntil(p) : null);
     const now = new Date(controller.scheduledTime);
     const purged = await maintenanceService.purgeExpired(now);
     logger.info({ cron: controller.cron, ...purged }, 'Limpeza concluída');

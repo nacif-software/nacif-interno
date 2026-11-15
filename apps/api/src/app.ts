@@ -4,6 +4,7 @@ import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { bindConfig } from './config/env';
 import { bindDb } from './db/client';
+import { bindBackground } from './infra/http/background';
 import type { AppEnv, AppRouter } from './infra/http/context';
 import { notFound, onError } from './infra/http/error-handler';
 import { registerModules, type ApiModule } from './infra/http/module';
@@ -19,6 +20,15 @@ export function createApp(options: { modules?: readonly ApiModule[] } = {}): App
   app.use('*', async (c, next) => {
     bindConfig(c.env);
     bindDb(c.env.DB);
+    // `executionCtx` só existe no Workers; fora dele (testes) as tarefas rodam soltas.
+    let waitUntil: ((p: Promise<unknown>) => void) | null;
+    try {
+      const ctx = c.executionCtx;
+      waitUntil = (p) => ctx.waitUntil(p);
+    } catch {
+      waitUntil = null;
+    }
+    bindBackground(waitUntil);
     await next();
   });
   app.use(secureHeaders());

@@ -3,6 +3,7 @@ import type { ApiModule } from '../../infra/http/module';
 import { authRouter } from './auth/auth.routes';
 import { healthRouter } from './health/health.routes';
 import { projectsRouter } from './projects/projects.routes';
+import { pushRouter } from './push/push.routes';
 import { servicesRouter } from './services/services.routes';
 import { usersRouter } from './users/users.routes';
 
@@ -11,6 +12,7 @@ router.route('/', healthRouter);
 router.route('/', authRouter);
 router.route('/', usersRouter);
 router.route('/', projectsRouter);
+router.route('/', pushRouter);
 router.route('/', servicesRouter);
 
 export const coreModule: ApiModule = {

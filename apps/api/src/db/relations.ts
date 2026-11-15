@@ -9,6 +9,7 @@ import {
   flowEvents,
   passwordSetupTokens,
   projects,
+  pushSubscriptions,
   sessions,
   userProjects,
   users,
@@ -19,6 +20,11 @@ export const usersRelations = relations(users, ({ many }) => ({
   ledgerEntries: many(availabilityLedgerEntries, { relationName: 'ledgerOwner' }),
   sessions: many(sessions),
   passwordSetupTokens: many(passwordSetupTokens),
+  pushSubscriptions: many(pushSubscriptions),
+}));
+
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(users, { fields: [pushSubscriptions.userId], references: [users.id] }),
 }));
 
 export const userProjectsRelations = relations(userProjects, ({ one }) => ({

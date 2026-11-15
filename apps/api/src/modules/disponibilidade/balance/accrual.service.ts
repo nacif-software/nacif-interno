@@ -6,6 +6,9 @@ import {
   type AccrualRunResult,
 } from '@nacif/shared';
 import type { NewLedgerEntry } from '../../../db/types';
+import { background } from '../../../infra/http/background';
+import { pushMessages } from '../../core/push/push.messages';
+import { pushService } from '../../core/push/push.service';
 import { usersRepository } from '../../core/users/users.repository';
 import { settingsRepository } from '../settings/settings.repository';
 import { balanceRepository } from './balance.repository';
@@ -36,6 +39,20 @@ export const accrualService = {
       }));
     });
     const created = await balanceRepository.insertAccruals(entries);
-    return { created };
+    // Um aviso por pessoa (quem recuperou mais de um ano recebe só o último, com o saldo final).
+    const perUser = new Map<string, number>();
+    for (const row of created) perUser.set(row.userId, row.days);
+    if (perUser.size > 0) {
+      const balances = await balanceRepository.balances([...perUser.keys()]);
+      for (const [userId, days] of perUser) {
+        background(
+          pushService.notify(
+            [userId],
+            pushMessages.ledger('ACCRUAL', days, balances.get(userId) ?? 0),
+          ),
+        );
+      }
+    }
+    return { created: created.length };
   },
 };
