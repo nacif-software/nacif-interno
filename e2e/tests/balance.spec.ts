@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addDays, dayLabel, login, logout, nextMonday, pickDay, users } from '../fixtures/auth';
+import { addDays, login, logout, nextMonday, pickDay, rangeLabel, users } from '../fixtures/auth';
 
 /** Lê o número do card "Saldo de dias" do painel. */
 async function readBalance(page: Page): Promise<number> {
@@ -47,7 +47,7 @@ test('membro vê o saldo no painel e no extrato; aprovador ajusta os dias descon
   const row = page
     .locator('li')
     .filter({ has: page.getByRole('link', { name: /^Pedro Nakano/ }) })
-    .filter({ hasText: `${dayLabel(start).slice(0, 2)} – ` })
+    .filter({ hasText: rangeLabel(start, end) })
     .first();
   await expect(row).toContainText(`${initial} → ${after}`);
   await row.getByRole('link', { name: /^Pedro Nakano/ }).click();
