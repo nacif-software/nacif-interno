@@ -74,7 +74,7 @@ Seed: pessoas do design com senha `nacif1234` (`caio@nacif.xyz` admin, `marina@n
 - Erros da API sempre via `AppError` (`apps/api/src/infra/http/errors.ts`) → `{ error: { code, message, details } }`.
 - DTOs e schemas de request só no shared (`packages/shared/src/schemas`). Nunca importar tipos do Drizzle (`apps/api/src/db`) no web.
 - Banco: schema em `apps/api/src/db/schema.ts`, tipos de linha em `src/db/types.ts`. O D1 não tem transação interativa: **nunca `db().transaction()`**; escrita com mais de um statement vai num único `db().batch([...])`, e guards de estado vão no `WHERE` do `UPDATE` (ver `approvals.service.ts`).
-- Saldo de dias é derivado (ADR 0012): nunca gravar saldo em coluna; créditos e vendas entram em `availability_ledger_entries`, o débito vem de `communications.deducted_days` das aprovadas. Pessoa ↔ projeto é N:N (`user_projects`); `users.project_id` e `communications.project_id` estão obsoletos, não os leia em código novo.
+- Saldo de dias é derivado (ADR 0012): nunca gravar saldo em coluna; créditos e vendas entram em `availability_ledger_entries`, o débito vem de `communications.deducted_days` das aprovadas. Pessoa ↔ projeto é N:N (`user_projects`); `users.project_id` é coluna morta no D1 (nula, fora do schema; não a leia nem a declare); `communications.project_id` sai na migração 0003.
 - Testes ao lado do código em `__tests__/` (shared, web) ou `src/__tests__/` (api, no runtime Workers com D1 local).
 - Cores, fontes e raios só pelos tokens do tema (`bg-brand`, `text-ink-muted`, `rounded-card`, `font-mono`...). Sem sombras, exceto `shadow-float` em dropdown e toast.
 - Commits e títulos de PR no formato Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`...). O título do PR é o que fica na `main` (§9).

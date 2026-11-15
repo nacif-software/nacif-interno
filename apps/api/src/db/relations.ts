@@ -14,12 +14,7 @@ import {
   users,
 } from './schema';
 
-export const usersRelations = relations(users, ({ one, many }) => ({
-  project: one(projects, {
-    fields: [users.projectId],
-    references: [projects.id],
-    relationName: 'projectMembers',
-  }),
+export const usersRelations = relations(users, ({ many }) => ({
   projects: many(userProjects),
   ledgerEntries: many(availabilityLedgerEntries, { relationName: 'ledgerOwner' }),
   sessions: many(sessions),
@@ -97,7 +92,6 @@ export const communicationsRelations = relations(communications, ({ one, many })
     references: [users.id],
     relationName: 'communicationApprover',
   }),
-  project: one(projects, { fields: [communications.projectId], references: [projects.id] }),
   decisions: many(decisions),
   events: many(flowEvents),
 }));

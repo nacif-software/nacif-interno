@@ -76,10 +76,9 @@ describe('communications', () => {
   });
 
   it('sinaliza conflito com aprovada de outra pessoa no mesmo projeto e registra no fluxo', async () => {
-    const { caio, marina, julia, pedro, orion } = await seedTeam();
+    const { caio, marina, julia, pedro } = await seedTeam();
     await createCommunication({
       authorId: marina.id,
-      projectId: orion.id,
       coverId: pedro.id,
       approverId: caio.id,
       startDate: addDays(monday, 1),
@@ -108,10 +107,9 @@ describe('communications', () => {
   });
 
   it('detalhe por código; não-autor sem relação recebe 403; aprovador e admin podem ver', async () => {
-    const { caio, marina, julia, pedro, orion } = await seedTeam();
+    const { caio, marina, julia, pedro } = await seedTeam();
     const c = await createCommunication({
       authorId: pedro.id,
-      projectId: orion.id,
       coverId: julia.id,
       approverId: marina.id,
       startDate: monday,
@@ -139,10 +137,9 @@ describe('communications', () => {
   });
 
   it('edita período mantendo o código e cancela em análise; não-autor recebe 403', async () => {
-    const { marina, julia, pedro, orion } = await seedTeam();
+    const { marina, julia, pedro } = await seedTeam();
     const c = await createCommunication({
       authorId: pedro.id,
-      projectId: orion.id,
       coverId: julia.id,
       approverId: marina.id,
       startDate: monday,
@@ -190,10 +187,9 @@ describe('communications', () => {
   });
 
   it('lista minhas comunicações paginadas e dashboard com métricas', async () => {
-    const { marina, julia, pedro, orion } = await seedTeam();
+    const { marina, julia, pedro } = await seedTeam();
     await createCommunication({
       authorId: pedro.id,
-      projectId: orion.id,
       coverId: julia.id,
       approverId: marina.id,
       startDate: monday,
@@ -202,7 +198,6 @@ describe('communications', () => {
     });
     await createCommunication({
       authorId: pedro.id,
-      projectId: orion.id,
       coverId: julia.id,
       approverId: marina.id,
       startDate: addDays(monday, 14),
@@ -210,7 +205,6 @@ describe('communications', () => {
     });
     await createCommunication({
       authorId: julia.id,
-      projectId: orion.id,
       coverId: pedro.id,
       approverId: marina.id,
       startDate: monday,

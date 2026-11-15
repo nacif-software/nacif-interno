@@ -17,7 +17,6 @@ describe('corridas em decisões', () => {
     const start = addDays(todayIso(APP_TIMEZONE), 10);
     const row = await createCommunication({
       authorId: team.pedro.id,
-      projectId: team.orion.id,
       coverId: team.marina.id,
       approverId: team.caio.id,
       startDate: start,

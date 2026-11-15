@@ -9,7 +9,6 @@ function withRelations() {
     author: { with: { projects: { with: { project: true as const } } } },
     cover: true as const,
     approver: true as const,
-    project: true as const,
     decisions: {
       where: isNull(decisions.revertedAt),
       orderBy: [desc(decisions.decidedAt)],

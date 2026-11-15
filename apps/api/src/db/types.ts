@@ -44,8 +44,6 @@ export type CommunicationRow = Communication & {
   /** Nula nas comunicações importadas da planilha. */
   cover: User | null;
   approver: User;
-  /** @deprecated Projeto escolhido no envio; nulo nas novas (a comunicação vale para todos os projetos da pessoa). */
-  project: Project | null;
   /** Decisão vigente (não revertida), no máximo uma. */
   decisions: Decision[];
   events: (FlowEvent & { actor: User | null })[];
