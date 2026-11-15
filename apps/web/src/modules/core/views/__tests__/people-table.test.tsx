@@ -36,6 +36,13 @@ const users = [
   user({ id: 'u-pedro', name: 'Pedro Nakano', email: 'pedro@nacif.xyz' }),
   user({ id: 'u-ana', name: 'Ana Lima', email: 'ana@nacif.xyz', invitePending: true }),
   user({ id: 'u-thiago', name: 'Thiago Lemos', email: 'thiago@nacif.xyz', active: false }),
+  user({
+    id: 'u-darryl',
+    name: 'Darryl Gibs',
+    email: 'darryl@nacif.xyz',
+    active: false,
+    invitePending: true,
+  }),
 ];
 
 describe('PeopleTable', () => {
@@ -49,9 +56,10 @@ describe('PeopleTable', () => {
       'Redefinir senha de Caio Bertelli',
       'Redefinir senha de Pedro Nakano',
     ]);
+    // só a pessoa ativa com convite pendente (Ana) mostra a ação; Darryl está desativado
     expect(
-      screen.getByRole('button', { name: 'Convite pendente · gerar novo link' }),
-    ).toBeInTheDocument();
+      screen.getAllByRole('button', { name: 'Convite pendente · gerar novo link' }),
+    ).toHaveLength(1);
   });
 
   it('gera o link de redefinição e entrega ao modal', async () => {

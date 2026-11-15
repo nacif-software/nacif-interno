@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { cn } from '@/lib/cn';
 import { Breadcrumb, Logo, type Crumb } from '@/ui';
 
 /** Layout de tarefa (formulário): logo + breadcrumb, coluna central e rodapé fixo com ações. */
@@ -40,7 +41,13 @@ export function FocusedShell({
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 py-4 pb-40 md:px-10 md:py-11">
+      <main
+        className={cn(
+          'mx-auto w-full max-w-[1440px] flex-1 px-5 pt-4 pb-4 md:px-10 md:pt-11 md:pb-11',
+          // O rodapé fixo cobre o fim da página: reserva a altura dele mais um respiro.
+          footer && 'pb-48 md:pb-36',
+        )}
+      >
         <div className="mx-auto flex max-w-[720px] flex-col gap-4 md:gap-7">{children}</div>
       </main>
       {footer && (
