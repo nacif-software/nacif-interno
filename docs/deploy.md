@@ -97,15 +97,16 @@ O histórico do controle de dias vem da planilha, em três passos:
 
 O que o script faz com os dados: aquisições "Automática" viram créditos `ACCRUAL` com o ano (o cron não duplica); "Manual" viram `GRANT` com a nota original; vendas viram `SALE`; solicitações viram comunicações com código sequencial por ano na ordem de envio, `deducted_days` igual à coluna "Dias", sem cobertura nem projeto, com decisão e eventos de fluxo; pessoas que saíram entram inativas. Pessoas já existentes (pelo e-mail) só têm nome, atividade, papel e data base atualizados.
 
-### Corte da planilha (checklist)
+### Corte da planilha
 
-Feito uma vez, depois da importação em produção (executada em 2026-11-15, 12/12 saldos conferidos; ADR 0012):
+**Feito em 2026-11-15.** A importação rodou em produção (12/12 saldos conferidos; ADR 0012) e o responsável pelo produto decidiu que a planilha deixa de ser usada a partir dessa data: o controle de dias é só na plataforma. A planilha continua existindo como referência do histórico importado, em somente leitura, sob responsabilidade de quem a criou; nenhum dado novo entra nela.
 
-1. [ ] Planilha em **somente leitura** (Google Sheets → Compartilhar → Leitor para todos) com um aviso na primeira aba: "Controle encerrado em <data>. Use interno.nacif.software." Não apagar: é a referência do histórico importado.
-2. [ ] Créditos anuais pendentes lançados: esperar o cron das 00:00 ou, logado como administrador, `POST /api/disponibilidade/balance/accrual/run`.
-3. [ ] Para cada pessoa ativa, gerar o link em Administração → Pessoas → `Convite pendente · gerar novo link` e enviar por um canal pessoal (o link vale 7 dias e é de uso único; sem e-mail automático até a issue #10).
-4. [ ] Preencher a data base do crédito de quem entrou sem ela (Administração → Pessoas → `Data base`); o crédito anual passa a valer a partir do primeiro aniversário.
-5. [ ] Avisar o time: comunicações de indisponibilidade e consulta do saldo passam a ser só no sistema; vendas e créditos manuais são pedidos a um administrador.
+O que ainda é operacional, sem código:
+
+- Cada pessoa ativa recebe o link de definição de senha gerado em Administração → Pessoas → `Convite pendente · gerar novo link`, por um canal pessoal (o link vale 7 dias e é de uso único). Não há envio de e-mail até a issue #10; `Redefinir senha` também só gera o link.
+- Quem entrou sem data base do crédito recebe a data em Administração → Pessoas → `Data base`; o crédito anual passa a valer a partir do primeiro aniversário dela e o catch-up lança o que já venceu.
+- Créditos anuais pendentes: o cron das 00:00 lança sozinho; para antecipar, `POST /api/disponibilidade/balance/accrual/run` logado como administrador.
+- Vendas e créditos manuais passam a ser pedidos a um administrador, que registra em Administração → Saldos de dias.
 
 ## Rollback
 
