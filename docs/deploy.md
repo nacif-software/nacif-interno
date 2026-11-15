@@ -84,6 +84,16 @@ O script (`apps/api/scripts/create-admin.ts`) cria a pessoa com papel ADMIN (ou 
 
 A partir daí, convites e redefinições são feitos pela Administração no próprio app.
 
+## Importação da planilha (uma vez, na virada)
+
+O histórico do controle de dias vem da planilha, em três passos:
+
+1. **JSON fora do repositório.** Um script Python local lê o `.xlsx` e gera `controle-de-dias.json` com pessoas (e-mail, nome, ativo, data base, papel, projetos), projetos, aquisições, vendas, solicitações e os saldos esperados. Nada disso entra no git.
+2. **Ensaio no D1 local**: `rm -rf apps/api/.wrangler/state && make migrate && make create-admin email=<admin> db=local && make import-sheet file=<json> db=local`. O script grava tudo num único `wrangler d1 execute` (ids determinísticos `sheet-…`, então rodar de novo não duplica), e no fim imprime a comparação do saldo calculado com a aba Saldo, pessoa a pessoa. Só siga se tudo estiver `ok`.
+3. **Produção**: guarde o bookmark (`wrangler d1 time-travel info nacif-interno-prod`), rode `make import-sheet file=<json> admin=<e-mail do admin>`, confira a comparação e depois `POST /api/disponibilidade/balance/accrual/run` (ou espere o cron) para os créditos anuais pendentes. Por fim, na Administração, gere o link de definição de senha de cada pessoa ativa.
+
+O que o script faz com os dados: aquisições "Automática" viram créditos `ACCRUAL` com o ano (o cron não duplica); "Manual" viram `GRANT` com a nota original; vendas viram `SALE`; solicitações viram comunicações com código sequencial por ano na ordem de envio, `deducted_days` igual à coluna "Dias", sem cobertura nem projeto, com decisão e eventos de fluxo; pessoas que saíram entram inativas. Pessoas já existentes (pelo e-mail) só têm nome, atividade, papel e data base atualizados.
+
 ## Rollback
 
 ### Código
