@@ -160,6 +160,7 @@ export const MESSAGES = {
   projectsOptional: 'Projetos (opcional)',
   projectsLabel: 'Projetos',
   projectsAdd: '+ adicionar',
+  projectsAddLabel: 'Adicionar projeto…',
   lastEntryLabel: 'Último lançamento',
   grantAction: 'Lançar crédito',
   saleAction: 'Registrar venda',

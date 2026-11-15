@@ -1,7 +1,8 @@
 import { inviteBodySchema, MESSAGES, type InviteBody, type ProjectDto } from '@nacif/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
-import { Button, Input, RefChips, useToast } from '@/ui';
+import { Button, Input, useToast } from '@/ui';
+import { ProjectPicker } from './project-picker';
 import { useInviteUser } from '../../controllers/use-users';
 import type { SetupLink } from './setup-link-modal';
 
@@ -55,21 +56,19 @@ export function InviteForm({
         </Button>
       </div>
       {error && <p className="text-[13px] text-danger">{error}</p>}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-6">
         <Controller
           control={form.control}
           name="projectIds"
           render={({ field }) => (
-            <RefChips
+            <ProjectPicker
               label={MESSAGES.projectsOptional}
               selected={projects
                 .filter((p) => (field.value ?? []).includes(p.id))
                 .map((p) => ({ id: p.id, name: p.name }))}
               options={projects.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name }))}
               onChange={field.onChange}
-              addLabel={MESSAGES.projectsAdd}
-              size="md"
-              className="gap-[6px]"
+              className="min-w-[220px]"
             />
           )}
         />

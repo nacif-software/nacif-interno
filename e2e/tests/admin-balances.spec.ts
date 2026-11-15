@@ -41,11 +41,10 @@ test('administrador lança crédito e venda, vê o extrato da pessoa e associa d
   // dois projetos para Júlia
   await page.goto('/disponibilidade/administracao');
   const projects = page.getByRole('group', { name: 'Projetos de Júlia Reis' });
-  await projects.getByRole('button', { name: '+ adicionar' }).click();
-  await page.getByRole('menuitem', { name: 'Vega' }).click();
-  await expect(projects).toContainText('Atlas');
-  await expect(projects).toContainText('Vega');
+  await projects.getByRole('combobox').selectOption({ label: 'Vega' });
+  await expect(projects.getByRole('button', { name: 'Remover Atlas' })).toBeVisible();
+  await expect(projects.getByRole('button', { name: 'Remover Vega' })).toBeVisible();
   // desfaz para não afetar os outros testes
   await projects.getByRole('button', { name: 'Remover Vega' }).click();
-  await expect(projects).not.toContainText('Vega');
+  await expect(projects.getByRole('button', { name: 'Remover Vega' })).toHaveCount(0);
 });
