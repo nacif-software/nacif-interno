@@ -32,7 +32,7 @@ HTTP → secureHeaders/cors/bodyLimit → /api/<módulo> router (Hono)
 
 - E-mail/senha local (`bcryptjs`), atrás da interface `AuthProvider` (`apps/api/src/modules/core/auth/providers`). Login corporativo entra trocando o provider (issue #7).
 - Domínio restrito a `@nacif.xyz` antes de consultar o banco (`DOMAIN_NOT_ALLOWED` ecoa o e-mail para a copy da tela 01b).
-- Sessão opaca (token de 256 bits, Web Crypto) na tabela `sessions` do D1, cookie `nacif_session` httpOnly/sameSite=lax, 30 dias deslizantes. Desativar uma pessoa revoga todas as sessões. Um Cron Trigger diário apaga sessões e tokens expirados.
+- Sessão opaca (token de 256 bits, Web Crypto) na tabela `sessions` do D1, cookie `nacif_session` httpOnly/sameSite=lax, 30 dias deslizantes. Desativar uma pessoa revoga todas as sessões. Um Cron Trigger diário (`0 3 * * *` UTC) apaga sessões e tokens expirados e, em seguida, lança o crédito anual de dias (ver abaixo).
 - Convite: admin cria a pessoa sem senha e recebe um link `/definir-senha/<token>` (token com hash sha256 na tabela `password_setup_tokens`, 7 dias, uso único). Sem e-mail no MVP (issue #10).
 
 ## Sistema de módulos
@@ -56,13 +56,20 @@ HTTP → secureHeaders/cors/bodyLimit → /api/<módulo> router (Hono)
 
 ## Regras de negócio do módulo disponibilidade
 
-| Regra                                                                                      | Onde                                              |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------- |
-| Dias úteis, antecedência mínima, sobreposição, código `AAAA-NNNN`, transições, quem decide | `packages/shared/src/rules`, `date`               |
-| Conflito (aprovadas de outra pessoa no mesmo projeto) e `limitReached`                     | `apps/api/.../communications/conflict.service.ts` |
-| Elegibilidade de cobertura/aprovador                                                       | `communications.service.ts`                       |
-| Eventos de fluxo (SUBMITTED, IN_REVIEW, DECISION, CANCELLED, EDITED, DECISION_REVERTED)    | services de communications e approvals            |
-| Aprovação em lote com undo (30 s no servidor, toast de 10 s)                               | `approvals.service.ts`                            |
+| Regra                                                                                                         | Onde                                                               |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Dias úteis, antecedência mínima, sobreposição, código `AAAA-NNNN`, transições, quem decide                    | `packages/shared/src/rules`, `date`                                |
+| Conflito (aprovadas de outra pessoa em qualquer projeto em comum) e `limitReached`                            | `apps/api/.../communications/conflict.service.ts`                  |
+| Elegibilidade de cobertura/aprovador; aprovador padrão a partir dos projetos da pessoa                        | `communications.service.ts`, `rules/default-approver.ts`           |
+| Eventos de fluxo (SUBMITTED, IN_REVIEW, DECISION, CANCELLED, EDITED, DECISION_REVERTED)                       | services de communications e approvals                             |
+| Aprovação em lote com undo (30 s no servidor, toast de 10 s); ajuste de dias descontados                      | `approvals.service.ts`                                             |
+| Saldo de dias (sinal dos lançamentos, saldo acumulado do extrato) e aniversários da data base (29/02 → 28/02) | `packages/shared/src/rules/balance.ts`, `date/anniversary.ts`      |
+| Saldo por pessoa (subqueries sobre ledger e aprovadas), extrato, lançamentos do admin                         | `apps/api/.../balance/balance.service.ts`, `balance.repository.ts` |
+| Crédito anual idempotente com catch-up (cron, ao salvar a data base e `POST /balance/accrual/run`)            | `apps/api/.../balance/accrual.service.ts`                          |
+
+### Saldo de dias (ADR 0012)
+
+O saldo nunca é gravado: é `Σ ledger (ACCRUAL + GRANT − SALE) − Σ deductedDays das comunicações APPROVED`, calculado por consulta. O cron diário chama `accrualService.runCatchUp(now)` depois de `purgeExpired`: para cada pessoa ativa com data base, cria um lançamento `ACCRUAL` por aniversário já passado e ainda sem lançamento (índice único parcial garante a idempotência; inserts em pedaços de 10 por causa do limite de parâmetros do D1). "Hoje" é calculado em `America/Sao_Paulo` para nunca creditar um dia cedo.
 
 ## Contrato de erro
 

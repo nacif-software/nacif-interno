@@ -16,7 +16,7 @@ O **Hermes Agent** não é um módulo do portal: é um agente externo, com acess
 
 O time é composto por prestadores PJ. A UI e as docs **nunca** usam: "férias", "folga", "saldo de férias", "funcionário", "colaborador", "RH", "abono".
 
-Usar: "comunicação de indisponibilidade", "período de indisponibilidade", "membro do time" / "prestador", "aprovador" / "administrador", "dias comunicados no ano" (contador informativo, não é saldo nem direito).
+Usar: "comunicação de indisponibilidade", "período de indisponibilidade", "membro do time" / "prestador", "aprovador" / "administrador", "saldo de dias" (créditos − vendas − dias descontados das aprovadas; ADR 0012), "crédito anual", "venda de dias", "dias descontados", "data base do crédito", "dias comunicados no ano" (contador informativo, texto de apoio do saldo).
 
 Tom: direto, profissional, enxuto. **Sem emojis na UI.** Copy em pt-BR vem de `docs/design-spec.md` e fica centralizada em `packages/shared/src/labels/pt-br.ts`. Identificadores de código em inglês. `make vocab-check` e uma regra ESLint bloqueiam o vocabulário proibido em `apps/web/src` e `packages/shared/src`.
 
@@ -40,18 +40,19 @@ Monorepo pnpm: `apps/api` (Hono 4 + Drizzle + D1, publicado como Cloudflare Work
 
 Tudo passa pelo `Makefile` (rode `make help`). Não há Docker: o Worker roda local com `wrangler dev` e o banco é um D1 local (SQLite em `apps/api/.wrangler/state`).
 
-| Comando                                                                    | O que faz                                                                                        |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `make install`                                                             | instala dependências, cria `apps/api/.dev.vars`, gera os tipos do Worker e migra o D1 local      |
-| `make dev`                                                                 | sobe o Worker (API, `:8787`) e o Vite (web, `:5173`, proxy de `/api` para `:8787`)               |
-| `make types`                                                               | regera `worker-configuration.d.ts` depois de mudar o `wrangler.jsonc`                            |
-| `make migrate` / `make migrate-new name=x` / `make seed` / `make db-reset` | migrações (`drizzle-kit generate` + `wrangler d1 migrations apply --local`) e seed               |
-| `make test`                                                                | shared + web + api (api roda no runtime Workers com D1 local, sem serviço externo)               |
-| `make test-e2e`                                                            | Playwright contra o build de produção servido por `wrangler dev` (sobe sozinho)                  |
-| `make deploy-check` / `make deploy`                                        | build do web + `wrangler deploy --dry-run` / o deploy real (é o que o Workers Builds roda)       |
-| `make create-admin email=x@nacif.xyz [db=local]`                           | cria/promove um administrador e imprime o link de senha (único comando que escreve no D1 remoto) |
-| `make lint` / `make typecheck` / `make format` / `make vocab-check`        | qualidade                                                                                        |
-| `make ci`                                                                  | tudo que o CI roda                                                                               |
+| Comando                                                                    | O que faz                                                                                   |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `make install`                                                             | instala dependências, cria `apps/api/.dev.vars`, gera os tipos do Worker e migra o D1 local |
+| `make dev`                                                                 | sobe o Worker (API, `:8787`) e o Vite (web, `:5173`, proxy de `/api` para `:8787`)          |
+| `make types`                                                               | regera `worker-configuration.d.ts` depois de mudar o `wrangler.jsonc`                       |
+| `make migrate` / `make migrate-new name=x` / `make seed` / `make db-reset` | migrações (`drizzle-kit generate` + `wrangler d1 migrations apply --local`) e seed          |
+| `make test`                                                                | shared + web + api (api roda no runtime Workers com D1 local, sem serviço externo)          |
+| `make test-e2e`                                                            | Playwright contra o build de produção servido por `wrangler dev` (sobe sozinho)             |
+| `make deploy-check` / `make deploy`                                        | build do web + `wrangler deploy --dry-run` / o deploy real (é o que o Workers Builds roda)  |
+| `make create-admin email=x@nacif.xyz [db=local]`                           | cria/promove um administrador e imprime o link de senha (escreve no D1 remoto por padrão)   |
+| `make import-sheet file=x.json [db=local] [admin=e-mail]`                  | importa o histórico da planilha de controle de dias (uma vez; ver `docs/deploy.md`)         |
+| `make lint` / `make typecheck` / `make format` / `make vocab-check`        | qualidade                                                                                   |
+| `make ci`                                                                  | tudo que o CI roda                                                                          |
 
 Portas: web 5173 (dev), Worker 8787 (API e, no e2e, também o web buildado). Variáveis locais em `apps/api/.dev.vars` (copiado de `.dev.vars.example`); as de produção ficam em `vars` no `wrangler.jsonc`.
 
@@ -73,6 +74,7 @@ Seed: pessoas do design com senha `nacif1234` (`caio@nacif.xyz` admin, `marina@n
 - Erros da API sempre via `AppError` (`apps/api/src/infra/http/errors.ts`) → `{ error: { code, message, details } }`.
 - DTOs e schemas de request só no shared (`packages/shared/src/schemas`). Nunca importar tipos do Drizzle (`apps/api/src/db`) no web.
 - Banco: schema em `apps/api/src/db/schema.ts`, tipos de linha em `src/db/types.ts`. O D1 não tem transação interativa: **nunca `db().transaction()`**; escrita com mais de um statement vai num único `db().batch([...])`, e guards de estado vão no `WHERE` do `UPDATE` (ver `approvals.service.ts`).
+- Saldo de dias é derivado (ADR 0012): nunca gravar saldo em coluna; créditos e vendas entram em `availability_ledger_entries`, o débito vem de `communications.deducted_days` das aprovadas. Pessoa ↔ projeto é N:N (`user_projects`); `users.project_id` e `communications.project_id` estão obsoletos, não os leia em código novo.
 - Testes ao lado do código em `__tests__/` (shared, web) ou `src/__tests__/` (api, no runtime Workers com D1 local).
 - Cores, fontes e raios só pelos tokens do tema (`bg-brand`, `text-ink-muted`, `rounded-card`, `font-mono`...). Sem sombras, exceto `shadow-float` em dropdown e toast.
 - Commits e títulos de PR no formato Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, `chore:`...). O título do PR é o que fica na `main` (§9).
