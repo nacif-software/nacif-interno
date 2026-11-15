@@ -94,9 +94,9 @@ Pessoas: botão `Convidar por e-mail` (primário escuro pequeno). Tabela grid `1
 Configurações (card padding 26, seções com border-top): `Antecedência mínima` input 88px mono valor `7` + `dias antes do início` · `Limite de pessoas simultaneamente indisponíveis` input `2` + `por projeto` · `Aprovadores padrão` chips lilás `Caio Bertelli`, `Marina Duarte` + chip tracejado `+ adicionar`, hint `Usados quando o membro do time não escolhe um aprovador.` · botão `Salvar configurações` à direita.
 **Acréscimo necessário (não desenhado):** CRUD de projetos e associação pessoa↔projeto, com os mesmos componentes de tabela.
 
-### 08 Saldo de dias (acrescentado em 2026-11-09, épica #29)
+### 08 Saldo de dias
 
-Substitui a planilha de controle de dias. Mesmos tokens e componentes; nada novo de estilo. Termo: **saldo de dias**.
+Acrescentado em 2026-11-09 (épica #29, ADR 0012) e consolidado em 2026-11-15 com as telas entregues. Substitui a planilha de controle de dias. Mesmos tokens e componentes; nada novo de estilo. Termo: **saldo de dias**. Os blocos abaixo descrevem o que cada tela existente ganhou; a tela nova é o extrato.
 
 **02 Painel**: o primeiro card de métrica passa a ser `Saldo de dias` → valor grande (ex.: `5`), texto de apoio `12 dias comunicados em 2026.` O card inteiro é link para o extrato (hover: borda roxa). Saldo negativo: valor em #DC2626 e apoio `Saldo negativo: fale com um administrador.`
 
@@ -140,12 +140,13 @@ Header: `Fila de aprovação` + badge contador `6` (#DDD2FB/#5316E8). Chips `Em 
 
 ## A.4 Modelo de dados inferido
 
-- **Pessoa**: id, nome, iniciais (derivado), email (@nacif.xyz), papel enum `MEMBRO | APROVADOR | ADMINISTRADOR`, ativo bool, projeto (FK), senha hash (auth local), convite pendente.
+- **Pessoa**: id, nome, iniciais (derivado), email (@nacif.xyz), papel enum `MEMBRO | APROVADOR | ADMINISTRADOR`, ativo bool, projetos (N:N, seção 08), dataBaseDoCredito (opcional), senha hash (auth local), convite pendente.
 - **Projeto**: nome (`Órion`, `Atlas`, `Vega`), aprovadorPadrao (FK Pessoa).
-- **Comunicação**: codigo `#2026-0184` (ano + sequencial 4 dígitos), autor, projeto, dataInicio, dataFim, diasUteis (calculado, exclui sáb/dom), cobertura (FK Pessoa, obrigatório), aprovador (FK Pessoa), observacoes (opcional), status enum `EM_ANALISE | APROVADA | RECUSADA | CANCELADA`, enviadaEm, canceladaEm, conflitos (derivado).
+- **Comunicação**: codigo `#2026-0184` (ano + sequencial 4 dígitos), autor, dataInicio, dataFim, diasUteis (calculado, exclui sáb/dom), diasDescontados (= diasUteis, ajustável na aprovação), cobertura (FK Pessoa, obrigatória no formulário; vazia só no histórico importado), aprovador (FK Pessoa), observacoes (opcional), status enum `EM_ANALISE | APROVADA | RECUSADA | CANCELADA`, enviadaEm, canceladaEm, conflitos (derivado; vale para todos os projetos do autor).
+- **Lançamento de saldo**: pessoa, tipo `CREDITO_ANUAL | CREDITO | VENDA`, dias, data de referência, nota (obrigatória fora do crédito anual), quem lançou. Saldo de dias = créditos − vendas − dias descontados das aprovadas (derivado).
 - **Decisão**: comunicacaoId, tipo `APROVADA | RECUSADA`, decidor, decididaEm, justificativa (obrigatória ≥20 chars na recusa), loteId (aprovação em lote desfazível).
 - **EventoDeFluxo**: comunicacaoId, tipo `ENVIADA | EM_ANALISE | DECISAO | CANCELADA | EDITADA`, ator, timestamp, descricao.
-- **Configuração global**: antecedenciaMinimaDias=7, limiteSimultaneosPorProjeto=2, aprovadoresPadrao (lista Pessoa).
+- **Configuração global**: antecedenciaMinimaDias=7, limiteSimultaneosPorProjeto=2, diasPorAno=10, aprovadoresPadrao (lista Pessoa).
 
 ## A.5 Regras de negócio
 
@@ -154,15 +155,15 @@ Header: `Fila de aprovação` + badge contador `6` (#DDD2FB/#5316E8). Chips `Em 
 3. Período contínuo; dias passados desabilitados; pode cruzar meses.
 4. Contagem em dias úteis (exclui sáb/dom; sem feriados no MVP).
 5. `Dias comunicados no ano` é informativo; o saldo real é o `Saldo de dias` (seção 08).
-6. Conflito: sobreposição com comunicação **aprovada** de outra pessoa no **mesmo projeto** → aviso amarelo não bloqueante + nota no fluxo visível ao aprovador. Limite de simultâneos (2) alimenta esse aviso; não bloqueia.
-7. Cobertura obrigatória; aprovador pré-preenchido com o padrão do projeto (fallback: aprovadores padrão globais), editável.
+6. Conflito: sobreposição com comunicação **aprovada** de outra pessoa em **qualquer projeto em comum** → aviso amarelo não bloqueante + nota no fluxo visível ao aprovador. Limite de simultâneos (2) por projeto alimenta esse aviso; não bloqueia.
+7. Cobertura obrigatória; aprovador pré-preenchido com o padrão de um projeto da pessoa (fallback: aprovadores padrão globais), editável.
 8. Enviar → `EM_ANALISE` imediatamente + evento `Enviada` e `Em análise` com o mesmo timestamp; toast `Comunicação enviada a <aprovador>.`
-9. Aprovar: sem justificativa; em lote com `Desfazer` (janela curta, ex. 10 s, no cliente + endpoint de reversão).
+9. Aprovar: sem justificativa; em lote com `Desfazer` (janela curta, ex. 10 s, no cliente + endpoint de reversão). Individualmente, o aprovador pode ajustar os dias descontados com motivo (seção 08).
 10. Recusar: individual, justificativa ≥ 20 chars; toast `Comunicação recusada. O autor foi notificado.`
 11. Cancelar pelo autor enquanto em análise (modal de confirmação); registro `Cancelada pelo autor em <data>.`
 12. Editar período enquanto em análise; mantém o código, registra evento `Editada`, reencaminha ao aprovador.
 13. Calendário do time: aprovadas + em análise, todas as pessoas ativas, filtro por projeto.
-14. Papéis: Membro cria/acompanha; Aprovador decide (e também é membro); Administrador gerencia pessoas, papéis, ativação, convites, projetos e configurações. Fila: aprovador vê as endereçadas a ele; admin vê todas.
+14. Papéis: Membro cria/acompanha; Aprovador decide (e também é membro); Administrador gerencia pessoas, papéis, ativação, convites, projetos, configurações e saldos de dias (créditos, vendas, data base). Fila: aprovador vê as endereçadas a ele; admin vê todas.
 15. Nav por papel: membro `Início | Minhas comunicações | Time`; aprovador `Início | Aprovações | Calendário do time`; admin idem + `Administração`.
 16. Pessoa inativa não faz login, não aparece como opção de cobertura, mas comunicações passadas permanecem.
 

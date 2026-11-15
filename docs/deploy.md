@@ -4,16 +4,16 @@ Como o Nacif Interno é publicado e operado na Cloudflare (ADR 0011). Este docum
 
 ## Visão geral
 
-| Peça       | Valor                                                                                                  |
-| ---------- | ------------------------------------------------------------------------------------------------------ |
-| Worker     | `nacif-interno`: API Hono em `/api/*` e o SPA do web pelos Static Assets (`apps/web/dist`)             |
-| Banco      | D1 `nacif-interno-prod` (migrações em `apps/api/drizzle/`)                                             |
-| Domínio    | `interno.nacif.software`, Custom Domain do Worker (`routes` no `wrangler.jsonc`, `workers_dev: false`) |
-| Publicação | Workers Builds a partir da `main`; nenhuma publicação manual                                           |
-| Cron       | `0 3 * * *` (UTC) limpa sessões e tokens expirados; só em produção                                     |
-| Logs       | Workers Logs (`observability.enabled`) e `wrangler tail`                                               |
-| Plano      | Workers Paid (necessário para o Email Service da #10 e para a retenção de 30 dias do D1)               |
-| Ambientes  | Só produção. Não há staging. Previews por branch ficam para depois do Access (#7), ver "Previews"      |
+| Peça       | Valor                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Worker     | `nacif-interno`: API Hono em `/api/*` e o SPA do web pelos Static Assets (`apps/web/dist`)                              |
+| Banco      | D1 `nacif-interno-prod` (migrações em `apps/api/drizzle/`)                                                              |
+| Domínio    | `interno.nacif.software`, Custom Domain do Worker (`routes` no `wrangler.jsonc`, `workers_dev: false`)                  |
+| Publicação | Workers Builds a partir da `main`; nenhuma publicação manual                                                            |
+| Cron       | `0 3 * * *` (UTC = 00:00 em São Paulo) limpa sessões e tokens expirados e lança o crédito anual de dias; só em produção |
+| Logs       | Workers Logs (`observability.enabled`) e `wrangler tail`                                                                |
+| Plano      | Workers Paid (necessário para o Email Service da #10 e para a retenção de 30 dias do D1)                                |
+| Ambientes  | Só produção. Não há staging. Previews por branch ficam para depois do Access (#7), ver "Previews"                       |
 
 A configuração do Worker vive em `apps/api/wrangler.jsonc` e é a fonte de verdade: o deploy sobrescreve o que estiver no painel (vars, cron, domínio). Mudou algo lá, rode `make types` e `make deploy-check`.
 
@@ -94,6 +94,16 @@ O histórico do controle de dias vem da planilha, em três passos:
 
 O que o script faz com os dados: aquisições "Automática" viram créditos `ACCRUAL` com o ano (o cron não duplica); "Manual" viram `GRANT` com a nota original; vendas viram `SALE`; solicitações viram comunicações com código sequencial por ano na ordem de envio, `deducted_days` igual à coluna "Dias", sem cobertura nem projeto, com decisão e eventos de fluxo; pessoas que saíram entram inativas. Pessoas já existentes (pelo e-mail) só têm nome, atividade, papel e data base atualizados.
 
+### Corte da planilha (checklist)
+
+Feito uma vez, depois da importação em produção (executada em 2026-11-15, 12/12 saldos conferidos; ADR 0012):
+
+1. [ ] Planilha em **somente leitura** (Google Sheets → Compartilhar → Leitor para todos) com um aviso na primeira aba: "Controle encerrado em <data>. Use interno.nacif.software." Não apagar: é a referência do histórico importado.
+2. [ ] Créditos anuais pendentes lançados: esperar o cron das 00:00 ou, logado como administrador, `POST /api/disponibilidade/balance/accrual/run`.
+3. [ ] Para cada pessoa ativa, gerar o link em Administração → Pessoas → `Convite pendente · gerar novo link` e enviar por um canal pessoal (o link vale 7 dias e é de uso único; sem e-mail automático até a issue #10).
+4. [ ] Preencher a data base do crédito de quem entrou sem ela (Administração → Pessoas → `Data base`); o crédito anual passa a valer a partir do primeiro aniversário.
+5. [ ] Avisar o time: comunicações de indisponibilidade e consulta do saldo passam a ser só no sistema; vendas e créditos manuais são pedidos a um administrador.
+
 ## Rollback
 
 ### Código
@@ -117,11 +127,11 @@ wrangler d1 time-travel restore nacif-interno-prod --timestamp=2026-11-05T13:00:
 wrangler d1 time-travel restore nacif-interno-prod --bookmark=<bookmark>
 ```
 
-O restore é **destrutivo**: sobrescreve o banco no lugar e cancela queries em andamento. A saída do `restore` imprime o bookmark de antes da operação; restaurar para ele desfaz o restore. Combine com o código: se o restore volta o schema para antes de uma migração, faça antes o rollback do código para uma versão compatível, ou o app vai quebrar. Só as migrações do deploy e o `create-admin` escrevem no banco remoto; `make seed` recusa `--remote`.
+O restore é **destrutivo**: sobrescreve o banco no lugar e cancela queries em andamento. A saída do `restore` imprime o bookmark de antes da operação; restaurar para ele desfaz o restore. Combine com o código: se o restore volta o schema para antes de uma migração, faça antes o rollback do código para uma versão compatível, ou o app vai quebrar. Só as migrações do deploy, o `create-admin` e o `import-sheet` escrevem no banco remoto; `make seed` recusa `--remote`.
 
 ## Cron, logs e custos
 
-- **Cron**: `0 3 * * *` chama `scheduled()` em `apps/api/src/worker.ts` (`maintenanceService.purgeExpired`). Para testar local: `wrangler dev --test-scheduled` e `curl "localhost:8787/__scheduled?cron=0+3+*+*+*"`.
+- **Cron**: `0 3 * * *` chama `scheduled()` em `apps/api/src/worker.ts` (`maintenanceService.purgeExpired` e depois `accrualService.runCatchUp`, que lança os créditos anuais pendentes; rodar duas vezes não duplica). Para testar local: `wrangler dev --test-scheduled` e `curl "localhost:8787/__scheduled?cron=0+3+*+*+*"`.
 - **Logs**: JSON por requisição (`infra/http/request-logger.ts`) e erros com stack. `wrangler tail` ao vivo; Workers Logs no painel com filtros, 7 dias de retenção, 20 milhões de eventos por mês inclusos.
 - **Custos** (preços de 2026-10): Workers Paid US$ 5/mês inclui 10 milhões de requisições e 30 milhões de CPU-ms; D1 inclui 25 bilhões de linhas lidas, 50 milhões escritas e 5 GB; Builds inclui 6.000 minutos. Para o volume do time, tudo cabe no valor fixo. Uso em Workers & Pages → Usage e em Billing.
 
