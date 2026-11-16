@@ -61,7 +61,7 @@ Topbar só com logo + breadcrumb `Minhas comunicações / Nova`. Coluna 720 gap 
 H2 `Nova comunicação de indisponibilidade` (38/700) · `Antecedência mínima configurada: 7 dias.`
 Card `Período de indisponibilidade` (600 15) com `Outubro 2026` à direita; grade 7 col gap 4; cabeçalho `D S T Q Q S S` (mono 11); células 38px com estados: empty, past (#C9C9CE), normal (#4A4A55), sel (#DDD2FB/#5316E8 600), edge (#5316E8/#FFF 600 radius 4), conflict (#FEF3E2/#D97706). Rodapé com 3 blocos separados por divisor: `INÍCIO` → `05 out 2026` · `FIM` → `09 out 2026` · `DIAS ÚTEIS NO PERÍODO` → `5 dias úteis` (600 17 #5316E8). **Implementar com controles ‹ › de mês e suporte a período cruzando meses** (o design omite, mas os dados exigem).
 Alerta de conflito (borda #D97706, fundo #FEF3E2): `Conflito no projeto Órion` · `Pedro Nakano já tem indisponibilidade aprovada de 06 a 08 out no mesmo projeto. Você pode seguir, mas o aprovador verá esse conflito.` Não bloqueante.
-Card de campos (gap 22): `Quem cobre suas entregas` select, opção formato `Júlia Reis — projeto Órion` · `Aprovador` select pré-preenchido `Caio Bertelli`, hint `Aprovador padrão do seu projeto.` · `Observações` + `(opcional)` textarea 96px.
+Card de campos (gap 22): `Quem cobre suas entregas` + `(opcional)` select com hint `Quem assume suas entregas no período, se houver.`, primeira opção `Sem cobertura`, demais no formato `Júlia Reis — projeto Órion` · `Aprovador` select pré-preenchido `Caio Bertelli`, hint `Aprovador padrão do seu projeto.` · `Observações` + `(opcional)` textarea 96px.
 Footer fixo: `Resumo: 05 – 09 out 2026 · 5 dias úteis · cobertura Júlia Reis` (trecho de datas em 600 #080D24) · botões `Cancelar` (secundário) e `Enviar comunicação` (primário escuro).
 
 ### 04 Detalhe
@@ -166,7 +166,7 @@ Header: `Fila de aprovação` + badge contador `6` (#DDD2FB/#5316E8). Chips `Em 
 4. Contagem em dias úteis (exclui sáb/dom; sem feriados no MVP).
 5. `Dias comunicados no ano` é informativo; o saldo real é o `Saldo de dias` (seção 08).
 6. Conflito: sobreposição com comunicação **aprovada** de outra pessoa em **qualquer projeto em comum** → aviso amarelo não bloqueante + nota no fluxo visível ao aprovador. Limite de simultâneos (2) por projeto alimenta esse aviso; não bloqueia.
-7. Cobertura obrigatória; aprovador pré-preenchido com o padrão de um projeto da pessoa (fallback: aprovadores padrão globais), editável.
+7. Cobertura opcional (opção `Sem cobertura`; quando informada, outra pessoa ativa, mesmo com convite pendente); aprovador pré-preenchido com o padrão de um projeto da pessoa (fallback: aprovadores padrão globais), editável.
 8. Enviar → `EM_ANALISE` imediatamente + evento `Enviada` e `Em análise` com o mesmo timestamp; toast `Comunicação enviada a <aprovador>.`
 9. Aprovar: sem justificativa; em lote com `Desfazer` (janela curta, ex. 10 s, no cliente + endpoint de reversão). Individualmente, o aprovador pode ajustar os dias descontados com motivo (seção 08).
 10. Recusar: individual, justificativa ≥ 20 chars; toast `Comunicação recusada. O autor foi notificado.`

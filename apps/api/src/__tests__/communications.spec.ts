@@ -75,6 +75,24 @@ describe('communications', () => {
     expect(weekend.status).toBe(422);
   });
 
+  it('aceita comunicação sem cobertura (campo vazio, nulo ou ausente)', async () => {
+    const { caio } = await seedTeam();
+    const agent = buildTestApp();
+    await loginAs(agent, 'pedro@nacif.xyz');
+    const empty = await agent
+      .post('/api/disponibilidade/communications')
+      .send({ coverId: '', approverId: caio.id, startDate: monday, endDate: friday });
+    expect(empty.status).toBe(201);
+    expect(empty.body.cover).toBeNull();
+    const absent = await agent.post('/api/disponibilidade/communications').send({
+      approverId: caio.id,
+      startDate: addDays(monday, 14),
+      endDate: addDays(friday, 14),
+    });
+    expect(absent.status).toBe(201);
+    expect(absent.body.cover).toBeNull();
+  });
+
   it('sinaliza conflito com aprovada de outra pessoa no mesmo projeto e registra no fluxo', async () => {
     const { caio, marina, julia, pedro } = await seedTeam();
     await createCommunication({

@@ -23,7 +23,12 @@ export const createCommunicationBodySchema = z
   .object({
     startDate: isoDateSchema,
     endDate: isoDateSchema,
-    coverId: z.string().min(1, { error: MESSAGES.coverRequired }),
+    // Opcional desde 2026-11-16: '' do formulário vira null; nula também no histórico importado.
+    coverId: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((v) => (v ? v : null)),
     approverId: z.string().min(1, { error: MESSAGES.approverRequired }),
     notes: z.string().trim().max(NOTES_MAX_CHARS).optional(),
   })
@@ -32,7 +37,9 @@ export const createCommunicationBodySchema = z
     error: MESSAGES.noBusinessDays,
     path: ['endDate'],
   });
-export type CreateCommunicationBody = z.infer<typeof createCommunicationBodySchema>;
+export type CreateCommunicationBody = z.output<typeof createCommunicationBodySchema>;
+/** Valores do formulário antes do schema (cobertura ainda como '' quando vazia). */
+export type CreateCommunicationInput = z.input<typeof createCommunicationBodySchema>;
 
 export const updatePeriodBodySchema = dateRangeSchema;
 export type UpdatePeriodBody = z.infer<typeof updatePeriodBodySchema>;

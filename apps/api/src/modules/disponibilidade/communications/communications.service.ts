@@ -69,7 +69,12 @@ async function loadOrThrow(idOrCode: string): Promise<CommunicationRow> {
   return row;
 }
 
-async function assertPeople(actor: AuthenticatedUser, coverId: string, approverId: string) {
+/** Cobertura é opcional (histórico importado e decisão de 2026-11-16); quando vem, precisa ser outra pessoa ativa. */
+async function assertPeople(
+  actor: AuthenticatedUser,
+  coverId: string | null | undefined,
+  approverId: string,
+) {
   if (coverId === actor.id)
     throw new ValidationError(MESSAGES.coverIsSelf, [
       { path: 'body.coverId', message: MESSAGES.coverIsSelf },
@@ -79,10 +84,10 @@ async function assertPeople(actor: AuthenticatedUser, coverId: string, approverI
       { path: 'body.approverId', message: MESSAGES.approverIsSelf },
     ]);
   const [cover, approver] = await Promise.all([
-    usersRepository.findById(coverId),
+    coverId ? usersRepository.findById(coverId) : Promise.resolve(null),
     usersRepository.findById(approverId),
   ]);
-  if (!cover || !cover.active)
+  if (coverId && (!cover || !cover.active))
     throw new ValidationError('Cobertura inválida.', [
       { path: 'body.coverId', message: 'Cobertura inválida.' },
     ]);
@@ -181,7 +186,7 @@ export const communicationsService = {
             startDate: body.startDate,
             endDate: body.endDate,
             businessDays,
-            coverId: body.coverId,
+            coverId: body.coverId ?? null,
             approverId: body.approverId,
             notes: body.notes && body.notes.length > 0 ? body.notes : null,
             status: 'IN_REVIEW',

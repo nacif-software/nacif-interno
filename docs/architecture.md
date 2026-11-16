@@ -60,7 +60,7 @@ HTTP → secureHeaders/cors/bodyLimit → /api/<módulo> router (Hono)
 | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Dias úteis, antecedência mínima, sobreposição, código `AAAA-NNNN`, transições, quem decide                    | `packages/shared/src/rules`, `date`                                |
 | Conflito (aprovadas de outra pessoa em qualquer projeto em comum) e `limitReached`                            | `apps/api/.../communications/conflict.service.ts`                  |
-| Elegibilidade de cobertura/aprovador; aprovador padrão a partir dos projetos da pessoa                        | `communications.service.ts`, `rules/default-approver.ts`           |
+| Elegibilidade de cobertura (opcional) e aprovador; aprovador padrão a partir dos projetos da pessoa           | `communications.service.ts`, `rules/default-approver.ts`           |
 | Eventos de fluxo (SUBMITTED, IN_REVIEW, DECISION, CANCELLED, EDITED, DECISION_REVERTED)                       | services de communications e approvals                             |
 | Aprovação em lote com undo (30 s no servidor, toast de 10 s); ajuste de dias descontados                      | `approvals.service.ts`                                             |
 | Saldo de dias (sinal dos lançamentos, saldo acumulado do extrato) e aniversários da data base (29/02 → 28/02) | `packages/shared/src/rules/balance.ts`, `date/anniversary.ts`      |

@@ -24,12 +24,11 @@ export const usersService = {
 
   /** Opções para os selects do formulário: cobertura (qualquer pessoa ativa) ou aprovador (APPROVER/ADMIN). */
   async options(actor: AuthenticatedUser, purpose: 'cover' | 'approver'): Promise<UserOption[]> {
-    const conditions: SQL[] = [
-      eq(users.active, true),
-      ne(users.id, actor.id),
-      isNotNull(users.passwordHash),
-    ];
-    if (purpose === 'approver') conditions.push(inArray(users.role, ['APPROVER', 'ADMIN']));
+    const conditions: SQL[] = [eq(users.active, true), ne(users.id, actor.id)];
+    // Cobertura é informativa: vale quem ainda não definiu a senha. Aprovador precisa entrar para decidir.
+    if (purpose === 'approver') {
+      conditions.push(isNotNull(users.passwordHash), inArray(users.role, ['APPROVER', 'ADMIN']));
+    }
     const rows = await usersRepository.list(and(...conditions));
     return rows.map(toUserOption).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   },
