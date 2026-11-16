@@ -15,7 +15,7 @@ function createAdminToken(): string {
       encoding: 'utf8',
     },
   );
-  const token = /\/definir-senha\/([0-9a-f]+)/.exec(output)?.[1];
+  const token = /\/set-password\/([0-9a-f]+)/.exec(output)?.[1];
   if (!token) throw new Error(`Link não encontrado na saída do create-admin:\n${output}`);
   return token;
 }
@@ -23,7 +23,7 @@ function createAdminToken(): string {
 test('create-admin: o link define a senha e dá acesso à Administração', async ({ page }) => {
   const token = createAdminToken();
 
-  await page.goto(`/definir-senha/${token}`);
+  await page.goto(`/set-password/${token}`);
   await expect(
     page.getByRole('heading', { name: /Defina sua senha|Redefina sua senha/ }),
   ).toBeVisible();
@@ -34,12 +34,12 @@ test('create-admin: o link define a senha e dá acesso à Administração', asyn
   await page.getByRole('button', { name: 'Salvar e entrar' }).click();
 
   await expect(page).toHaveURL(/\/$/);
-  await page.goto('/disponibilidade/administracao');
+  await page.goto('/disponibilidade/admin');
   await expect(page.getByRole('link', { name: 'Administração' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Pessoas' })).toBeVisible();
 
   // O mesmo link não vale duas vezes.
   await logout(page);
-  await page.goto(`/definir-senha/${token}`);
+  await page.goto(`/set-password/${token}`);
   await expect(page.getByRole('alert')).toContainText('Link inválido ou expirado');
 });

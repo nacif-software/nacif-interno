@@ -8,7 +8,7 @@ export const SETUP_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Caminho da tela "Definir senha" no web. */
 export function setupPath(token: string): string {
-  return `/definir-senha/${token}`;
+  return `/set-password/${token}`;
 }
 
 /** Nome provisório a partir do e-mail: "marina.duarte@" → "Marina Duarte". */

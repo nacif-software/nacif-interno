@@ -83,7 +83,7 @@ make create-admin email=nome@nacif.xyz          # D1 remoto (produção)
 make create-admin email=nome@nacif.xyz db=local # D1 local, para testar o fluxo
 ```
 
-O script (`apps/api/scripts/create-admin.ts`) cria a pessoa com papel ADMIN (ou promove a existente, mantendo o nome), invalida links anteriores e imprime um link `APP_URL/definir-senha/<token>` válido por 7 dias. O link abre a tela "Definir senha": pede nome e senha para quem é novo, só senha para quem já tinha. Se a pessoa já tinha senha, a atual continua valendo até o link ser usado. Rodar de novo com o mesmo e-mail gera um link novo; serve também para recuperar o acesso de um administrador. Só e-mails `@nacif.xyz` são aceitos. O token nunca é gravado: o banco guarda o hash SHA-256.
+O script (`apps/api/scripts/create-admin.ts`) cria a pessoa com papel ADMIN (ou promove a existente, mantendo o nome), invalida links anteriores e imprime um link `APP_URL/set-password/<token>` válido por 7 dias. O link abre a tela "Definir senha": pede nome e senha para quem é novo, só senha para quem já tinha. Se a pessoa já tinha senha, a atual continua valendo até o link ser usado. Rodar de novo com o mesmo e-mail gera um link novo; serve também para recuperar o acesso de um administrador. Só e-mails `@nacif.xyz` são aceitos. O token nunca é gravado: o banco guarda o hash SHA-256.
 
 A partir daí, convites e redefinições são feitos pela Administração no próprio app.
 

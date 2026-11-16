@@ -66,14 +66,14 @@ describe('BalancePage', () => {
     mockApi((url) =>
       url.pathname === '/api/disponibilidade/balance' ? { body: balance } : undefined,
     );
-    renderWithProviders(<BalancePage />, { sessionUser: pedro, route: '/disponibilidade/saldo' });
+    renderWithProviders(<BalancePage />, { sessionUser: pedro, route: '/disponibilidade/balance' });
 
     expect(await screen.findByRole('heading', { name: 'Meu saldo' })).toBeInTheDocument();
     expect(screen.getByText('Data base do crédito: 22 ago 2025.')).toBeInTheDocument();
     expect(screen.getByText('Saldo negativo: fale com um administrador.')).toBeInTheDocument();
     expect(screen.getByText('Indisponibilidade 02 – 06 fev')).toHaveAttribute(
       'href',
-      '/disponibilidade/comunicacoes/2026-0190',
+      '/disponibilidade/communications/2026-0190',
     );
     expect(screen.getByText('Venda de dias')).toBeInTheDocument();
     expect(screen.getByText('Venda acordada em outubro')).toBeInTheDocument();
@@ -97,7 +97,7 @@ describe('BalancePage', () => {
           }
         : undefined,
     );
-    renderWithProviders(<BalancePage />, { sessionUser: pedro, route: '/disponibilidade/saldo' });
+    renderWithProviders(<BalancePage />, { sessionUser: pedro, route: '/disponibilidade/balance' });
     expect(await screen.findByText('Nenhum lançamento ainda')).toBeInTheDocument();
     expect(
       screen.getByText('Sem data base do crédito: nenhum crédito anual automático.'),

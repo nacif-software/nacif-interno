@@ -15,7 +15,7 @@ test('membro vê o saldo no painel e no extrato; aprovador ajusta os dias descon
   await page.goto('/disponibilidade');
   const initial = await readBalance(page);
   await page.getByRole('link', { name: /Saldo de dias/ }).click();
-  await expect(page).toHaveURL(/\/disponibilidade\/saldo$/);
+  await expect(page).toHaveURL(/\/disponibilidade\/balance$/);
   await expect(page.getByRole('heading', { name: 'Meu saldo' })).toBeVisible();
   await expect(page.getByText('Venda de dias')).toBeVisible();
   await expect(page.getByText('Venda acordada em outubro')).toBeVisible();
@@ -24,7 +24,7 @@ test('membro vê o saldo no painel e no extrato; aprovador ajusta os dias descon
   const start = nextMonday(10);
   const end = addDays(start, 1);
   const after = initial - 2;
-  await page.goto('/disponibilidade/comunicacoes/nova');
+  await page.goto('/disponibilidade/communications/new');
   await expect(
     page.getByRole('heading', { name: 'Nova comunicação de indisponibilidade' }),
   ).toBeVisible();
@@ -43,7 +43,7 @@ test('membro vê o saldo no painel e no extrato; aprovador ajusta os dias descon
 
   // Marina aprova ajustando para 0 dias (troca de feriado)
   await login(page, users.approver);
-  await page.goto('/disponibilidade/aprovacoes');
+  await page.goto('/disponibilidade/approvals');
   const row = page
     .locator('li')
     .filter({ has: page.getByRole('link', { name: /^Pedro Nakano/ }) })

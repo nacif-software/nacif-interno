@@ -65,7 +65,7 @@ describe('PeopleTable', () => {
   it('gera o link de redefinição e entrega ao modal', async () => {
     const fetchMock = mockApi((url) => {
       if (url.pathname === '/api/users/u-pedro/password-reset')
-        return { body: { setupLink: 'http://localhost:5173/definir-senha/abc' } };
+        return { body: { setupLink: 'http://localhost:5173/set-password/abc' } };
       return undefined;
     });
     const onSetupLink = vi.fn();
@@ -77,7 +77,7 @@ describe('PeopleTable', () => {
       .click(screen.getByRole('button', { name: 'Redefinir senha de Pedro Nakano' }));
     await waitFor(() =>
       expect(onSetupLink).toHaveBeenCalledWith({
-        link: 'http://localhost:5173/definir-senha/abc',
+        link: 'http://localhost:5173/set-password/abc',
         email: 'pedro@nacif.xyz',
         mode: 'reset',
       }),

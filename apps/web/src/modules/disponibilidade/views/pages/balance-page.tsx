@@ -35,7 +35,7 @@ function signed(days: number): string {
   return days > 0 ? `+${days}` : String(days);
 }
 
-/** Extrato do saldo de dias: da própria pessoa (`/saldo`) ou, para o administrador, de outra (`/saldo/:userId`). */
+/** Extrato do saldo de dias: da própria pessoa (`/balance`) ou, para o administrador, de outra (`/balance/:userId`). */
 export function BalancePage() {
   const { userId } = useParams();
   const me = useCurrentUser();

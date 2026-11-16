@@ -3,7 +3,7 @@ import { login, users } from '../fixtures/auth';
 
 test('aprova em lote e desfaz pelo toast', async ({ page }) => {
   await login(page, users.admin);
-  await page.goto('/disponibilidade/aprovacoes');
+  await page.goto('/disponibilidade/approvals');
   const rows = page.locator('li').filter({ has: page.getByRole('button', { name: 'Aprovar' }) });
   await expect(rows.first()).toBeVisible();
   const before = await rows.count();

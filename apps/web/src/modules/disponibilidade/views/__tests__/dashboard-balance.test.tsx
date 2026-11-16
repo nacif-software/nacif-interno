@@ -48,7 +48,7 @@ describe('card Saldo de dias no painel', () => {
     mock(5);
     renderWithProviders(<DashboardPage />, { sessionUser: pedro, route: '/disponibilidade' });
     const card = await screen.findByRole('link', { name: /Saldo de dias/ });
-    expect(card).toHaveAttribute('href', '/disponibilidade/saldo');
+    expect(card).toHaveAttribute('href', '/disponibilidade/balance');
     expect(screen.getByTestId('balance-value')).toHaveTextContent('5');
     expect(card).toHaveTextContent('8 dias comunicados em 2026.');
   });

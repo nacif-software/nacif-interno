@@ -6,7 +6,7 @@ test('membro cria, aprovador aprova, membro vê aprovada', async ({ page }) => {
   const end = addDays(start, 2);
 
   await login(page, users.member);
-  await page.goto('/disponibilidade/comunicacoes/nova');
+  await page.goto('/disponibilidade/communications/new');
   await expect(
     page.getByRole('heading', { name: 'Nova comunicação de indisponibilidade' }),
   ).toBeVisible();
@@ -29,7 +29,7 @@ test('membro cria, aprovador aprova, membro vê aprovada', async ({ page }) => {
   await logout(page);
 
   await login(page, users.admin);
-  await page.goto('/disponibilidade/aprovacoes');
+  await page.goto('/disponibilidade/approvals');
   const row = page
     .locator('li')
     .filter({ has: page.getByRole('link', { name: /^Pedro Nakano/ }) })
@@ -43,6 +43,6 @@ test('membro cria, aprovador aprova, membro vê aprovada', async ({ page }) => {
   await logout(page);
 
   await login(page, users.member);
-  await page.goto('/disponibilidade/comunicacoes?status=APPROVED');
+  await page.goto('/disponibilidade/communications?status=APPROVED');
   await expect(page.getByText('Aprovada').first()).toBeVisible();
 });
