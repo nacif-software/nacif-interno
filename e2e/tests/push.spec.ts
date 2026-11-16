@@ -35,7 +35,7 @@ test('modal de avisos aparece uma vez por navegador e a tela Notificações most
 
   await page.getByRole('button', { name: /Menu de/ }).click();
   await page.getByRole('menuitem', { name: 'Notificações' }).click();
-  await expect(page).toHaveURL(/\/notificacoes$/);
+  await expect(page).toHaveURL(/\/notifications$/);
   await expect(page.getByRole('heading', { name: 'Notificações' })).toBeVisible();
   await expect(page.getByTestId('push-status')).toContainText('Desligado');
   await expect(page.getByRole('switch', { name: 'Avisos neste dispositivo' })).not.toBeChecked();

@@ -45,7 +45,7 @@ describe('users e projects', () => {
     const res = await admin.post('/api/users/invites').send({ email: 'ana.lima@nacif.xyz' });
     expect(res.status).toBe(201);
     expect(res.body.user.name).toBe('Ana Lima');
-    expect(res.body.setupLink).toContain('/definir-senha/');
+    expect(res.body.setupLink).toContain('/set-password/');
     expect((await admin.post('/api/users/invites').send({ email: 'ana@gmail.com' })).status).toBe(
       422,
     );
@@ -66,7 +66,7 @@ describe('users e projects', () => {
 
     const res = await admin.post(`/api/users/${pedro.id}/password-reset`);
     expect(res.status).toBe(200);
-    expect(res.body.setupLink).toContain('/definir-senha/');
+    expect(res.body.setupLink).toContain('/set-password/');
   });
 
   it('redefinição: senha antiga vale até usar o link; depois cai e as sessões encerram', async () => {

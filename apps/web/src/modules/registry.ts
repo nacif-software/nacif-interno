@@ -8,7 +8,7 @@ export interface NavItem {
   to: string;
   /** Rótulo curto para a tab bar mobile. */
   shortLabel?: string;
-  /** Casa rotas filhas (ex.: /disponibilidade/comunicacoes/*). */
+  /** Casa rotas filhas (ex.: /disponibilidade/communications/*). */
   end?: boolean;
 }
 

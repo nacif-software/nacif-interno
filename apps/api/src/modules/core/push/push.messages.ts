@@ -7,11 +7,11 @@ import {
   type PushNotification,
 } from '@nacif/shared';
 
-/** Caminhos do web abertos ao clicar no aviso (mantidos num só lugar; ver issue #46). */
+/** Caminhos do web abertos ao clicar no aviso (mantidos num só lugar; `paths` do manifest do web). */
 const WEB_PATHS = {
-  communication: (code: string) => `/disponibilidade/comunicacoes/${code}`,
-  approvals: '/disponibilidade/aprovacoes',
-  balance: '/disponibilidade/saldo',
+  communication: (code: string) => `/disponibilidade/communications/${code}`,
+  approvals: '/disponibilidade/approvals',
+  balance: '/disponibilidade/balance',
 };
 
 interface CommunicationRef {

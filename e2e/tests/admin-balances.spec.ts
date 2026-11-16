@@ -5,7 +5,7 @@ test('administrador lança crédito e venda, vê o extrato da pessoa e associa d
   page,
 }) => {
   await login(page, users.admin);
-  await page.goto('/disponibilidade/administracao');
+  await page.goto('/disponibilidade/admin');
   await expect(page.getByRole('heading', { name: 'Saldos de dias' })).toBeVisible();
 
   // Júlia (seed): crédito 10 → saldo inicial lido da tabela
@@ -39,7 +39,7 @@ test('administrador lança crédito e venda, vê o extrato da pessoa e associa d
   await expect(page.getByText('Venda acordada no fechamento do mês')).toBeVisible();
 
   // dois projetos para Júlia
-  await page.goto('/disponibilidade/administracao');
+  await page.goto('/disponibilidade/admin');
   const projects = page.getByRole('group', { name: 'Projetos de Júlia Reis' });
   await projects.getByRole('button', { name: 'Atlas' }).click();
   await expect(projects.getByRole('checkbox', { name: 'Atlas' })).toBeChecked();

@@ -27,7 +27,7 @@ describe('BalancesCard', () => {
     renderWithProviders(<BalancesCard items={items} />);
     expect(screen.getByRole('link', { name: 'Pedro Nakano' })).toHaveAttribute(
       'href',
-      '/disponibilidade/saldo/u-pedro',
+      '/disponibilidade/balance/u-pedro',
     );
     expect(screen.getByText('22 ago 2025')).toBeInTheDocument();
     expect(screen.getByText('06 out 2026')).toBeInTheDocument();

@@ -37,7 +37,7 @@ export function UserMenu() {
       </div>
       <div className="my-1 border-t border-line" />
       <MenuItem onClick={() => void navigate('/')}>Todos os serviços</MenuItem>
-      <MenuItem onClick={() => void navigate('/notificacoes')}>
+      <MenuItem onClick={() => void navigate('/notifications')}>
         {MESSAGES.notificationsTitle}
       </MenuItem>
       <MenuItem

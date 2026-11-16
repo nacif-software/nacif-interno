@@ -33,7 +33,7 @@ HTTP → secureHeaders/cors/bodyLimit → /api/<módulo> router (Hono)
 - E-mail/senha local (`bcryptjs`), atrás da interface `AuthProvider` (`apps/api/src/modules/core/auth/providers`). Login corporativo entra trocando o provider (issue #7).
 - Domínio restrito a `@nacif.xyz` antes de consultar o banco (`DOMAIN_NOT_ALLOWED` ecoa o e-mail para a copy da tela 01b).
 - Sessão opaca (token de 256 bits, Web Crypto) na tabela `sessions` do D1, cookie `nacif_session` httpOnly/sameSite=lax, 30 dias deslizantes. Desativar uma pessoa revoga todas as sessões. Um Cron Trigger diário (`0 3 * * *` UTC) apaga sessões e tokens expirados e, em seguida, lança o crédito anual de dias (ver abaixo).
-- Convite: admin cria a pessoa sem senha e recebe um link `/definir-senha/<token>` (token com hash sha256 na tabela `password_setup_tokens`, 7 dias, uso único). Sem e-mail no MVP (issue #10).
+- Convite: admin cria a pessoa sem senha e recebe um link `/set-password/<token>` (token com hash sha256 na tabela `password_setup_tokens`, 7 dias, uso único). Sem e-mail no MVP (issue #10).
 
 ## Sistema de módulos
 
@@ -73,7 +73,7 @@ O saldo nunca é gravado: é `Σ ledger (ACCRUAL + GRANT − SALE) − Σ deduct
 
 ## Notificações push (ADR 0013)
 
-Único canal hoje é o Web Push no navegador, enviado pelo próprio Worker (`modules/core/push`): `pushService.notify(userIds, aviso)` cifra com `@block65/webcrypto-web-push` e faz `fetch` ao serviço de push de cada assinatura da pessoa; 404/410 apagam a assinatura, o resto vira log. Os services chamam `background(pushService.notify(...))` logo depois do `batch` bem-sucedido, e `background()` entrega a promessa ao `executionCtx.waitUntil` (requisição ou cron), então o envio nunca atrasa nem derruba a resposta. Textos em `push.messages.ts` (copy no shared). No web: `public/sw.js` (só push), modal único por dispositivo em `RequireAuth`, tela `/notificacoes` e `manifest.webmanifest` para o iOS.
+Único canal hoje é o Web Push no navegador, enviado pelo próprio Worker (`modules/core/push`): `pushService.notify(userIds, aviso)` cifra com `@block65/webcrypto-web-push` e faz `fetch` ao serviço de push de cada assinatura da pessoa; 404/410 apagam a assinatura, o resto vira log. Os services chamam `background(pushService.notify(...))` logo depois do `batch` bem-sucedido, e `background()` entrega a promessa ao `executionCtx.waitUntil` (requisição ou cron), então o envio nunca atrasa nem derruba a resposta. Textos em `push.messages.ts` (copy no shared). No web: `public/sw.js` (só push), modal único por dispositivo em `RequireAuth`, tela `/notifications` e `manifest.webmanifest` para o iOS.
 
 ## Contrato de erro
 

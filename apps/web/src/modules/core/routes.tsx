@@ -8,7 +8,7 @@ import { SetPasswordPage } from './views/pages/set-password-page';
 
 export const coreRoutes: RouteObject[] = [
   { path: '/login', Component: LoginPage },
-  { path: '/definir-senha/:token', Component: SetPasswordPage },
+  { path: '/set-password/:token', Component: SetPasswordPage },
   {
     Component: RequireAuth,
     children: [
@@ -17,7 +17,7 @@ export const coreRoutes: RouteObject[] = [
         element: <AppShell />,
         children: [
           { index: true, Component: HomePage },
-          { path: 'notificacoes', Component: NotificationsPage },
+          { path: 'notifications', Component: NotificationsPage },
         ],
       },
     ],

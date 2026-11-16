@@ -5,7 +5,7 @@ test('calendário do time mostra outubro de 2026 com barras e filtro por projeto
   page,
 }) => {
   await login(page, users.approver);
-  await page.goto('/disponibilidade/calendario?month=2026-10');
+  await page.goto('/disponibilidade/calendar?month=2026-10');
   await expect(page.getByRole('heading', { name: 'Outubro 2026' })).toBeVisible();
   await expect(page.getByText('Pedro Nakano')).toBeVisible();
   await expect(page.getByRole('link', { name: /Em análise/ }).first()).toBeVisible();
@@ -15,7 +15,7 @@ test('calendário do time mostra outubro de 2026 com barras e filtro por projeto
 
 test('administrador vê pessoas, projetos e configurações', async ({ page }) => {
   await login(page, users.admin);
-  await page.goto('/disponibilidade/administracao');
+  await page.goto('/disponibilidade/admin');
   await expect(page.getByRole('heading', { name: 'Pessoas' })).toBeVisible();
   await expect(page.getByText('thiago@nacif.xyz')).toBeVisible();
   await expect(page.getByRole('switch', { name: 'Ativar Thiago Lemos' })).toBeVisible();
@@ -28,6 +28,6 @@ test('administrador vê pessoas, projetos e configurações', async ({ page }) =
 
 test('membro não acessa a fila de aprovação', async ({ page }) => {
   await login(page, users.member);
-  await page.goto('/disponibilidade/aprovacoes');
+  await page.goto('/disponibilidade/approvals');
   await expect(page).toHaveURL(/\/$/);
 });

@@ -6,14 +6,14 @@ export const BASE = '/disponibilidade';
 
 export const paths = {
   base: BASE,
-  list: `${BASE}/comunicacoes`,
-  create: `${BASE}/comunicacoes/nova`,
-  detail: (code: string) => `${BASE}/comunicacoes/${encodeURIComponent(code)}`,
-  edit: (code: string) => `${BASE}/comunicacoes/${encodeURIComponent(code)}/editar`,
-  approvals: `${BASE}/aprovacoes`,
-  calendar: `${BASE}/calendario`,
-  balance: `${BASE}/saldo`,
-  admin: `${BASE}/administracao`,
+  list: `${BASE}/communications`,
+  create: `${BASE}/communications/new`,
+  detail: (code: string) => `${BASE}/communications/${encodeURIComponent(code)}`,
+  edit: (code: string) => `${BASE}/communications/${encodeURIComponent(code)}/edit`,
+  approvals: `${BASE}/approvals`,
+  calendar: `${BASE}/calendar`,
+  balance: `${BASE}/balance`,
+  admin: `${BASE}/admin`,
 };
 
 function navItems(role: Role): NavItem[] {

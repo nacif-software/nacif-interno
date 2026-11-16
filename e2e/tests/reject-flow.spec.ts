@@ -3,7 +3,7 @@ import { login, users } from '../fixtures/auth';
 
 test('aprovador recusa com justificativa obrigatória', async ({ page }) => {
   await login(page, users.admin);
-  await page.goto('/disponibilidade/aprovacoes?period=all');
+  await page.goto('/disponibilidade/approvals?period=all');
   const row = page
     .locator('li')
     .filter({ has: page.getByRole('link', { name: /^Bruna Alencar/ }) })

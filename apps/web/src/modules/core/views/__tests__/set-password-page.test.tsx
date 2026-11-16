@@ -16,8 +16,8 @@ function setup(info: SetPasswordInfo) {
     return undefined;
   });
   renderWithProviders(<SetPasswordPage />, {
-    route: '/definir-senha/tok',
-    path: '/definir-senha/:token',
+    route: '/set-password/tok',
+    path: '/set-password/:token',
   });
   return fetchMock;
 }
