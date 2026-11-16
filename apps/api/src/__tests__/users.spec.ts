@@ -32,6 +32,24 @@ describe('users e projects', () => {
     expect(covers.body.map((u: { name: string }) => u.name)).not.toContain('Thiago Lemos');
   });
 
+  it('convite pendente entra como cobertura, mas não como aprovador', async () => {
+    await seedTeam();
+    await createUser({ name: 'Ana Pendente', email: 'ana@nacif.xyz', withPassword: false });
+    await createUser({
+      name: 'Lucca Pendente',
+      email: 'luccap@nacif.xyz',
+      role: 'APPROVER',
+      withPassword: false,
+    });
+    const agent = buildTestApp();
+    await loginAs(agent, 'pedro@nacif.xyz');
+    const covers = await agent.get('/api/users/options?purpose=cover');
+    expect(covers.body.map((u: { name: string }) => u.name)).toContain('Ana Pendente');
+    expect(covers.body.map((u: { name: string }) => u.name)).toContain('Lucca Pendente');
+    const approvers = await agent.get('/api/users/options?purpose=approver');
+    expect(approvers.body.map((u: { name: string }) => u.name)).not.toContain('Lucca Pendente');
+  });
+
   it('não-admin recebe 403 ao convidar; admin cria convite com link', async () => {
     await seedTeam();
     const member = buildTestApp();

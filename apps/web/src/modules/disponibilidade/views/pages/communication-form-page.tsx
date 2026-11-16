@@ -248,14 +248,15 @@ export function CommunicationFormPage() {
           )}
 
           <div className="flex flex-col gap-4 rounded-card border border-line bg-card p-[18px] md:gap-[22px] md:p-7">
-            <Field label="Quem cobre suas entregas" error={form.formState.errors.coverId?.message}>
+            <Field
+              label="Quem cobre suas entregas"
+              optional
+              hint={MESSAGES.coverOptionalHint}
+              error={form.formState.errors.coverId?.message}
+            >
               {(p) => (
-                <Select
-                  {...p}
-                  {...form.register('coverId')}
-                  disabled={disableEditFields}
-                  placeholder="Selecione"
-                >
+                <Select {...p} {...form.register('coverId')} disabled={disableEditFields}>
+                  <option value="">{MESSAGES.coverNone}</option>
                   {covers.data?.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.projectNames.length === 0
