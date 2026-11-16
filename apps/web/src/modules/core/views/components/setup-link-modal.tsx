@@ -20,13 +20,17 @@ export function SetupLinkModal({
   setup: SetupLink | null;
   onClose: () => void;
 }) {
-  const [copied, setCopied] = useState(false);
+  // Guarda qual link foi copiado: o modal fica montado entre aberturas, então um link novo
+  // volta a mostrar "Copiar link" sem precisar de efeito nem de reset.
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const copied = setup !== null && copiedLink === setup.link;
   const copy = async () => {
+    if (!setup) return;
     try {
-      await navigator.clipboard.writeText(setup?.link ?? '');
-      setCopied(true);
+      await navigator.clipboard.writeText(setup.link);
+      setCopiedLink(setup.link);
     } catch {
-      setCopied(false);
+      setCopiedLink(null);
     }
   };
   const text = COPY[setup?.mode ?? 'invite'];
