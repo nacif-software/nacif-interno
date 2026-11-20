@@ -12,9 +12,9 @@ API := pnpm --filter @nacif/api
 help: ## Lista os alvos disponíveis
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
-install: ## Instala dependências, cria .dev.vars, gera tipos do Worker e aplica as migrações no D1 local
+install: ## Instala dependências, cria .dev.vars (com par VAPID local), gera tipos do Worker e aplica as migrações no D1 local
 	pnpm install
-	@test -f apps/api/.dev.vars || cp apps/api/.dev.vars.example apps/api/.dev.vars
+	@test -f apps/api/.dev.vars || { cp apps/api/.dev.vars.example apps/api/.dev.vars && $(API) --silent vapid-keys mailto:dev@nacif.xyz >> apps/api/.dev.vars; }
 	$(MAKE) types
 	$(MAKE) migrate
 
