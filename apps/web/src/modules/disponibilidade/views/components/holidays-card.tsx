@@ -30,7 +30,6 @@ export function HolidaysCard({ holidays }: { holidays: HolidayDto[] }) {
     });
   });
 
-  // Mais recente primeiro; dentro do ano, em ordem de data.
   const years = [...new Set(holidays.map((h) => isoDateYear(h.date)))].sort((a, b) => b - a);
 
   return (
