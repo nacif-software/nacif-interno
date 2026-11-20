@@ -189,7 +189,6 @@ export async function createCommunication(input: {
   return created;
 }
 
-/** Cenário padrão: projeto Órion com admin Caio, aprovador Marina e membros Pedro e Júlia. */
 /** Feriado do calendário Nacif (a migração carrega o calendário; o setup limpa antes de cada teste). */
 export async function createHoliday(input: { date: string; name?: string }): Promise<Holiday> {
   const [row] = await db()
@@ -200,6 +199,7 @@ export async function createHoliday(input: { date: string; name?: string }): Pro
   return row;
 }
 
+/** Cenário padrão: projeto Órion com admin Caio, aprovador Marina e membros Pedro e Júlia. */
 export async function seedTeam() {
   const orion = await createProject({ name: 'Órion' });
   const atlas = await createProject({ name: 'Atlas' });

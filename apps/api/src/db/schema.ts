@@ -349,7 +349,9 @@ export type FlowEventMetadata =
       /** Presente quando o aprovador ajustou os dias descontados. */
       deductedDays?: number;
     }
-  | { batchId: string };
+  | { batchId: string }
+  /** Dias úteis recontados pelo calendário de feriados (ADR 0014); sem ator. */
+  | { recount: { previousBusinessDays: number; businessDays: number } };
 
 export const flowEvents = sqliteTable(
   'flow_events',

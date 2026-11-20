@@ -1,10 +1,13 @@
 import { addDays, APP_TIMEZONE, MESSAGES, todayIso } from '@nacif/shared';
 import { describe, expect, it } from 'vitest';
-import { holidays } from '../db/schema';
+import { and, eq } from 'drizzle-orm';
+import { db } from '../db/client';
+import { communications, flowEvents, holidays } from '../db/schema';
+import { recountService } from '../modules/disponibilidade/holidays/recount.service';
 import { buildTestApp } from '../test/app';
 import { loginAs } from '../test/auth';
 import { countRows } from '../test/db';
-import { createHoliday, seedTeam } from '../test/factories';
+import { createCommunication, createHoliday, seedTeam } from '../test/factories';
 
 const today = todayIso(APP_TIMEZONE);
 /** Próxima segunda-feira com pelo menos `minDays` de antecedência. */
@@ -118,5 +121,105 @@ describe('feriados', () => {
     expect(day.holiday).toBe('Recesso Nacif');
     const others = res.body.days.filter((d: { date: string }) => d.date !== monday);
     expect(others.every((d: { holiday: string | null }) => d.holiday === null)).toBe(true);
+  });
+
+  describe('recontagem das comunicações que ainda não começaram', () => {
+    async function reload(id: string) {
+      const row = await db().query.communications.findFirst({ where: eq(communications.id, id) });
+      if (!row) throw new Error('sumiu');
+      return row;
+    }
+    async function recountEvents(id: string) {
+      return countRows(
+        flowEvents,
+        and(eq(flowEvents.communicationId, id), eq(flowEvents.type, 'EDITED')),
+      );
+    }
+
+    it('feriado novo reconta aprovada futura sem ajuste e registra o evento', async () => {
+      const { caio, pedro } = await seedTeam();
+      const monday = nextMonday(14);
+      const c = await createCommunication({
+        authorId: pedro.id,
+        approverId: caio.id,
+        startDate: monday,
+        endDate: addDays(monday, 4),
+        status: 'APPROVED',
+      });
+      const admin = buildTestApp();
+      await loginAs(admin, 'caio@nacif.xyz');
+      const created = await admin
+        .post('/api/disponibilidade/holidays')
+        .send({ date: addDays(monday, 1), name: 'Feriado' });
+      expect(created.status).toBe(201);
+
+      const after = await reload(c.id);
+      expect(after.businessDays).toBe(4);
+      expect(after.deductedDays).toBe(4);
+      const [event] = await db()
+        .select()
+        .from(flowEvents)
+        .where(and(eq(flowEvents.communicationId, c.id), eq(flowEvents.type, 'EDITED')));
+      expect(event?.actorId).toBeNull();
+      expect(event?.description).toBe(MESSAGES.holidayRecountEvent(5, 4));
+      expect(event?.metadata).toEqual({ recount: { previousBusinessDays: 5, businessDays: 4 } });
+
+      const removed = await admin.delete(`/api/disponibilidade/holidays/${created.body.id}`);
+      expect(removed.status).toBe(204);
+      const restored = await reload(c.id);
+      expect(restored.businessDays).toBe(5);
+      expect(restored.deductedDays).toBe(5);
+    });
+
+    it('preserva o desconto ajustado pelo aprovador', async () => {
+      const { caio, pedro } = await seedTeam();
+      const monday = nextMonday(14);
+      const c = await createCommunication({
+        authorId: pedro.id,
+        approverId: caio.id,
+        startDate: monday,
+        endDate: addDays(monday, 4),
+        status: 'APPROVED',
+        deductedDays: 2,
+      });
+      await createHoliday({ date: addDays(monday, 1) });
+      await recountService.recountUpcoming();
+      const after = await reload(c.id);
+      expect(after.businessDays).toBe(4);
+      expect(after.deductedDays).toBe(2);
+    });
+
+    it('não mexe em comunicação que já começou', async () => {
+      const { caio, pedro } = await seedTeam();
+      const c = await createCommunication({
+        authorId: pedro.id,
+        approverId: caio.id,
+        startDate: addDays(today, -3),
+        endDate: addDays(today, 10),
+        status: 'APPROVED',
+      });
+      const before = await reload(c.id);
+      await createHoliday({ date: nextMonday(1) });
+      await recountService.recountUpcoming();
+      const after = await reload(c.id);
+      expect(after.businessDays).toBe(before.businessDays);
+      expect(await recountEvents(c.id)).toBe(0);
+    });
+
+    it('é idempotente', async () => {
+      const { caio, pedro } = await seedTeam();
+      const monday = nextMonday(14);
+      const c = await createCommunication({
+        authorId: pedro.id,
+        approverId: caio.id,
+        startDate: monday,
+        endDate: addDays(monday, 4),
+      });
+      await createHoliday({ date: monday });
+      expect(await recountService.recountUpcoming()).toEqual({ recounted: 1 });
+      expect(await recountService.recountUpcoming()).toEqual({ recounted: 0 });
+      expect(await recountEvents(c.id)).toBe(1);
+      expect((await reload(c.id)).deductedDays).toBeNull();
+    });
   });
 });
