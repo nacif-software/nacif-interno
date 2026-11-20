@@ -309,6 +309,38 @@ describe('feriados', () => {
       expect(await recountService.recountUpcoming()).toEqual({ recounted: 105 });
     });
 
+    it('período ajustado que vira só feriados desconta 0 e o ajuste volta quando o feriado sai', async () => {
+      const { caio, pedro } = await seedTeam();
+      const monday = nextMonday(14);
+      const tuesday = addDays(monday, 1);
+      const c = await createCommunication({
+        authorId: pedro.id,
+        approverId: caio.id,
+        startDate: monday,
+        endDate: tuesday,
+      });
+      const admin = buildTestApp();
+      await loginAs(admin, 'caio@nacif.xyz');
+      await admin
+        .post(`/api/disponibilidade/approvals/${c.id}/approve`)
+        .send({ deductedDays: 1, deductionNote: 'Meio período trabalhado.' });
+      const h1 = await admin
+        .post('/api/disponibilidade/holidays')
+        .send({ date: monday, name: 'Um' });
+      const h2 = await admin
+        .post('/api/disponibilidade/holidays')
+        .send({ date: tuesday, name: 'Dois' });
+      let after = await reload(c.id);
+      expect(after.businessDays).toBe(0);
+      expect(after.deductedDays).toBe(0);
+
+      await admin.delete(`/api/disponibilidade/holidays/${h1.body.id}`);
+      await admin.delete(`/api/disponibilidade/holidays/${h2.body.id}`);
+      after = await reload(c.id);
+      expect(after.businessDays).toBe(2);
+      expect(after.deductedDays).toBe(1);
+    });
+
     it('duas recontagens simultâneas registram um evento só', async () => {
       const { caio, pedro } = await seedTeam();
       const monday = nextMonday(14);

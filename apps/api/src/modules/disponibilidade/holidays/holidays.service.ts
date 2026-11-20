@@ -2,6 +2,7 @@ import { MESSAGES, type CreateHolidayBody, type HolidayDto } from '@nacif/shared
 import { batchAll } from '../../../db/client';
 import { uniqueViolation } from '../../../db/errors';
 import { AppError, NotFoundError } from '../../../infra/http/errors';
+import { logger } from '../../../infra/logger';
 import { toHolidayDto } from './holiday.mapper';
 import { holidaysRepository } from './holidays.repository';
 import { recountService } from './recount.service';
@@ -10,8 +11,13 @@ import { recountService } from './recount.service';
  * A recontagem do batch usa o calendário lido antes dele; se outra mudança entrou no meio, uma
  * segunda passada contra o calendário já gravado corrige (idempotente: sem diferença, não escreve).
  */
-function reconcile(now: Date) {
-  return recountService.recountUpcoming(now);
+async function reconcile(now: Date): Promise<void> {
+  // A mudança já foi gravada com a sua recontagem; se esta passada extra falhar, o cron repete.
+  try {
+    await recountService.recountUpcoming(now);
+  } catch (err) {
+    logger.error({ err }, 'Reconciliação da recontagem por feriados falhou; o cron repete');
+  }
 }
 
 export const holidaysService = {
@@ -22,8 +28,10 @@ export const holidaysService = {
   /** Grava o feriado e reconta as comunicações afetadas num único batch (tudo ou nada). */
   async create(body: CreateHolidayBody, now: Date = new Date()): Promise<HolidayDto> {
     const id = crypto.randomUUID();
-    const calendar = new Set(await holidaysRepository.dateSet()).add(body.date);
-    const recount = await recountService.statements(calendar, now);
+    const recount = await recountService.statements(
+      async () => new Set(await holidaysRepository.dateSet()).add(body.date),
+      now,
+    );
     try {
       await batchAll([
         holidaysRepository.insert({ id, date: body.date, name: body.name, createdAt: now }),
@@ -43,9 +51,11 @@ export const holidaysService = {
   async remove(id: string, now: Date = new Date()): Promise<void> {
     const holiday = await holidaysRepository.findById(id);
     if (!holiday) throw new NotFoundError('Feriado não encontrado.');
-    const calendar = new Set(await holidaysRepository.dateSet());
-    calendar.delete(holiday.date);
-    const recount = await recountService.statements(calendar, now);
+    const recount = await recountService.statements(async () => {
+      const calendar = new Set(await holidaysRepository.dateSet());
+      calendar.delete(holiday.date);
+      return calendar;
+    }, now);
     await batchAll([holidaysRepository.remove(id), ...recount.statements]);
     await reconcile(now);
   },

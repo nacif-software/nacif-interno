@@ -8,8 +8,8 @@ import { holidaysRepository } from './holidays.repository';
 
 const ID_CHUNK = 90;
 
-/** Aprovadas cuja decisão vigente ajustou os dias descontados (o recálculo não mexe no desconto). */
-async function adjustedApprovals(ids: string[]): Promise<Set<string>> {
+/** Dias descontados que o aprovador definiu na decisão vigente, por comunicação (só as ajustadas). */
+async function adjustedApprovals(ids: string[]): Promise<Map<string, number>> {
   const latest = new Map<string, FlowEventMetadata | null>();
   // Em pedaços, pelo limite de ~100 parâmetros por statement do D1.
   for (let i = 0; i < ids.length; i += ID_CHUNK) {
@@ -27,23 +27,27 @@ async function adjustedApprovals(ids: string[]): Promise<Set<string>> {
       if (!latest.has(r.communicationId)) latest.set(r.communicationId, r.metadata);
     }
   }
-  return new Set(
-    [...latest]
-      .filter(([, m]) => m && 'deductedDays' in m && m.deductedDays !== undefined)
-      .map(([id]) => id),
-  );
+  const adjusted = new Map<string, number>();
+  for (const [id, m] of latest) {
+    if (m && 'deductedDays' in m && typeof m.deductedDays === 'number')
+      adjusted.set(id, m.deductedDays);
+  }
+  return adjusted;
 }
 
 /**
  * Recontagem dos dias úteis das comunicações em análise ou aprovadas que começam hoje ou depois,
  * pelo calendário de feriados (ADR 0014). Roda junto com a mudança do calendário (mesmo batch) e no
- * cron das 00:00, que assim alcança quem começa no próprio dia. Em aprovadas, o desconto acompanha
- * só se o aprovador não ajustou os dias. Idempotente.
+ * cron das 00:00, que assim alcança quem começa no próprio dia. Idempotente.
  */
 export const recountService = {
-  /** Statements da recontagem contra `holidays` (o calendário como ficará), para compor num batch. */
+  /**
+   * Statements da recontagem, para compor num batch. `calendar` é lido depois das comunicações: a
+   * contagem nunca usa um calendário mais antigo que as linhas lidas (o guard de `business_days`
+   * barra a escrita se outra recontagem passou no meio).
+   */
   async statements(
-    holidays: ReadonlySet<IsoDate>,
+    calendar: () => Promise<ReadonlySet<IsoDate>>,
     now: Date = new Date(),
   ): Promise<{ statements: BatchItem<'sqlite'>[]; recounted: number }> {
     const today = todayIso(APP_TIMEZONE, now);
@@ -56,6 +60,7 @@ export const recountService = {
           gte(communications.startDate, today),
         ),
       );
+    const holidays = await calendar();
     const changed = rows
       .map((row) => ({
         row,
@@ -69,15 +74,24 @@ export const recountService = {
     const statements: BatchItem<'sqlite'>[] = [];
     for (const { row, businessDays } of changed) {
       const previous = row.businessDays;
-      // Ajuste = decisão vigente com `deductedDays` na metadata ou desconto diferente dos dias úteis.
-      const followDeduction =
-        row.status === 'APPROVED' &&
-        !adjusted.has(row.id) &&
-        (row.deductedDays ?? previous) === previous;
+      // Em aprovadas: sem ajuste, o desconto acompanha os dias úteis; com ajuste (decisão vigente com
+      // `deductedDays`, ou desconto diferente dos dias úteis no histórico sem metadata), vale o
+      // ajuste limitado aos dias úteis: período que vira só feriado desconta 0 e o ajuste volta
+      // quando o feriado sai.
+      const explicit = adjusted.get(row.id);
+      const legacyAdjusted = (row.deductedDays ?? previous) !== previous;
+      const deductedDays =
+        row.status !== 'APPROVED'
+          ? undefined
+          : explicit !== undefined
+            ? Math.min(explicit, businessDays)
+            : legacyAdjusted
+              ? Math.min(row.deductedDays ?? previous, businessDays)
+              : businessDays;
       statements.push(
         db()
           .update(communications)
-          .set({ businessDays, ...(followDeduction ? { deductedDays: businessDays } : {}) })
+          .set({ businessDays, ...(deductedDays !== undefined ? { deductedDays } : {}) })
           .where(
             and(
               eq(communications.id, row.id),
@@ -108,7 +122,7 @@ export const recountService = {
   /** Recontagem com o calendário atual (cron). */
   async recountUpcoming(now: Date = new Date()): Promise<{ recounted: number }> {
     const { statements, recounted } = await this.statements(
-      await holidaysRepository.dateSet(),
+      () => holidaysRepository.dateSet(),
       now,
     );
     if (statements.length > 0) await batchAll(statements);
