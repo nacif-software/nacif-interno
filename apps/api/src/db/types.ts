@@ -6,6 +6,7 @@ import type {
   communications,
   decisions,
   flowEvents,
+  holidays,
   passwordSetupTokens,
   projects,
   pushSubscriptions,
@@ -32,6 +33,8 @@ export type NewDecision = typeof decisions.$inferInsert;
 export type FlowEvent = typeof flowEvents.$inferSelect;
 export type NewFlowEvent = typeof flowEvents.$inferInsert;
 export type UserProject = typeof userProjects.$inferSelect;
+export type Holiday = typeof holidays.$inferSelect;
+export type NewHoliday = typeof holidays.$inferInsert;
 export type LedgerEntry = typeof availabilityLedgerEntries.$inferSelect;
 export type NewLedgerEntry = typeof availabilityLedgerEntries.$inferInsert;
 

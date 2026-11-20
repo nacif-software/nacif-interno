@@ -11,6 +11,7 @@ import {
   communications,
   decisions,
   flowEvents,
+  holidays,
   passwordSetupTokens,
   pushSubscriptions,
   projects,
@@ -47,5 +48,7 @@ beforeEach(async () => {
     db().delete(sessions),
     db().delete(users),
     db().delete(projects),
+    // A migração carrega o calendário Nacif; cada teste insere os feriados de que precisa.
+    db().delete(holidays),
   ]);
 });
