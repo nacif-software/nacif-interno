@@ -75,6 +75,7 @@ export const MESSAGES = {
   holidayRemovedToast: (name: string) => `Feriado ${name} removido.`,
   holidaysMissingYear: (years: number[]) =>
     `O calendário de feriados de ${years.join(' e ')} ainda não foi definido. A contagem de dias úteis pode mudar.`,
+  holidayRecountTitle: 'Dias úteis recalculados',
   holidayRecountEvent: (from: number, to: number) =>
     `Dias úteis recalculados pelo calendário de feriados: ${from} → ${to}`,
   startInPast: 'A data inicial não pode estar no passado.',

@@ -44,6 +44,8 @@ export const recountService = {
             and(
               eq(communications.id, row.id),
               eq(communications.status, row.status),
+              eq(communications.startDate, row.startDate),
+              eq(communications.endDate, row.endDate),
               eq(communications.businessDays, previous),
             ),
           ),
@@ -56,11 +58,9 @@ export const recountService = {
             description: MESSAGES.holidayRecountEvent(previous, businessDays),
             metadata: { recount: { previousBusinessDays: previous, businessDays } },
           },
-          sql`exists (
-            select 1 from ${communications}
-            where ${communications.id} = ${row.id} and ${communications.businessDays} = ${businessDays}
-              and ${communications.status} = ${row.status}
-          )`,
+          // Só se o UPDATE logo acima (mesmo batch) aplicou: duas recontagens simultâneas não
+          // registram o evento duas vezes.
+          sql`changes() = 1`,
         ),
       );
     }

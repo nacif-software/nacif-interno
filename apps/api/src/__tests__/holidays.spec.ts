@@ -206,6 +206,39 @@ describe('feriados', () => {
       expect(await recountEvents(c.id)).toBe(0);
     });
 
+    it('duas recontagens simultâneas registram um evento só', async () => {
+      const { caio, pedro } = await seedTeam();
+      const monday = nextMonday(14);
+      const c = await createCommunication({
+        authorId: pedro.id,
+        approverId: caio.id,
+        startDate: monday,
+        endDate: addDays(monday, 4),
+        status: 'APPROVED',
+      });
+      await createHoliday({ date: monday });
+      await Promise.all([recountService.recountUpcoming(), recountService.recountUpcoming()]);
+      expect((await reload(c.id)).businessDays).toBe(4);
+      expect(await recountEvents(c.id)).toBe(1);
+    });
+
+    it('período só com feriados passa a ter 0 dias úteis e 0 descontados', async () => {
+      const { caio, pedro } = await seedTeam();
+      const monday = nextMonday(14);
+      const c = await createCommunication({
+        authorId: pedro.id,
+        approverId: caio.id,
+        startDate: monday,
+        endDate: monday,
+        status: 'APPROVED',
+      });
+      await createHoliday({ date: monday });
+      await recountService.recountUpcoming();
+      const after = await reload(c.id);
+      expect(after.businessDays).toBe(0);
+      expect(after.deductedDays).toBe(0);
+    });
+
     it('é idempotente', async () => {
       const { caio, pedro } = await seedTeam();
       const monday = nextMonday(14);
