@@ -82,7 +82,7 @@ export const calendarService = {
     const total = daysInMonth(query.month);
     const days = Array.from({ length: total }, (_, i) => {
       const date = `${query.month}-${String(i + 1).padStart(2, '0')}`;
-      return { date, weekend: isWeekend(date) };
+      return { date, weekend: isWeekend(date), holiday: null };
     });
 
     return { month: query.month, days, rows: calendarRows };

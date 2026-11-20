@@ -31,7 +31,10 @@ export type CalendarRow = z.infer<typeof calendarRowSchema>;
 
 export const calendarMonthDtoSchema = z.object({
   month: isoMonthSchema,
-  days: z.array(z.object({ date: isoDateSchema, weekend: z.boolean() })),
+  /** `holiday`: nome do feriado do calendário Nacif no dia, ou null. */
+  days: z.array(
+    z.object({ date: isoDateSchema, weekend: z.boolean(), holiday: z.string().nullable() }),
+  ),
   rows: z.array(calendarRowSchema),
 });
 export type CalendarMonthDto = z.infer<typeof calendarMonthDtoSchema>;

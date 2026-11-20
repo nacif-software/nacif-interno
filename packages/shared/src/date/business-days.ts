@@ -1,6 +1,7 @@
 import {
   addDays,
   compareIsoDates,
+  isoDateYear,
   isoDayOfWeek,
   maxIsoDate,
   minIsoDate,
@@ -29,12 +30,34 @@ export function eachDay(startDate: IsoDate, endDate: IsoDate): IsoDate[] {
   return days;
 }
 
+/** Conjunto vazio: contagem só com fim de semana (histórico importado, seed). */
+export const NO_HOLIDAYS: ReadonlySet<IsoDate> = Object.freeze(new Set<IsoDate>());
+
+/** Dia útil: segunda a sexta e fora do calendário de feriados da Nacif. */
+export function isBusinessDay(iso: IsoDate, holidays: ReadonlySet<IsoDate> = NO_HOLIDAYS): boolean {
+  return !isWeekend(iso) && !holidays.has(iso);
+}
+
+/** Dias úteis no intervalo inclusivo, descontando fim de semana e os feriados informados. */
+export function countBusinessDays(
+  startDate: IsoDate,
+  endDate: IsoDate,
+  holidays: ReadonlySet<IsoDate> = NO_HOLIDAYS,
+): number {
+  return eachDay(startDate, endDate).filter((d) => isBusinessDay(d, holidays)).length;
+}
+
 /**
- * Dias úteis (segunda a sexta) no intervalo inclusivo.
- * Feriados não são considerados (issue #8 no GitHub).
+ * Anos do período sem nenhum feriado cadastrado: o calendário daquele ano ainda não foi definido
+ * e a contagem de dias úteis pode mudar quando for.
  */
-export function countBusinessDays(startDate: IsoDate, endDate: IsoDate): number {
-  return eachDay(startDate, endDate).filter((d) => !isWeekend(d)).length;
+export function yearsWithoutHolidays(range: DateRange, holidays: ReadonlySet<IsoDate>): number[] {
+  const covered = new Set([...holidays].map(isoDateYear));
+  const years: number[] = [];
+  for (let y = isoDateYear(range.startDate); y <= isoDateYear(range.endDate); y++) {
+    if (!covered.has(y)) years.push(y);
+  }
+  return years;
 }
 
 /** Recorta `range` aos limites de `bounds`; null se não houver interseção. */

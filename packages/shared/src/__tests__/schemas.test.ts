@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MESSAGES } from '../labels/pt-br';
 import {
   createCommunicationBodySchema,
+  createHolidayBodySchema,
   loginBodySchema,
   nacifEmailSchema,
   rejectBodySchema,
@@ -50,5 +51,11 @@ describe('schemas', () => {
         endDate: '2026-10-09',
       }).success,
     ).toBe(true);
+  });
+
+  it('feriado exige nome com 2+ caracteres e data válida', () => {
+    expect(createHolidayBodySchema.safeParse({ date: '2026-12-25', name: 'Natal' }).success).toBe(true);
+    expect(createHolidayBodySchema.safeParse({ date: '2026-12-25', name: 'N' }).success).toBe(false);
+    expect(createHolidayBodySchema.safeParse({ date: '2026-02-30', name: 'Natal' }).success).toBe(false);
   });
 });

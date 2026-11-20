@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { clampRange, countBusinessDays, eachDay, isWeekend } from '../date/business-days';
+import {
+  clampRange,
+  countBusinessDays,
+  eachDay,
+  isBusinessDay,
+  isWeekend,
+  yearsWithoutHolidays,
+} from '../date/business-days';
 
 describe('countBusinessDays', () => {
   it('conta segunda a sexta dentro da mesma semana', () => {
@@ -47,5 +54,28 @@ describe('isWeekend / eachDay / clampRange', () => {
         { startDate: '2026-10-01', endDate: '2026-10-31' },
       ),
     ).toBeNull();
+  });
+});
+
+describe('feriados', () => {
+  const natal = new Set(['2026-12-25']);
+  it('desconta feriado em dia de semana', () => {
+    expect(countBusinessDays('2026-12-21', '2026-12-25', natal)).toBe(4);
+  });
+  it('sem feriados mantém a contagem só de fim de semana', () => {
+    expect(countBusinessDays('2026-12-21', '2026-12-25')).toBe(5);
+  });
+  it('feriado em fim de semana não muda nada', () => {
+    expect(countBusinessDays('2026-11-09', '2026-11-15', new Set(['2026-11-15']))).toBe(5);
+  });
+  it('isBusinessDay considera feriado e dia comum', () => {
+    expect(isBusinessDay('2026-12-25', natal)).toBe(false);
+    expect(isBusinessDay('2026-12-24', natal)).toBe(true);
+    expect(isBusinessDay('2026-12-26', natal)).toBe(false);
+  });
+  it('yearsWithoutHolidays aponta os anos do período sem calendário', () => {
+    const range = { startDate: '2026-12-28', endDate: '2027-01-08' };
+    expect(yearsWithoutHolidays(range, natal)).toEqual([2027]);
+    expect(yearsWithoutHolidays(range, new Set(['2026-12-25', '2027-01-01']))).toEqual([]);
   });
 });
