@@ -52,6 +52,25 @@ describe('feriados', () => {
     expect(await countRows(holidays)).toBe(0);
   });
 
+  it('protege as rotas: anônimo 401, membro não remove (403), corpo inválido 422', async () => {
+    await seedTeam();
+    const holiday = await createHoliday({ date: '2026-12-25', name: 'Natal' });
+    const anon = buildTestApp();
+    expect((await anon.get('/api/disponibilidade/holidays')).status).toBe(401);
+
+    const member = buildTestApp();
+    await loginAs(member, 'pedro@nacif.xyz');
+    expect((await member.delete(`/api/disponibilidade/holidays/${holiday.id}`)).status).toBe(403);
+
+    const admin = buildTestApp();
+    await loginAs(admin, 'caio@nacif.xyz');
+    const invalid = await admin
+      .post('/api/disponibilidade/holidays')
+      .send({ date: '2026-13-01', name: 'X' });
+    expect(invalid.status).toBe(422);
+    expect(await countRows(holidays)).toBe(1);
+  });
+
   it('data repetida devolve 409 e id inexistente devolve 404', async () => {
     await seedTeam();
     await createHoliday({ date: '2026-12-25', name: 'Natal' });
@@ -248,6 +267,46 @@ describe('feriados', () => {
       await createHoliday({ date: weekday });
       await recountService.recountUpcoming();
       expect((await reload(c.id)).businessDays).toBe(before - 1);
+    });
+
+    it('dois feriados adicionados ao mesmo tempo no mesmo período descontam os dois', async () => {
+      const { caio, pedro } = await seedTeam();
+      const monday = nextMonday(14);
+      const c = await createCommunication({
+        authorId: pedro.id,
+        approverId: caio.id,
+        startDate: monday,
+        endDate: addDays(monday, 4),
+        status: 'APPROVED',
+      });
+      const admin = buildTestApp();
+      await loginAs(admin, 'caio@nacif.xyz');
+      const [a, b] = await Promise.all([
+        admin.post('/api/disponibilidade/holidays').send({ date: monday, name: 'Um' }),
+        admin
+          .post('/api/disponibilidade/holidays')
+          .send({ date: addDays(monday, 1), name: 'Dois' }),
+      ]);
+      expect([a.status, b.status]).toEqual([201, 201]);
+      const after = await reload(c.id);
+      expect(after.businessDays).toBe(3);
+      expect(after.deductedDays).toBe(3);
+    });
+
+    it('reconta mais de 100 aprovadas sem estourar o limite de parâmetros do D1', async () => {
+      const { caio, pedro } = await seedTeam();
+      const monday = nextMonday(14);
+      for (let i = 0; i < 105; i++) {
+        await createCommunication({
+          authorId: pedro.id,
+          approverId: caio.id,
+          startDate: monday,
+          endDate: addDays(monday, 4),
+          status: 'APPROVED',
+        });
+      }
+      await createHoliday({ date: monday });
+      expect(await recountService.recountUpcoming()).toEqual({ recounted: 105 });
     });
 
     it('duas recontagens simultâneas registram um evento só', async () => {

@@ -6,6 +6,14 @@ import { toHolidayDto } from './holiday.mapper';
 import { holidaysRepository } from './holidays.repository';
 import { recountService } from './recount.service';
 
+/**
+ * A recontagem do batch usa o calendário lido antes dele; se outra mudança entrou no meio, uma
+ * segunda passada contra o calendário já gravado corrige (idempotente: sem diferença, não escreve).
+ */
+function reconcile(now: Date) {
+  return recountService.recountUpcoming(now);
+}
+
 export const holidaysService = {
   async list(): Promise<HolidayDto[]> {
     return (await holidaysRepository.list()).map(toHolidayDto);
@@ -27,6 +35,7 @@ export const holidaysService = {
       }
       throw err;
     }
+    await reconcile(now);
     return toHolidayDto({ id, date: body.date, name: body.name, createdAt: now });
   },
 
@@ -38,5 +47,6 @@ export const holidaysService = {
     calendar.delete(holiday.date);
     const recount = await recountService.statements(calendar, now);
     await batchAll([holidaysRepository.remove(id), ...recount.statements]);
+    await reconcile(now);
   },
 };

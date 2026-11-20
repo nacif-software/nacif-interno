@@ -6,17 +6,27 @@ import { communications, flowEvents, type FlowEventMetadata } from '../../../db/
 import { flowEventsRepository } from '../communications/flow-events.repository';
 import { holidaysRepository } from './holidays.repository';
 
+const ID_CHUNK = 90;
+
 /** Aprovadas cuja decisão vigente ajustou os dias descontados (o recálculo não mexe no desconto). */
 async function adjustedApprovals(ids: string[]): Promise<Set<string>> {
-  if (ids.length === 0) return new Set();
-  const rows = await db()
-    .select({ communicationId: flowEvents.communicationId, metadata: flowEvents.metadata })
-    .from(flowEvents)
-    .where(and(eq(flowEvents.type, 'DECISION'), inArray(flowEvents.communicationId, ids)))
-    .orderBy(desc(flowEvents.occurredAt));
   const latest = new Map<string, FlowEventMetadata | null>();
-  for (const r of rows)
-    if (!latest.has(r.communicationId)) latest.set(r.communicationId, r.metadata);
+  // Em pedaços, pelo limite de ~100 parâmetros por statement do D1.
+  for (let i = 0; i < ids.length; i += ID_CHUNK) {
+    const rows = await db()
+      .select({ communicationId: flowEvents.communicationId, metadata: flowEvents.metadata })
+      .from(flowEvents)
+      .where(
+        and(
+          eq(flowEvents.type, 'DECISION'),
+          inArray(flowEvents.communicationId, ids.slice(i, i + ID_CHUNK)),
+        ),
+      )
+      .orderBy(desc(flowEvents.occurredAt));
+    for (const r of rows) {
+      if (!latest.has(r.communicationId)) latest.set(r.communicationId, r.metadata);
+    }
+  }
   return new Set(
     [...latest]
       .filter(([, m]) => m && 'deductedDays' in m && m.deductedDays !== undefined)
