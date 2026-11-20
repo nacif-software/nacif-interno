@@ -24,6 +24,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: cp apps/api/.dev.vars.example apps/api/.dev.vars
+      # Par VAPID descartável só deste job: o push (modal e tela Notificações) depende das três variáveis.
+      - run: pnpm --silent --filter @nacif/api vapid-keys mailto:dev@nacif.xyz >> apps/api/.dev.vars
       - run: pnpm --filter @nacif/api types
       - run: pnpm lint
       - run: pnpm typecheck
@@ -50,6 +52,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: cp apps/api/.dev.vars.example apps/api/.dev.vars
+      # Par VAPID descartável só deste job: o push (modal e tela Notificações) depende das três variáveis.
+      - run: pnpm --silent --filter @nacif/api vapid-keys mailto:dev@nacif.xyz >> apps/api/.dev.vars
       - run: pnpm --filter @nacif/api types
       - run: pnpm --filter @nacif/e2e exec playwright install --with-deps chromium
       # O Playwright sobe o Worker sozinho (build do web + migrações + wrangler dev); ver e2e/playwright.config.ts.
