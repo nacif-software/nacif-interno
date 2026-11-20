@@ -11,10 +11,6 @@ export type HolidayDto = z.infer<typeof holidayDtoSchema>;
 
 export const createHolidayBodySchema = z.object({
   date: isoDateSchema,
-  name: z
-    .string()
-    .trim()
-    .min(2, { error: MESSAGES.holidayNameTooShort })
-    .max(80),
+  name: z.string().trim().min(2, { error: MESSAGES.holidayNameTooShort }).max(80),
 });
 export type CreateHolidayBody = z.infer<typeof createHolidayBodySchema>;

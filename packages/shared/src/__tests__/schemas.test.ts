@@ -54,8 +54,14 @@ describe('schemas', () => {
   });
 
   it('feriado exige nome com 2+ caracteres e data válida', () => {
-    expect(createHolidayBodySchema.safeParse({ date: '2026-12-25', name: 'Natal' }).success).toBe(true);
-    expect(createHolidayBodySchema.safeParse({ date: '2026-12-25', name: 'N' }).success).toBe(false);
-    expect(createHolidayBodySchema.safeParse({ date: '2026-02-30', name: 'Natal' }).success).toBe(false);
+    expect(createHolidayBodySchema.safeParse({ date: '2026-12-25', name: 'Natal' }).success).toBe(
+      true,
+    );
+    expect(createHolidayBodySchema.safeParse({ date: '2026-12-25', name: 'N' }).success).toBe(
+      false,
+    );
+    expect(createHolidayBodySchema.safeParse({ date: '2026-02-30', name: 'Natal' }).success).toBe(
+      false,
+    );
   });
 });
