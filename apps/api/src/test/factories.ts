@@ -7,11 +7,12 @@ import {
   availabilitySettings,
   communications,
   flowEvents,
+  holidays,
   projects,
   userProjects,
   users,
 } from '../db/schema';
-import type { Communication, LedgerEntry, Project, UserWithProjects } from '../db/types';
+import type { Communication, Holiday, LedgerEntry, Project, UserWithProjects } from '../db/types';
 import { hashPassword } from '../modules/core/auth/password';
 
 export const TEST_PASSWORD = 'senha-forte-123';
@@ -189,6 +190,16 @@ export async function createCommunication(input: {
 }
 
 /** Cenário padrão: projeto Órion com admin Caio, aprovador Marina e membros Pedro e Júlia. */
+/** Feriado do calendário Nacif (a migração carrega o calendário; o setup limpa antes de cada teste). */
+export async function createHoliday(input: { date: string; name?: string }): Promise<Holiday> {
+  const [row] = await db()
+    .insert(holidays)
+    .values({ date: input.date, name: input.name ?? 'Feriado de teste' })
+    .returning();
+  if (!row) throw new Error('Feriado não criado.');
+  return row;
+}
+
 export async function seedTeam() {
   const orion = await createProject({ name: 'Órion' });
   const atlas = await createProject({ name: 'Atlas' });

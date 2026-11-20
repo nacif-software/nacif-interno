@@ -16,6 +16,7 @@ import { db } from '../../../db/client';
 import { communications, users } from '../../../db/schema';
 import { memberOfProject } from '../../core/projects/user-projects.repository';
 import { projectRefs } from '../../core/users/user.mapper';
+import { holidaysRepository } from '../holidays/holidays.repository';
 
 export const calendarService = {
   async month(query: CalendarQuery): Promise<CalendarMonthDto> {
@@ -23,7 +24,7 @@ export const calendarService = {
 
     const inProject = (userColumn: SQLWrapper) =>
       query.projectId ? memberOfProject(userColumn, query.projectId) : undefined;
-    const [people, rows] = await Promise.all([
+    const [people, rows, monthHolidays] = await Promise.all([
       db().query.users.findMany({
         where: and(eq(users.active, true), isNotNull(users.passwordHash), inProject(users.id)),
         with: { projects: { with: { project: true } } },
@@ -37,7 +38,9 @@ export const calendarService = {
         ),
         orderBy: [asc(communications.startDate)],
       }),
+      holidaysRepository.inRange(bounds.startDate, bounds.endDate),
     ]);
+    const holidayName = new Map(monthHolidays.map((h) => [h.date, h.name]));
 
     // Primeiro projeto (quem não tem projeto vai para o fim) e nome, com ordenação pt-BR.
     const collator = new Intl.Collator('pt-BR');
@@ -82,7 +85,7 @@ export const calendarService = {
     const total = daysInMonth(query.month);
     const days = Array.from({ length: total }, (_, i) => {
       const date = `${query.month}-${String(i + 1).padStart(2, '0')}`;
-      return { date, weekend: isWeekend(date), holiday: null };
+      return { date, weekend: isWeekend(date), holiday: holidayName.get(date) ?? null };
     });
 
     return { month: query.month, days, rows: calendarRows };

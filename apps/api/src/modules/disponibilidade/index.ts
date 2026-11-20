@@ -7,6 +7,7 @@ import { balanceRouter } from './balance/balance.routes';
 import { calendarRouter } from './calendar/calendar.routes';
 import { communicationsRouter } from './communications/communications.routes';
 import { dashboardRouter } from './dashboard/dashboard.routes';
+import { holidaysRouter } from './holidays/holidays.routes';
 import { disponibilidadeService } from './manifest';
 import { settingsRouter } from './settings/settings.routes';
 
@@ -22,6 +23,7 @@ router.route('/', communicationsRouter);
 router.route('/', approvalsRouter);
 router.route('/', calendarRouter);
 router.route('/', balanceRouter);
+router.route('/', holidaysRouter);
 
 export const disponibilidadeModule: ApiModule = {
   slug: 'disponibilidade',
