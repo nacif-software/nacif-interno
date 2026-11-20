@@ -8,8 +8,10 @@ import { SetupLinkModal, type SetupLink } from '@/modules/core/views/components/
 import { Card, SkeletonCard } from '@/ui';
 import { MESSAGES } from '@nacif/shared';
 import { useBalanceOverview } from '../../controllers/use-balance';
+import { useHolidays } from '../../controllers/use-holidays';
 import { useSettings } from '../../controllers/use-settings';
 import { BalancesCard } from '../components/balances-card';
+import { HolidaysCard } from '../components/holidays-card';
 import { SettingsCard } from '../components/settings-card';
 
 export function AdminPage() {
@@ -18,6 +20,7 @@ export function AdminPage() {
   const approvers = useUserOptions('approver');
   const settings = useSettings();
   const balances = useBalanceOverview();
+  const holidays = useHolidays();
   const [setup, setSetup] = useState<SetupLink | null>(null);
 
   const loading = users.isPending || projects.isPending || settings.isPending;
@@ -71,6 +74,8 @@ export function AdminPage() {
         ) : (
           <SkeletonCard />
         )}
+        <h2 className="text-section-title">{MESSAGES.holidaysTitle}</h2>
+        {holidays.data ? <HolidaysCard holidays={holidays.data} /> : <SkeletonCard />}
       </section>
       <SetupLinkModal setup={setup} onClose={() => setSetup(null)} />
     </div>

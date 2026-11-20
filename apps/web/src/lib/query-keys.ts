@@ -12,6 +12,7 @@ export const qk = {
   disp: {
     all: ['disp'] as const,
     settings: ['disp', 'settings'] as const,
+    holidays: ['disp', 'holidays'] as const,
     dashboard: ['disp', 'dashboard'] as const,
     balance: (userId: string | null = null) => ['disp', 'balance', userId] as const,
     balanceOverview: ['disp', 'balance', 'overview'] as const,

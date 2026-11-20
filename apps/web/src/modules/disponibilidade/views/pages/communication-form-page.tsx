@@ -6,6 +6,7 @@ import {
   MESSAGES,
   todayIso,
   defaultApproverFor,
+  yearsWithoutHolidays,
 } from '@nacif/shared';
 import { useEffect, useMemo } from 'react';
 import { Controller } from 'react-hook-form';
@@ -28,6 +29,7 @@ import { useConflicts } from '../../controllers/use-conflicts';
 import { useSettings } from '../../controllers/use-settings';
 import { paths } from '../../manifest';
 import { useMyBalance } from '../../controllers/use-balance';
+import { useHolidayDates } from '../../controllers/use-holidays';
 import { ConflictAlert } from '../components/conflict-alert';
 import { DateRangePicker } from '../components/date-range-picker';
 import { FormFooter } from '../components/form-footer';
@@ -127,7 +129,10 @@ export function CommunicationFormPage() {
   });
 
   const balance = useMyBalance();
-  const plannedDays = startDate && endDate ? countBusinessDays(startDate, endDate) : null;
+  const holidays = useHolidayDates();
+  const plannedDays = startDate && endDate ? countBusinessDays(startDate, endDate, holidays) : null;
+  const missingYears =
+    startDate && endDate ? yearsWithoutHolidays({ startDate, endDate }, holidays) : [];
   // Na edição, a comunicação ainda não debitou (está em análise): o saldo atual já é a base.
   const balanceAfter =
     balance.data && plannedDays !== null ? balance.data.balance - plannedDays : null;
@@ -145,7 +150,7 @@ export function CommunicationFormPage() {
         Resumo:{' '}
         <span className="font-semibold text-ink">
           {formatDateRange(startDate, endDate)} ·{' '}
-          {formatBusinessDays(countBusinessDays(startDate, endDate))}
+          {formatBusinessDays(countBusinessDays(startDate, endDate, holidays))}
         </span>
         {coverName && ` · cobertura ${coverName}`}
       </>
@@ -213,11 +218,17 @@ export function CommunicationFormPage() {
                   startDate={startDate || undefined}
                   endDate={endDate || undefined}
                   conflicts={conflicts.data?.conflicts}
+                  holidays={holidays}
                   onChange={(r) => {
                     setValue('startDate', r.startDate, { shouldValidate: false });
                     setValue('endDate', r.endDate, { shouldValidate: false });
                   }}
                 />
+                {missingYears.length > 0 && (
+                  <p className="text-[13px] text-ink-muted">
+                    {MESSAGES.holidaysMissingYear(missingYears)}
+                  </p>
+                )}
                 {(form.formState.errors.startDate ?? form.formState.errors.endDate) && (
                   <Alert variant="error">
                     {form.formState.errors.startDate?.message ??
