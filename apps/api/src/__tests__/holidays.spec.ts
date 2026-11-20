@@ -206,6 +206,50 @@ describe('feriados', () => {
       expect(await recountEvents(c.id)).toBe(0);
     });
 
+    it('ajuste do aprovador sobrevive a feriado adicionado e depois removido', async () => {
+      const { caio, pedro } = await seedTeam();
+      const monday = nextMonday(14);
+      const c = await createCommunication({
+        authorId: pedro.id,
+        approverId: caio.id,
+        startDate: monday,
+        endDate: addDays(monday, 4),
+      });
+      const admin = buildTestApp();
+      await loginAs(admin, 'caio@nacif.xyz');
+      const approved = await admin
+        .post(`/api/disponibilidade/approvals/${c.id}/approve`)
+        .send({ deductedDays: 4, deductionNote: 'Um dia trabalhado no período.' });
+      expect(approved.status).toBe(200);
+
+      const holiday = await admin
+        .post('/api/disponibilidade/holidays')
+        .send({ date: addDays(monday, 1), name: 'Feriado' });
+      expect((await reload(c.id)).deductedDays).toBe(4);
+      await admin.delete(`/api/disponibilidade/holidays/${holiday.body.id}`);
+      const after = await reload(c.id);
+      expect(after.businessDays).toBe(5);
+      expect(after.deductedDays).toBe(4);
+    });
+
+    it('reconta período que começa hoje (o cron das 00:00 alcança quem começa no dia)', async () => {
+      const { caio, pedro } = await seedTeam();
+      const c = await createCommunication({
+        authorId: pedro.id,
+        approverId: caio.id,
+        startDate: today,
+        endDate: addDays(today, 6),
+        status: 'APPROVED',
+      });
+      const before = (await reload(c.id)).businessDays;
+      let weekday = addDays(today, 1);
+      while ([0, 6].includes(new Date(`${weekday}T00:00:00Z`).getUTCDay()))
+        weekday = addDays(weekday, 1);
+      await createHoliday({ date: weekday });
+      await recountService.recountUpcoming();
+      expect((await reload(c.id)).businessDays).toBe(before - 1);
+    });
+
     it('duas recontagens simultâneas registram um evento só', async () => {
       const { caio, pedro } = await seedTeam();
       const monday = nextMonday(14);

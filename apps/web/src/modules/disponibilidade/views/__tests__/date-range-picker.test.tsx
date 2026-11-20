@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { DateRangePicker } from '../components/date-range-picker';
 
-function Harness({ holidays }: { holidays?: ReadonlySet<string> }) {
+function Harness({ holidays }: { holidays?: ReadonlySet<string> | null }) {
   const [range, setRange] = useState<{ startDate?: string; endDate?: string }>({});
   return (
     <DateRangePicker
@@ -50,5 +50,14 @@ describe('DateRangePicker', () => {
     await user.click(screen.getByRole('gridcell', { name: '05 out 2026' }));
     await user.click(screen.getByRole('gridcell', { name: '09 out 2026' }));
     expect(screen.getByText('4 dias úteis')).toBeInTheDocument();
+  });
+
+  it('sem calendário de feriados disponível, não mostra contagem de dias úteis', async () => {
+    render(<Harness holidays={null} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('gridcell', { name: '05 out 2026' }));
+    await user.click(screen.getByRole('gridcell', { name: '09 out 2026' }));
+    expect(screen.queryByText('5 dias úteis')).not.toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
   });
 });

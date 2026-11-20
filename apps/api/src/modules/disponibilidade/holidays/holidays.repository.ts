@@ -20,13 +20,14 @@ export const holidaysRepository = {
       .where(and(gte(holidays.date, startDate), lte(holidays.date, endDate)))
       .orderBy(asc(holidays.date));
   },
-  async insert(values: NewHoliday): Promise<Holiday> {
-    const [row] = await db().insert(holidays).values(values).returning();
-    if (!row) throw new Error('Feriado não gravado.');
-    return row;
+  findById(id: string): Promise<Holiday | undefined> {
+    return db().query.holidays.findFirst({ where: eq(holidays.id, id) });
   },
-  async remove(id: string): Promise<Holiday | undefined> {
-    const [row] = await db().delete(holidays).where(eq(holidays.id, id)).returning();
-    return row;
+  /** Builders para compor em `batch()` com a recontagem. */
+  insert(values: NewHoliday & { id: string }) {
+    return db().insert(holidays).values(values);
+  },
+  remove(id: string) {
+    return db().delete(holidays).where(eq(holidays.id, id));
   },
 };

@@ -130,9 +130,11 @@ export function CommunicationFormPage() {
 
   const balance = useMyBalance();
   const holidays = useHolidayDates();
-  const plannedDays = startDate && endDate ? countBusinessDays(startDate, endDate, holidays) : null;
+  // Sem calendário carregado não há contagem confiável: saldo após e aviso de ano ficam ocultos.
+  const plannedDays =
+    startDate && endDate && holidays ? countBusinessDays(startDate, endDate, holidays) : null;
   const missingYears =
-    startDate && endDate ? yearsWithoutHolidays({ startDate, endDate }, holidays) : [];
+    startDate && endDate && holidays ? yearsWithoutHolidays({ startDate, endDate }, holidays) : [];
   // Na edição, a comunicação ainda não debitou (está em análise): o saldo atual já é a base.
   const balanceAfter =
     balance.data && plannedDays !== null ? balance.data.balance - plannedDays : null;
@@ -149,8 +151,8 @@ export function CommunicationFormPage() {
       <>
         Resumo:{' '}
         <span className="font-semibold text-ink">
-          {formatDateRange(startDate, endDate)} ·{' '}
-          {formatBusinessDays(countBusinessDays(startDate, endDate, holidays))}
+          {formatDateRange(startDate, endDate)}
+          {plannedDays !== null && ` · ${formatBusinessDays(plannedDays)}`}
         </span>
         {coverName && ` · cobertura ${coverName}`}
       </>

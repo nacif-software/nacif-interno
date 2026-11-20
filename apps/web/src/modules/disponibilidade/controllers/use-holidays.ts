@@ -1,4 +1,4 @@
-import { NO_HOLIDAYS, type CreateHolidayBody, type HolidayDto, type IsoDate } from '@nacif/shared';
+import { type CreateHolidayBody, type HolidayDto, type IsoDate } from '@nacif/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { apiFetch } from '@/lib/api-client';
@@ -12,10 +12,13 @@ export function useHolidays() {
   });
 }
 
-/** Datas do calendário para contar dias úteis; vazio enquanto carrega. */
-export function useHolidayDates(): ReadonlySet<IsoDate> {
+/**
+ * Datas do calendário para contar dias úteis. `null` enquanto carrega ou se falhou: a tela não deve
+ * tratar calendário indisponível como calendário vazio (contaria feriado como dia útil).
+ */
+export function useHolidayDates(): ReadonlySet<IsoDate> | null {
   const { data } = useHolidays();
-  return useMemo(() => (data ? new Set(data.map((h) => h.date)) : NO_HOLIDAYS), [data]);
+  return useMemo(() => (data ? new Set(data.map((h) => h.date)) : null), [data]);
 }
 
 /** Mudar o calendário reconta comunicações futuras no servidor: invalida o módulo inteiro. */

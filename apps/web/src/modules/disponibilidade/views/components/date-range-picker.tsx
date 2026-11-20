@@ -28,8 +28,11 @@ export interface DateRangePickerProps {
   /** Primeiro dia selecionável (hoje). */
   minDate: IsoDate;
   conflicts?: ConflictDto[];
-  /** Calendário de feriados: não contam como dia útil e aparecem esmaecidos. */
-  holidays?: ReadonlySet<IsoDate>;
+  /**
+   * Calendário de feriados: não contam como dia útil e aparecem esmaecidos.
+   * `null` = calendário ainda não disponível: a contagem de dias úteis fica em branco.
+   */
+  holidays?: ReadonlySet<IsoDate> | null;
   onChange: (range: { startDate: IsoDate; endDate: IsoDate }) => void;
   label?: string;
   compact?: boolean;
@@ -43,11 +46,13 @@ export function DateRangePicker({
   endDate,
   minDate,
   conflicts = [],
-  holidays = NO_HOLIDAYS,
+  holidays: holidaysOrNull = NO_HOLIDAYS,
   onChange,
   label = 'Período de indisponibilidade',
   compact,
 }: DateRangePickerProps) {
+  const holidays = holidaysOrNull ?? NO_HOLIDAYS;
+  const countKnown = holidaysOrNull !== null;
   const [month, setMonth] = useState(() => isoDateMonth(startDate ?? minDate));
   const total = daysInMonth(month);
   const leading = isoDayOfWeek(monthStart(month));
@@ -75,6 +80,7 @@ export function DateRangePicker({
   }
 
   const businessDays = startDate && endDate ? countBusinessDays(startDate, endDate, holidays) : 0;
+  const daysLabel = countKnown ? formatBusinessDays(businessDays) : '—';
   const cell = compact ? 'h-[30px] text-[13px]' : 'h-[38px] text-[15px]';
 
   return (
@@ -155,7 +161,7 @@ export function DateRangePicker({
       {compact ? (
         <div className="border-t border-line pt-[14px] text-[15px] font-semibold text-brand">
           {startDate && endDate
-            ? `${formatDate(startDate).replace(/ \d{4}$/, '')} – ${formatDate(endDate).replace(/ \d{4}$/, '')} · ${formatBusinessDays(businessDays)}`
+            ? `${formatDate(startDate).replace(/ \d{4}$/, '')} – ${formatDate(endDate).replace(/ \d{4}$/, '')} · ${daysLabel}`
             : 'Selecione o período'}
         </div>
       ) : (
@@ -175,7 +181,7 @@ export function DateRangePicker({
           <div className="flex flex-col gap-2 border-l border-line pl-6">
             <dt className="text-eyebrow">Dias úteis no período</dt>
             <dd className="text-[17px] font-semibold text-brand">
-              {startDate && endDate ? formatBusinessDays(businessDays) : '—'}
+              {startDate && endDate ? daysLabel : '—'}
             </dd>
           </div>
         </dl>
