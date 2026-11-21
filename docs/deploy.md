@@ -4,16 +4,16 @@ Como o Nacif Interno é publicado e operado na Cloudflare (ADR 0011). Este docum
 
 ## Visão geral
 
-| Peça       | Valor                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Worker     | `nacif-interno`: API Hono em `/api/*` e o SPA do web pelos Static Assets (`apps/web/dist`)                              |
-| Banco      | D1 `nacif-interno-prod` (migrações em `apps/api/drizzle/`)                                                              |
-| Domínio    | `interno.nacif.software`, Custom Domain do Worker (`routes` no `wrangler.jsonc`, `workers_dev: false`)                  |
-| Publicação | Workers Builds a partir da `main`; nenhuma publicação manual                                                            |
-| Cron       | `0 3 * * *` (UTC = 00:00 em São Paulo) limpa sessões e tokens expirados e lança o crédito anual de dias; só em produção |
-| Logs       | Workers Logs (`observability.enabled`) e `wrangler tail`                                                                |
-| Plano      | Workers Paid (necessário para o Email Service da #10 e para a retenção de 30 dias do D1)                                |
-| Ambientes  | Só produção. Não há staging. Previews por branch ficam para depois do Access (#7), ver "Previews"                       |
+| Peça       | Valor                                                                                                                                                                                               |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Worker     | `nacif-interno`: API Hono em `/api/*` e o SPA do web pelos Static Assets (`apps/web/dist`)                                                                                                          |
+| Banco      | D1 `nacif-interno-prod` (migrações em `apps/api/drizzle/`)                                                                                                                                          |
+| Domínio    | `interno.nacif.software`, Custom Domain do Worker (`routes` no `wrangler.jsonc`, `workers_dev: false`)                                                                                              |
+| Publicação | Workers Builds a partir da `main`; nenhuma publicação manual                                                                                                                                        |
+| Cron       | `0 3 * * *` (UTC = 00:00 em São Paulo) limpa sessões e tokens expirados, lança o crédito anual de dias e reconta os dias úteis das comunicações futuras pelo calendário de feriados; só em produção |
+| Logs       | Workers Logs (`observability.enabled`) e `wrangler tail`                                                                                                                                            |
+| Plano      | Workers Paid (necessário para o Email Service da #10 e para a retenção de 30 dias do D1)                                                                                                            |
+| Ambientes  | Só produção. Não há staging. Previews por branch ficam para depois do Access (#7), ver "Previews"                                                                                                   |
 
 A configuração do Worker vive em `apps/api/wrangler.jsonc` e é a fonte de verdade: o deploy sobrescreve o que estiver no painel (vars, cron, domínio). Mudou algo lá, rode `make types` e `make deploy-check`.
 

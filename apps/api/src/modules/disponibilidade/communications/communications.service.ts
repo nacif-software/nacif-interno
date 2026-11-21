@@ -28,6 +28,7 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '../../../db/client';
 import { uniqueViolation } from '../../../db/errors';
 import { communications, flowEvents, type FlowEventMetadata } from '../../../db/schema';
+import { holidaysRepository } from '../holidays/holidays.repository';
 import type { CommunicationRow } from '../../../db/types';
 import type { AuthenticatedUser } from '../../../infra/http/context';
 import {
@@ -98,6 +99,17 @@ async function assertPeople(
   }
 }
 
+/** Dias úteis do período pelo calendário Nacif; o zod só vê fim de semana, então o 0 é barrado aqui. */
+async function countWithHolidays(startDate: string, endDate: string): Promise<number> {
+  const businessDays = countBusinessDays(startDate, endDate, await holidaysRepository.dateSet());
+  if (businessDays < 1) {
+    throw new ValidationError(MESSAGES.noBusinessDays, [
+      { path: 'body.endDate', message: MESSAGES.noBusinessDays },
+    ]);
+  }
+  return businessDays;
+}
+
 async function assertNotice(startDate: string, now: Date) {
   const settings = await settingsRepository.get();
   const today = todayIso(APP_TIMEZONE, now);
@@ -155,7 +167,7 @@ export const communicationsService = {
   ): Promise<CommunicationDetailDto> {
     await assertPeople(actor, body.coverId, body.approverId);
     const settings = await assertNotice(body.startDate, now);
-    const businessDays = countBusinessDays(body.startDate, body.endDate);
+    const businessDays = await countWithHolidays(body.startDate, body.endDate);
     // A comunicação vale para todos os projetos da pessoa; o conflito olha cada um deles.
     const { conflicts } = await findConflicts({
       authorId: actor.id,
@@ -259,7 +271,7 @@ export const communicationsService = {
         'Só é possível editar o período enquanto a comunicação está em análise.',
       );
     const settings = await assertNotice(body.startDate, now);
-    const businessDays = countBusinessDays(body.startDate, body.endDate);
+    const businessDays = await countWithHolidays(body.startDate, body.endDate);
     const { conflicts } = await findConflicts({
       authorId: actor.id,
       projectIds: actor.projects.map((p) => p.projectId),

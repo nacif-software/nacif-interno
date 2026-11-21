@@ -80,7 +80,19 @@ function decideStatements(
         ? `Aprovada por ${actor.name} (${deductedDays} ${deductedDays === 1 ? 'dia descontado' : 'dias descontados'})`
         : `Aprovada por ${actor.name}`;
   return [
-    communicationsRepository.update(row.id, { status: type, deductedDays }, 'IN_REVIEW'),
+    communicationsRepository.update(
+      row.id,
+      {
+        status: type,
+        // Sem ajuste, o desconto é o `business_days` do momento da escrita, não o da leitura:
+        // uma recontagem por feriado entre as duas não deixa a aprovação descontando a mais.
+        deductedDays:
+          type === 'APPROVED'
+            ? (options.deductedDays ?? sql`${communications.businessDays}`)
+            : null,
+      },
+      'IN_REVIEW',
+    ),
     approvalsRepository.insertDecisionIfWon({
       id: decisionId,
       communicationId: row.id,

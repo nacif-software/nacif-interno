@@ -55,6 +55,8 @@ interface FlowMeta {
   conflictNotes?: string[];
   decision?: 'APPROVED' | 'REJECTED';
   justification?: string | null;
+  /** Recontagem pelo calendário de feriados (ADR 0014): evento EDITED sem ator. */
+  recount?: { previousBusinessDays: number; businessDays: number };
 }
 
 /** Converte eventos de fluxo em passos da timeline (tela 04). */
@@ -108,7 +110,7 @@ export function flowToTimeline(
       case 'EDITED':
         return {
           key: e.id,
-          title: 'Período editado',
+          title: meta.recount ? MESSAGES.holidayRecountTitle : 'Período editado',
           tone: 'neutral',
           detail: `${e.description} · ${when}`,
         };

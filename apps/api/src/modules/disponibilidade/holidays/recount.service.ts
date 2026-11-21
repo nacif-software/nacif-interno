@@ -1,0 +1,131 @@
+import { APP_TIMEZONE, countBusinessDays, MESSAGES, todayIso, type IsoDate } from '@nacif/shared';
+import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
+import type { BatchItem } from 'drizzle-orm/batch';
+import { batchAll, db } from '../../../db/client';
+import { communications, flowEvents, type FlowEventMetadata } from '../../../db/schema';
+import { flowEventsRepository } from '../communications/flow-events.repository';
+import { holidaysRepository } from './holidays.repository';
+
+const ID_CHUNK = 90;
+
+/** Dias descontados que o aprovador definiu na decisão vigente, por comunicação (só as ajustadas). */
+async function adjustedApprovals(ids: string[]): Promise<Map<string, number>> {
+  const latest = new Map<string, FlowEventMetadata | null>();
+  // Em pedaços, pelo limite de ~100 parâmetros por statement do D1.
+  for (let i = 0; i < ids.length; i += ID_CHUNK) {
+    const rows = await db()
+      .select({ communicationId: flowEvents.communicationId, metadata: flowEvents.metadata })
+      .from(flowEvents)
+      .where(
+        and(
+          eq(flowEvents.type, 'DECISION'),
+          inArray(flowEvents.communicationId, ids.slice(i, i + ID_CHUNK)),
+        ),
+      )
+      .orderBy(desc(flowEvents.occurredAt));
+    for (const r of rows) {
+      if (!latest.has(r.communicationId)) latest.set(r.communicationId, r.metadata);
+    }
+  }
+  const adjusted = new Map<string, number>();
+  for (const [id, m] of latest) {
+    if (m && 'deductedDays' in m && typeof m.deductedDays === 'number')
+      adjusted.set(id, m.deductedDays);
+  }
+  return adjusted;
+}
+
+/**
+ * Recontagem dos dias úteis das comunicações em análise ou aprovadas que começam hoje ou depois,
+ * pelo calendário de feriados (ADR 0014). Roda junto com a mudança do calendário (mesmo batch) e no
+ * cron das 00:00, que assim alcança quem começa no próprio dia. Idempotente.
+ */
+export const recountService = {
+  /**
+   * Statements da recontagem, para compor num batch. `calendar` é lido depois das comunicações: a
+   * contagem nunca usa um calendário mais antigo que as linhas lidas (o guard de `business_days`
+   * barra a escrita se outra recontagem passou no meio).
+   */
+  async statements(
+    calendar: () => Promise<ReadonlySet<IsoDate>>,
+    now: Date = new Date(),
+  ): Promise<{ statements: BatchItem<'sqlite'>[]; recounted: number }> {
+    const today = todayIso(APP_TIMEZONE, now);
+    const rows = await db()
+      .select()
+      .from(communications)
+      .where(
+        and(
+          inArray(communications.status, ['IN_REVIEW', 'APPROVED']),
+          gte(communications.startDate, today),
+        ),
+      );
+    const holidays = await calendar();
+    const changed = rows
+      .map((row) => ({
+        row,
+        businessDays: countBusinessDays(row.startDate, row.endDate, holidays),
+      }))
+      .filter(({ row, businessDays }) => businessDays !== row.businessDays);
+    const adjusted = await adjustedApprovals(
+      changed.filter(({ row }) => row.status === 'APPROVED').map(({ row }) => row.id),
+    );
+
+    const statements: BatchItem<'sqlite'>[] = [];
+    for (const { row, businessDays } of changed) {
+      const previous = row.businessDays;
+      // Em aprovadas: sem ajuste, o desconto acompanha os dias úteis; com ajuste (decisão vigente com
+      // `deductedDays`, ou desconto diferente dos dias úteis no histórico sem metadata), vale o
+      // ajuste limitado aos dias úteis: período que vira só feriado desconta 0 e o ajuste volta
+      // quando o feriado sai.
+      const explicit = adjusted.get(row.id);
+      const legacyAdjusted = (row.deductedDays ?? previous) !== previous;
+      const deductedDays =
+        row.status !== 'APPROVED'
+          ? undefined
+          : explicit !== undefined
+            ? Math.min(explicit, businessDays)
+            : legacyAdjusted
+              ? Math.min(row.deductedDays ?? previous, businessDays)
+              : businessDays;
+      statements.push(
+        db()
+          .update(communications)
+          .set({ businessDays, ...(deductedDays !== undefined ? { deductedDays } : {}) })
+          .where(
+            and(
+              eq(communications.id, row.id),
+              eq(communications.status, row.status),
+              eq(communications.startDate, row.startDate),
+              eq(communications.endDate, row.endDate),
+              eq(communications.businessDays, previous),
+            ),
+          ),
+        flowEventsRepository.insertIf(
+          {
+            communicationId: row.id,
+            type: 'EDITED',
+            actorId: null,
+            occurredAt: now,
+            description: MESSAGES.holidayRecountEvent(previous, businessDays),
+            metadata: { recount: { previousBusinessDays: previous, businessDays } },
+          },
+          // Só se o UPDATE logo acima (mesmo batch) aplicou: duas recontagens simultâneas não
+          // registram o evento duas vezes.
+          sql`changes() = 1`,
+        ),
+      );
+    }
+    return { statements, recounted: changed.length };
+  },
+
+  /** Recontagem com o calendário atual (cron). */
+  async recountUpcoming(now: Date = new Date()): Promise<{ recounted: number }> {
+    const { statements, recounted } = await this.statements(
+      () => holidaysRepository.dateSet(),
+      now,
+    );
+    if (statements.length > 0) await batchAll(statements);
+    return { recounted };
+  },
+};

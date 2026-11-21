@@ -1,6 +1,6 @@
 # ADR 0009 — Datas como strings ISO e dias úteis sem feriados
 
-**Status**: aceito (2026-09-23)
+**Status**: aceito (2026-09-23); parte de feriados substituída pelo ADR 0014 (2026-11-20)
 
 ## Decisão
 

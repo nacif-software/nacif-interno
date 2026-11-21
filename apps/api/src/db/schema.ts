@@ -171,6 +171,22 @@ export const availabilitySettings = sqliteTable('availability_settings', {
   updatedAt: updatedAt(),
 });
 
+/**
+ * Calendário de feriados e recesso da Nacif: datas que não contam como dia útil (ADR 0014).
+ * Um calendário único para o time; o administrador edita.
+ */
+export const holidays = sqliteTable(
+  'holidays',
+  {
+    id: id(),
+    /** `YYYY-MM-DD` */
+    date: text('date').notNull(),
+    name: text('name').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('holidays_date_key').on(t.date)],
+);
+
 export const availabilityDefaultApprovers = sqliteTable(
   'availability_default_approvers',
   {
@@ -333,7 +349,9 @@ export type FlowEventMetadata =
       /** Presente quando o aprovador ajustou os dias descontados. */
       deductedDays?: number;
     }
-  | { batchId: string };
+  | { batchId: string }
+  /** Dias úteis recontados pelo calendário de feriados (ADR 0014); sem ator. */
+  | { recount: { previousBusinessDays: number; businessDays: number } };
 
 export const flowEvents = sqliteTable(
   'flow_events',
