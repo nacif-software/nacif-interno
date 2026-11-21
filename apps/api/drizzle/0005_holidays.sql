@@ -6,7 +6,7 @@ CREATE TABLE `holidays` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `holidays_date_key` ON `holidays` (`date`);--> statement-breakpoint
--- Calendário Nacif 2025–2026 (canvas da política de descanso remunerado) e 01/01/2027.
+-- Calendário Nacif 2025–2026 (canvas da política de descanso remunerado). 2027 entra pela Administração quando for definido.
 INSERT INTO `holidays` (`id`, `date`, `name`, `created_at`) VALUES
 	('holiday-2025-03-03', '2025-03-03', 'Carnaval', '2026-11-20T00:00:00.000Z'),
 	('holiday-2025-03-04', '2025-03-04', 'Carnaval', '2026-11-20T00:00:00.000Z'),
@@ -32,5 +32,4 @@ INSERT INTO `holidays` (`id`, `date`, `name`, `created_at`) VALUES
 	('holiday-2026-11-15', '2026-11-15', 'Proclamação da República', '2026-11-20T00:00:00.000Z'),
 	('holiday-2026-11-20', '2026-11-20', 'Dia da Consciência Negra', '2026-11-20T00:00:00.000Z'),
 	('holiday-2026-12-25', '2026-12-25', 'Natal', '2026-11-20T00:00:00.000Z'),
-	('holiday-2026-12-31', '2026-12-31', 'Descanso Nacif', '2026-11-20T00:00:00.000Z'),
-	('holiday-2027-01-01', '2027-01-01', 'Confraternização Universal', '2026-11-20T00:00:00.000Z');
+	('holiday-2026-12-31', '2026-12-31', 'Descanso Nacif', '2026-11-20T00:00:00.000Z');
