@@ -1,23 +1,16 @@
 /**
- * Gera um par de chaves VAPID (P-256) para o Web Push, no formato que `@block65/webcrypto-web-push`
- * e o navegador esperam: pública = ponto não comprimido de 65 bytes, privada = escalar `d`, ambos
- * base64url sem padding. Rode uma vez por ambiente e guarde a privada como secret
- * (`wrangler secret put VAPID_PRIVATE_KEY`); a pública vai em `vars` no wrangler.jsonc.
+ * Imprime um par de chaves VAPID novo para o Web Push. Rode uma vez por ambiente: a privada vai
+ * como secret (`wrangler secret put VAPID_PRIVATE_KEY`), a pública e o subject em `vars` no
+ * wrangler.jsonc. Nenhuma chave privada entra no repositório, nem a de desenvolvimento.
  *
- *   make vapid-keys
+ *   make vapid-keys                       # subject padrão
+ *   pnpm vapid-keys mailto:dev@nacif.xyz  # subject informado
  */
-import { Buffer } from 'node:buffer';
-import { generateKeyPairSync } from 'node:crypto';
+import { generateVapidKeys } from './lib/vapid';
 
-const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
-const pub = publicKey.export({ format: 'jwk' }) as { x: string; y: string };
-const priv = privateKey.export({ format: 'jwk' }) as { d: string };
-const raw = Buffer.concat([
-  Buffer.from([0x04]),
-  Buffer.from(pub.x, 'base64url'),
-  Buffer.from(pub.y, 'base64url'),
-]);
+const subject = process.argv[2] ?? 'mailto:wenderson@nacif.xyz';
+const { publicKey, privateKey } = generateVapidKeys();
 
-console.log(`VAPID_PUBLIC_KEY=${raw.toString('base64url')}`);
-console.log(`VAPID_PRIVATE_KEY=${priv.d}`);
-console.log('VAPID_SUBJECT=mailto:wenderson@nacif.xyz');
+console.log(`VAPID_PUBLIC_KEY=${publicKey}`);
+console.log(`VAPID_PRIVATE_KEY=${privateKey}`);
+console.log(`VAPID_SUBJECT=${subject}`);

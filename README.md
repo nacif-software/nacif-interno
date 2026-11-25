@@ -45,7 +45,7 @@ Usuários do seed: `caio@nacif.xyz` (administrador), `marina@nacif.xyz` (aprovad
 
 ### Variáveis e segredos
 
-Variáveis locais ficam em `apps/api/.dev.vars` (criado a partir de `.dev.vars.example`; não é versionado). As de produção ficam em `vars` no `apps/api/wrangler.jsonc`; segredos entram com `wrangler secret put`. Tabela completa em `docs/deploy.md`.
+Variáveis locais ficam em `apps/api/.dev.vars` (criado pelo `make install` a partir de `.dev.vars.example`, mais um par VAPID só deste computador; não é versionado). As de produção ficam em `vars` no `apps/api/wrangler.jsonc`; segredos entram com `wrangler secret put`. Tabela completa em `docs/deploy.md`.
 
 | Nome                                               | Para quê                                                                 |
 | -------------------------------------------------- | ------------------------------------------------------------------------ |
