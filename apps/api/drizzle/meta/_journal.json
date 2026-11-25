@@ -36,6 +36,13 @@
       "when": 1794774168847,
       "tag": "0004_push_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1795196551492,
+      "tag": "0005_holidays",
+      "breakpoints": true
     }
   ]
 }

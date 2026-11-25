@@ -7,8 +7,12 @@ import {
   formatDate,
   formatMonthTitle,
   isoDateMonth,
+  isBusinessDay,
   isoDayOfWeek,
+  isWeekend,
+  MESSAGES,
   monthStart,
+  NO_HOLIDAYS,
   rangesOverlap,
   WEEKDAY_INITIALS,
   type ConflictDto,
@@ -24,6 +28,11 @@ export interface DateRangePickerProps {
   /** Primeiro dia selecionável (hoje). */
   minDate: IsoDate;
   conflicts?: ConflictDto[];
+  /**
+   * Calendário de feriados: não contam como dia útil e aparecem esmaecidos.
+   * `null` = calendário ainda não disponível: a contagem de dias úteis fica em branco.
+   */
+  holidays?: ReadonlySet<IsoDate> | null;
   onChange: (range: { startDate: IsoDate; endDate: IsoDate }) => void;
   label?: string;
   compact?: boolean;
@@ -37,10 +46,13 @@ export function DateRangePicker({
   endDate,
   minDate,
   conflicts = [],
+  holidays: holidaysOrNull = NO_HOLIDAYS,
   onChange,
   label = 'Período de indisponibilidade',
   compact,
 }: DateRangePickerProps) {
+  const holidays = holidaysOrNull ?? NO_HOLIDAYS;
+  const countKnown = holidaysOrNull !== null;
   const [month, setMonth] = useState(() => isoDateMonth(startDate ?? minDate));
   const total = daysInMonth(month);
   const leading = isoDayOfWeek(monthStart(month));
@@ -67,7 +79,8 @@ export function DateRangePicker({
     onChange({ startDate, endDate: day });
   }
 
-  const businessDays = startDate && endDate ? countBusinessDays(startDate, endDate) : 0;
+  const businessDays = startDate && endDate ? countBusinessDays(startDate, endDate, holidays) : 0;
+  const daysLabel = countKnown ? formatBusinessDays(businessDays) : '—';
   const cell = compact ? 'h-[30px] text-[13px]' : 'h-[38px] text-[15px]';
 
   return (
@@ -112,12 +125,14 @@ export function DateRangePicker({
         {Array.from({ length: total }, (_, i) => {
           const day = `${month}-${String(i + 1).padStart(2, '0')}`;
           const state = stateFor(day);
+          const holiday = !isWeekend(day) && !isBusinessDay(day, holidays);
           return (
             <button
               key={day}
               type="button"
               role="gridcell"
               aria-label={formatDate(day)}
+              title={holiday ? MESSAGES.holidaysHint : undefined}
               aria-selected={state === 'edge' || state === 'sel'}
               aria-disabled={state === 'past'}
               disabled={state === 'past'}
@@ -126,7 +141,11 @@ export function DateRangePicker({
                 'flex items-center justify-center rounded-badge leading-none transition-colors',
                 cell,
                 state === 'past' && 'cursor-not-allowed text-day-muted',
-                state === 'normal' && 'cursor-pointer text-ink-muted hover:bg-canvas',
+                state === 'normal' &&
+                  cn(
+                    'cursor-pointer hover:bg-canvas',
+                    holiday ? 'text-day-muted' : 'text-ink-muted',
+                  ),
                 state === 'conflict' &&
                   'cursor-pointer bg-warning-bg text-warning hover:brightness-95',
                 state === 'sel' && 'cursor-pointer bg-brand-wash font-semibold text-brand',
@@ -142,7 +161,7 @@ export function DateRangePicker({
       {compact ? (
         <div className="border-t border-line pt-[14px] text-[15px] font-semibold text-brand">
           {startDate && endDate
-            ? `${formatDate(startDate).replace(/ \d{4}$/, '')} – ${formatDate(endDate).replace(/ \d{4}$/, '')} · ${formatBusinessDays(businessDays)}`
+            ? `${formatDate(startDate).replace(/ \d{4}$/, '')} – ${formatDate(endDate).replace(/ \d{4}$/, '')} · ${daysLabel}`
             : 'Selecione o período'}
         </div>
       ) : (
@@ -162,7 +181,7 @@ export function DateRangePicker({
           <div className="flex flex-col gap-2 border-l border-line pl-6">
             <dt className="text-eyebrow">Dias úteis no período</dt>
             <dd className="text-[17px] font-semibold text-brand">
-              {startDate && endDate ? formatBusinessDays(businessDays) : '—'}
+              {startDate && endDate ? daysLabel : '—'}
             </dd>
           </div>
         </dl>

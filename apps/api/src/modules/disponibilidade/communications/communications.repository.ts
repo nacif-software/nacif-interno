@@ -1,4 +1,5 @@
 import { and, asc, count, desc, eq, isNull, sql, type SQL } from 'drizzle-orm';
+import type { SQLiteUpdateSetSource } from 'drizzle-orm/sqlite-core';
 import { db } from '../../../db/client';
 import { communications, decisions, flowEvents } from '../../../db/schema';
 import type { CommunicationRow, NewCommunication } from '../../../db/types';
@@ -49,7 +50,12 @@ export const communicationsRepository = {
     return db().insert(communications).values(data);
   },
   /** Builder para compor em `batch()`. Com `onlyIfStatus`, a linha só muda se ainda estiver nesse status. */
-  update(id: string, data: Partial<NewCommunication>, onlyIfStatus?: NewCommunication['status']) {
+  /** `data` aceita expressões SQL (ex.: copiar `business_days` no momento da escrita). */
+  update(
+    id: string,
+    data: SQLiteUpdateSetSource<typeof communications>,
+    onlyIfStatus?: NewCommunication['status'],
+  ) {
     return db()
       .update(communications)
       .set(data)

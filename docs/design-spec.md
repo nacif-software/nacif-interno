@@ -122,6 +122,18 @@ Avisos push no navegador, por dispositivo. Mesmos tokens e componentes.
 
 **Avisos** (título · corpo → tela): `Nova comunicação para avaliar` · `Pedro Mordente · 05 – 09 out 2026 · 5 dias úteis` → detalhe · `Período alterado` · `Pedro Mordente · agora 06 – 10 out 2026` → detalhe · `Comunicação cancelada` · `Pedro Mordente cancelou 05 – 09 out 2026` → fila · `Comunicação aprovada` · `05 – 09 out 2026 · por Ricardo Nacif[ · 3 dias descontados]` → detalhe · `Comunicação recusada` · `por Ricardo Nacif: <motivo até 80 caracteres>` → detalhe · `Comunicação voltou para análise` · `05 – 09 out 2026 · aprovação em lote desfeita` → detalhe · `Crédito anual de 10 dias` / `Crédito de 5 dias` / `Venda de 7 dias registrada` · `Saldo de dias: 17` → extrato.
 
+### 10 Feriados (acrescentado em 2026-11-20, ADR 0014)
+
+Proposta para aprovação do responsável pelo produto no PR. Calendário único de feriados e recesso da Nacif; feriado não conta como dia útil. Mesmos tokens e componentes.
+
+**07 Administração**: na coluna da direita, abaixo de `Configurações`, H2 `Feriados` e card (padding 28): texto de apoio `Feriados e o recesso da Nacif não contam como dia útil.` (13, #4A4A55); lista agrupada por ano (eyebrow com o ano, mais recente primeiro), cada linha com o nome (15/600) e a data em mono 13 (`25 dez 2026`) à esquerda e botão secundário pequeno `Remover` à direita; vazio: `Nenhum feriado cadastrado.` Rodapé com border-top: `Data` (input de data) e `Nome` lado a lado + botão secundário `Adicionar feriado`. Toasts: `Feriado Natal adicionado.` / `Feriado Natal removido.` Data repetida: toast de erro `Já existe um feriado nesta data.`
+
+**03 Formulário**: o seletor de período mostra o feriado com o número esmaecido (#C9C9CE, como dia passado, mas clicável) e dica `Feriados e o recesso da Nacif não contam como dia útil.`; `Dias úteis no período` e o resumo não contam feriados. Abaixo do seletor, quando o período toca um ano sem calendário cadastrado: `O calendário de feriados de 2028 ainda não foi definido. A contagem de dias úteis pode mudar.` (13, #4A4A55).
+
+**06 Calendário do time**: feriado com o mesmo tratamento do fim de semana (número #C9C9CE, fundo #F7F7F8 na coluna) e o nome do feriado como dica no cabeçalho do dia.
+
+**04 Detalhe**: quando o calendário muda, as comunicações que ainda não começaram são recontadas e o fluxo ganha `Dias úteis recalculados pelo calendário de feriados: 5 → 4` (sem autor).
+
 ### M1 Dashboard mobile
 
 Header 56: `NACIF` (18) + avatar 30 `MD`. H2 `Suas comunicações` (26) · botão roxo full `Nova comunicação` · métricas 2 col `Dias no ano` → `14`, `Em análise` → `1` (30/700) · lista: `14 – 18 set` + badge (11/600, 4px 9px) + `5 dias úteis · cobertura Pedro Nakano`; `05 – 09 out` Em análise `5 dias úteis · cobertura Júlia Reis`; `02 – 04 jul` Recusada `3 dias úteis`. Tab bar: `Início` (ativo 600 #5316E8) · `Comunicações` · `Time`.

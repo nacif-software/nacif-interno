@@ -6,8 +6,10 @@ import {
 } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { db } from '../db/client';
-import { passwordSetupTokens, sessions } from '../db/schema';
-import { createUser } from '../test/factories';
+import { addDays, APP_TIMEZONE, todayIso } from '@nacif/shared';
+import { eq } from 'drizzle-orm';
+import { communications, passwordSetupTokens, sessions } from '../db/schema';
+import { createCommunication, createHoliday, createUser, seedTeam } from '../test/factories';
 import { countRows } from '../test/db';
 import worker from '../worker';
 
@@ -43,5 +45,26 @@ describe('cron de manutenção', () => {
 
     expect(await countRows(sessions)).toBe(1);
     expect(await countRows(passwordSetupTokens)).toBe(1);
+  });
+
+  it('reconta os dias úteis das comunicações futuras pelo calendário de feriados', async () => {
+    const { caio, pedro } = await seedTeam();
+    let monday = addDays(todayIso(APP_TIMEZONE), 14);
+    while (new Date(`${monday}T00:00:00Z`).getUTCDay() !== 1) monday = addDays(monday, 1);
+    const c = await createCommunication({
+      authorId: pedro.id,
+      approverId: caio.id,
+      startDate: monday,
+      endDate: addDays(monday, 4),
+    });
+    await createHoliday({ date: monday });
+
+    const controller = createScheduledController({ scheduledTime: new Date(), cron: '0 3 * * *' });
+    const ctx = createExecutionContext();
+    await worker.scheduled(controller, env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    const row = await db().query.communications.findFirst({ where: eq(communications.id, c.id) });
+    expect(row?.businessDays).toBe(4);
   });
 });

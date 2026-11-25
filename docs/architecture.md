@@ -32,7 +32,7 @@ HTTP → secureHeaders/cors/bodyLimit → /api/<módulo> router (Hono)
 
 - E-mail/senha local (`bcryptjs`), atrás da interface `AuthProvider` (`apps/api/src/modules/core/auth/providers`). Login corporativo entra trocando o provider (issue #7).
 - Domínio restrito a `@nacif.xyz` antes de consultar o banco (`DOMAIN_NOT_ALLOWED` ecoa o e-mail para a copy da tela 01b).
-- Sessão opaca (token de 256 bits, Web Crypto) na tabela `sessions` do D1, cookie `nacif_session` httpOnly/sameSite=lax, 30 dias deslizantes. Desativar uma pessoa revoga todas as sessões. Um Cron Trigger diário (`0 3 * * *` UTC) apaga sessões e tokens expirados e, em seguida, lança o crédito anual de dias (ver abaixo).
+- Sessão opaca (token de 256 bits, Web Crypto) na tabela `sessions` do D1, cookie `nacif_session` httpOnly/sameSite=lax, 30 dias deslizantes. Desativar uma pessoa revoga todas as sessões. Um Cron Trigger diário (`0 3 * * *` UTC) apaga sessões e tokens expirados, lança o crédito anual de dias (ver abaixo) e reconta os dias úteis das comunicações futuras pelo calendário de feriados (ADR 0014).
 - Convite: admin cria a pessoa sem senha e recebe um link `/set-password/<token>` (token com hash sha256 na tabela `password_setup_tokens`, 7 dias, uso único). Sem e-mail no MVP (issue #10).
 
 ## Sistema de módulos

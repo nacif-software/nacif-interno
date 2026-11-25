@@ -174,7 +174,7 @@ describe('approvals', () => {
     const res = await agent.get('/api/disponibilidade/calendar?month=2026-10');
     expect(res.status).toBe(200);
     expect(res.body.days).toHaveLength(31);
-    expect(res.body.days[2]).toEqual({ date: '2026-10-03', weekend: true });
+    expect(res.body.days[2]).toEqual({ date: '2026-10-03', weekend: true, holiday: null });
     const names = res.body.rows.map((r: { user: { name: string } }) => r.user.name);
     expect(names).not.toContain('Thiago Lemos');
     const pedroRow = res.body.rows.find(

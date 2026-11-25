@@ -16,9 +16,11 @@ export function CalendarGrid({ data }: { data: CalendarMonthDto }) {
             {data.days.map((d) => (
               <div
                 key={d.date}
+                title={d.holiday ?? undefined}
+                aria-label={d.holiday ? `${Number(d.date.slice(8, 10))} · ${d.holiday}` : undefined}
                 className={cn(
                   'flex items-center justify-center border-r border-grid-line font-mono text-[11px] font-medium last:border-r-0',
-                  d.weekend ? 'bg-canvas text-day-muted' : 'text-ink-muted',
+                  d.weekend || d.holiday ? 'bg-canvas text-day-muted' : 'text-ink-muted',
                 )}
               >
                 {Number(d.date.slice(8, 10))}
@@ -45,7 +47,7 @@ export function CalendarGrid({ data }: { data: CalendarMonthDto }) {
                   aria-hidden
                   className={cn(
                     'border-r border-grid-line last:border-r-0',
-                    d.weekend && 'bg-canvas',
+                    (d.weekend || d.holiday) && 'bg-canvas',
                   )}
                 />
               ))}
